@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-export type { Theme } from '#/components/ThemeSwitcher'
+/** Per-component theme override; omit it to follow the page (data-theme="dark" or class="dark"). */
+export type Theme = 'light' | 'dark'
 
 // Mirrors a prop into local state so a component stays interactive on the
 // canvas without a handler, yet still follows the prop when it changes.
@@ -15,7 +16,7 @@ export function useSyncedState<T>(value: T, onChange?: (value: T) => void) {
 }
 
 export const focusRing =
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF]'
 
 // Tracks an element's border-box size (0 × 0 until mounted).
 export function useElementSize<T extends HTMLElement>() {

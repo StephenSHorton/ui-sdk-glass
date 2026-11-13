@@ -180,7 +180,7 @@ export function RangeSlider({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className="relative flex-1 cursor-grab touch-none rounded-full select-none active:cursor-grabbing has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-accent"
+          className="relative flex-1 cursor-grab touch-none rounded-full select-none active:cursor-grabbing has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-[#3291FF]"
           style={{ height: areaH }}
         >
           <canvas

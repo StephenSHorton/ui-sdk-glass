@@ -283,7 +283,10 @@ function makeLayer() {
 }
 
 function themeOf(el: HTMLElement): GlassThemeName {
-  return el.closest('[data-theme]')?.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+  // The nearest data-theme wins; otherwise a Tailwind/shadcn-style class="dark" on <html>.
+  const scoped = el.closest('[data-theme]')?.getAttribute('data-theme')
+  if (scoped) return scoped === 'dark' ? 'dark' : 'light'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 }
 
 function setVec3(u: { value: { set: (r: number, g: number, b: number) => void } }, hex: string) {
@@ -319,11 +322,14 @@ async function createRuntime() {
     }
   })
   // Theme switches anywhere re-render every view.
-  new MutationObserver(() => views.forEach((v) => (v.dirty = true))).observe(document.documentElement, {
+  const themeChanged = () => views.forEach((v) => (v.dirty = true))
+  new MutationObserver(themeChanged).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
     subtree: true,
   })
+  // class="dark" is only watched on <html> (a subtree class watch would fire on every re-render).
+  new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
   function resizeLayers(v: View, spec: GlassViewSpec) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2)

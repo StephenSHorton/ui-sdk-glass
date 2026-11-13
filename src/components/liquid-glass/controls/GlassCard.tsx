@@ -200,7 +200,7 @@ export function GlassCardPreview({ theme = 'light', stageWidth, stageHeight = 42
   return (
     <div
       data-theme={theme}
-      className="relative flex items-center justify-center overflow-visible bg-canvas dark:bg-canvas-dark"
+      className="relative flex items-center justify-center overflow-visible bg-[#dcdde0] dark:bg-[#141518]"
       style={{ width: stageWidth ?? '100%', height: stageHeight }}
     >
       <div aria-hidden="true" className={`pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center ${compact ? 'gap-2.5 px-1' : 'gap-4 px-10'}`}>
@@ -271,7 +271,7 @@ function ProgressiveBlur({ side, width = 150, blur = 4 }: { side: 'left' | 'righ
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-y-0 select-none [--edge:var(--color-canvas)] dark:[--edge:var(--color-canvas-dark)] ${side === 'left' ? '-left-px' : '-right-px'}`}
+      className={`pointer-events-none absolute inset-y-0 select-none [--edge:#dcdde0] dark:[--edge:#141518] ${side === 'left' ? '-left-px' : '-right-px'}`}
       style={{
         width,
         background: `linear-gradient(${inward}, var(--edge), transparent)`,
@@ -298,7 +298,7 @@ export function GlassCardExamples({ theme = 'light', githubUser = 'bilalgursen',
     borderAlpha: presets[theme].borderAlpha,
   }
   return (
-    <div data-theme={theme} className="relative w-full rounded-2xl bg-canvas py-10 dark:bg-canvas-dark">
+    <div data-theme={theme} className="relative w-full rounded-2xl bg-[#dcdde0] py-10 dark:bg-[#141518]">
       {/* Rows loop forever: two identical halves slide by exactly one half. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex flex-col justify-center overflow-hidden">
         {[0, 1].map((row) => (

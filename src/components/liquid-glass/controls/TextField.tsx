@@ -54,7 +54,7 @@ export function TextField({
       )}
       <div
         ref={ref}
-        className={`relative flex items-center gap-2 text-neutral-500 ${size === 'lg' ? 'h-12 px-5 text-[15px]' : 'h-10 px-4 text-[13px]'} ${shape === 'pill' ? 'rounded-full' : 'rounded-[14px]'} ${error ? 'outline-[1.5px] outline-[#e5484d] outline-solid' : 'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent'} ${disabled ? 'opacity-40' : ''}`}
+        className={`relative flex items-center gap-2 text-neutral-500 ${size === 'lg' ? 'h-12 px-5 text-[15px]' : 'h-10 px-4 text-[13px]'} ${shape === 'pill' ? 'rounded-full' : 'rounded-[14px]'} ${error ? 'outline-[1.5px] outline-[#e5484d] outline-solid' : 'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#3291FF]'} ${disabled ? 'opacity-40' : ''}`}
       >
         {width > 0 && (
           <LiquidGlass width={width} height={height} radius={radius} frost={frost} pressed={focused} swell={1.03} />

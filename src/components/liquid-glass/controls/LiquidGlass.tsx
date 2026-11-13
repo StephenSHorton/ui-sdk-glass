@@ -179,7 +179,7 @@ export function LiquidGlassPreview({
   return (
     <div
       data-theme={theme}
-      className="relative overflow-hidden bg-canvas dark:bg-canvas-dark"
+      className="relative overflow-hidden bg-[#dcdde0] dark:bg-[#141518]"
       style={{ width: W, height: H }}
     >
       <LiquidGlass

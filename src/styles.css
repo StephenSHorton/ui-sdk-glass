@@ -3,7 +3,7 @@
 /* `dark:` follows the nearest data-theme="dark" ancestor (UI kit components set it from their `theme` prop). */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-/* Design tokens lifted from the liquid glass slider; the glass itself is drawn on canvas (components/ui/glass). */
+/* Design tokens lifted from the liquid glass slider; the glass itself is drawn on canvas (components/liquid-glass/controls/glass). */
 @theme {
   --color-accent: #3291FF;
   --color-accent-deep: #02458f;

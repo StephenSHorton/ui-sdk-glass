@@ -2,7 +2,21 @@ import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
+
+import { generateAiFiles } from './scripts/ai-files'
+import { PAGES } from './src/docs/content'
+import { LOCALES, SITE_ORIGIN, localizedPath } from './src/site/i18n'
+
+/** Every public page, in both languages. The single list the prerenderer and sitemap use. */
+const paths = LOCALES.flatMap((l) => ['/', '/docs', ...PAGES.filter((p) => p.slug !== 'introduction').map((p) => `/docs/${p.slug}`)].map((p) => localizedPath(p, l)))
+
+/** llms.txt, per-page Markdown, the shadcn registry and the skill reference (scripts/ai-files.ts). */
+const aiFiles = (): Plugin => ({
+  name: 'liquid-glass-ai-files',
+  buildStart: () => generateAiFiles(),
+  configureServer: () => generateAiFiles(),
+})
 
 export default defineConfig({
   server: {
@@ -12,22 +26,26 @@ export default defineConfig({
   },
   resolve: { tsconfigPaths: true },
   plugins: [
+    aiFiles(),
     tailwindcss(),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),
-    // Static site generation (SSG): every route renders to a real
-    // `index.html` with full page content at build time, under
-    // `.output/public` — SEO-friendly static files that hydrate on the
-    // client. Forge publishes static output only; there is no SSR server at
-    // runtime (`.output/server` is a build-time artifact the prerenderer
-    // runs, never deployed). Because pages render in Node during the build,
-    // components must guard client-only APIs (`window`, `document`, three.js
-    // canvas setup, animation DOM work, …) behind `useEffect`. `failOnError`
-    // fails the build on error responses; React render throws are swallowed
-    // (Start recovers client-side and emits a content-less page), so the
-    // `build` script also runs `scripts/verify-static-build.mjs` to catch
-    // those — otherwise a broken page silently ships as empty HTML.
+    // Static site generation: every page in `paths` renders to real HTML under
+    // `.output/public` and hydrates on the client. There is no server at runtime, so
+    // components must keep `window`/`document` inside effects. `failOnError` fails the
+    // build on error responses; scripts/verify-static-build.mjs catches render throws.
     tanstackStart({
-      prerender: { enabled: true, crawlLinks: true, failOnError: true },
+      pages: [
+        ...paths.map((path) => ({ path })),
+        { path: '/404', sitemap: { exclude: true } },
+        { path: '/tr/404', sitemap: { exclude: true } },
+      ],
+      prerender: {
+        enabled: true,
+        crawlLinks: true,
+        failOnError: true,
+        filter: (page) => !page.path.includes('#') && !page.path.endsWith('.md') && !page.path.endsWith('.txt') && !page.path.endsWith('.json'),
+      },
+      sitemap: { host: SITE_ORIGIN },
     }),
     viteReact(),
   ],

@@ -1,15 +1,12 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
+import { useEffect, type CSSProperties } from 'react'
 
-import { GlassButton, GlassLayer } from '@/components/liquid-glass'
-import { HowItWorks } from '#/components/site/HowItWorks'
-import { Crosshair, DashedRule, DotGrid } from '#/components/site/layout-svg'
-import { UiKitGallery } from '#/components/site/UiKitGallery'
-import { DEMOS } from '#/docs/demos'
-import { CodeBlock, GitHubMark } from '#/site/chrome'
-import { installCommand } from '#/site/doc-page'
-import { REPO_URL, alternateLinks, localeFromParam, localeParam, type Locale } from '#/site/i18n'
-import { setTheme, useTheme } from '#/site/theme'
+import { Button } from '#/components/ui/button'
+import { FrameSection, GitHubMark, column } from '#/site/chrome'
+import { CodeBlock, InstallCommand } from '#/site/code'
+import { ComponentGrid } from '#/site/component-grid'
+import { ENTERED_KEY, REPO_URL, alternateLinks, localeFromParam, localeParam } from '#/site/i18n'
 import { UI } from '#/site/ui'
 
 export const Route = createFileRoute('/{-$locale}/')({
@@ -18,7 +15,7 @@ export const Route = createFileRoute('/{-$locale}/')({
     const t = UI[locale].hero
     return {
       meta: [
-        { title: locale === 'tr' ? 'Liquid Glass UI — React için sıvı cam bileşenleri' : 'Liquid Glass UI — liquid glass components for React' },
+        { title: locale === 'tr' ? 'Liquid Glass UI — React için cam bileşenleri' : 'Liquid Glass UI — glass components for React' },
         { name: 'description', content: t.subtitle },
         { property: 'og:title', content: 'Liquid Glass UI' },
         { property: 'og:description', content: t.subtitle },
@@ -29,90 +26,128 @@ export const Route = createFileRoute('/{-$locale}/')({
   component: Home,
 })
 
-function Showcase({ id, title }: { id: string; title: string }) {
-  const { Component } = DEMOS[id]
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex min-h-52 items-center justify-center rounded-2xl border border-border bg-[#e6e7ea] p-6 dark:bg-[#1c1d21]">
-        <Component />
-      </div>
-      <p className="px-1 text-[13px] font-semibold text-foreground">{title}</p>
-    </div>
-  )
-}
+const USAGE = `import { GlassButton, GlassTabs } from '@/components/liquid-glass'
+
+<GlassTabs
+  aria-label="View"
+  value={view}
+  onValueChange={setView}
+  options={[
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+  ]}
+/>
+<GlassButton material="tinted" className="bg-sky-500 text-white">
+  Save
+</GlassButton>`
+
+/** Entrance delay (and, for blocks, a shorter rise than the 20% the h1 lines use). */
+const at = (d: number, rise?: string) => ({ '--d': `${d}s`, ...(rise ? { '--rise': rise } : {}) }) as CSSProperties
+
+const h2 = 'font-display text-[32px] leading-[1.06] tracking-[-0.01em] text-balance text-foreground sm:text-[48px]'
 
 function Home() {
   const { locale } = Route.useRouteContext()
-  const [theme] = useTheme()
   const t = UI[locale]
   const p = { locale: localeParam(locale) }
+
+  // The entrance plays once per session; afterwards (and on the way back) the page is just there.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      document.documentElement.setAttribute('data-entered', '')
+      try {
+        sessionStorage.setItem(ENTERED_KEY, '1')
+      } catch {}
+    }, 2800)
+    return () => window.clearTimeout(id)
+  }, [])
+
   return (
-    <main>
-      <section className="w-full px-4 sm:px-6">
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center py-24 text-center md:py-32">
-          <DotGrid />
-          <DashedRule className="bottom-0 hidden md:block" />
-          <Crosshair className="absolute bottom-0 left-0 hidden -translate-x-1/2 translate-y-1/2 text-foreground/50 md:block" />
-          <Crosshair className="absolute right-0 bottom-0 hidden translate-x-1/2 translate-y-1/2 text-foreground/50 md:block" />
-          <p className="relative mb-6 font-mono text-[11px] tracking-[0.08em] text-muted-foreground uppercase">{t.hero.eyebrow}</p>
-          <h1 className="relative max-w-3xl text-[44px] leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-foreground sm:text-[64px]">
-            {t.hero.title}
-          </h1>
-          <p className="relative mt-6 max-w-2xl text-[16px] leading-relaxed text-balance text-muted-foreground sm:text-[17px]">{t.hero.subtitle}</p>
-          <div className="relative mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/{-$locale}/docs" params={p} data-glass-host className="inline-flex h-12 items-center gap-2 rounded-full bg-[#3291FF] px-6 text-[15px] font-semibold text-white">
-              <GlassLayer material="liquid" />
-              {t.hero.primary}
-              <ArrowRight className="size-[18px]" />
-            </Link>
-            <GlassButton size="lg" href={REPO_URL} target="_blank" rel="noreferrer" icon={<GitHubMark className="size-4" />} iconPosition="start" droplet="none">
-              {t.hero.secondary}
-            </GlassButton>
-          </div>
-        </div>
-      </section>
-
-      <section id="liquid" className="w-full scroll-mt-14 px-4 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-10 border-b border-border py-20 md:py-24">
-          <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div className="flex max-w-2xl flex-col gap-3">
-              <h2 className="text-[30px] leading-[1.1] font-semibold tracking-[-0.025em] text-foreground sm:text-[36px]">{t.liquid.title}</h2>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">{t.liquid.description}</p>
+    // Pulled up under the transparent header, so the rails run to the top of the page.
+    <main className="-mt-16">
+      {/* ── Hero: one promise, then the glass ── */}
+      <section className="relative overflow-hidden">
+        <div className={`${column} bg-background`}>
+          <div className="relative flex flex-col items-center px-4 pt-32 pb-14 text-center sm:px-5 sm:pt-36 sm:pb-16">
+            {/* One line from sm up, sized to the viewport; phones wrap it. */}
+            <h1 className="font-display text-[46px] leading-[1.0] tracking-[-0.015em] text-balance text-foreground sm:text-[clamp(46px,7.2vw,104px)] sm:whitespace-nowrap">
+              {/* Padding keeps the blur of the entrance from being clipped. */}
+              <span className="enter -m-6 block p-6" style={at(0.4)}>
+                {t.hero.lines.join(' ')}
+              </span>
+            </h1>
+            <p className="enter mt-6 max-w-[40ch] text-lead leading-relaxed text-balance text-muted-foreground sm:text-[19px]" style={at(0.6, '12px')}>
+              {t.hero.subtitle}
+            </p>
+            <div className="enter mt-10 flex flex-wrap items-center justify-center gap-3" style={at(0.75, '12px')}>
+              {/* The page's one primary action; GitHub is the quiet alternative. */}
+              <Button asChild size="lg" className="group pr-4 shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)] sm:pr-5">
+                <Link to="/{-$locale}/docs" params={p}>
+                  {t.hero.primary}
+                  <ArrowRight aria-hidden className="motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href={REPO_URL} target="_blank" rel="noreferrer">
+                  <GitHubMark />
+                  {t.hero.secondary}
+                </a>
+              </Button>
             </div>
-            <Link to="/{-$locale}/docs/$slug" params={{ ...p, slug: 'glass-button' }} className="inline-flex items-center gap-1 text-[14px] font-semibold text-[#3291FF]">
-              {t.liquid.more}
-              <ArrowRight className="size-4" />
-            </Link>
-          </header>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Showcase id="glass-button-droplet" title="GlassButton" />
-            <Showcase id="glass-button-clear" title="GlassButton · clear" />
-            <Showcase id="glass-tabs-basic" title="GlassTabs" />
-            <Showcase id="glass-badge-basic" title="GlassBadge" />
+          </div>
+
+          {/* ── The set: Press is the product shot, the rest follow on the same quiet stages. ── */}
+          <div className="px-3 sm:px-5">
+            <div className="wipe" style={at(0.9)}>
+              <ComponentGrid locale={locale} variant="landing" />
+            </div>
+          </div>
+
+          {/* The caption: one statement in two tones. */}
+          <div className="px-6 pt-24 pb-32 sm:pt-28 md:pb-40">
+            <p className="mx-auto max-w-[30ch] text-center font-display text-[26px] leading-[1.18] tracking-[-0.01em] text-balance sm:text-[36px]">
+              <span className="text-foreground">{t.set.title}</span> <span className="text-muted-foreground">{t.set.description}</span>
+            </p>
           </div>
         </div>
       </section>
 
-      <UiKitGallery locale={locale} theme={theme} onThemeChange={setTheme} />
-      <HowItWorks locale={locale} />
-
-      <section id="start" className="w-full scroll-mt-14 px-4 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 py-20 md:py-24">
-          <div className="flex max-w-2xl flex-col gap-3">
-            <h2 className="text-[30px] leading-[1.1] font-semibold tracking-[-0.025em] text-foreground sm:text-[36px]">{t.install.title}</h2>
-            <p className="text-[15px] leading-relaxed text-muted-foreground">{t.install.description}</p>
-          </div>
-          <CodeBlock code={installCommand('liquid-glass')} title="terminal" locale={locale as Locale} className="max-w-3xl" />
-          <p className="text-[14px] text-muted-foreground">
-            {t.install.ai}{' '}
-            <Link to="/{-$locale}/docs/$slug" params={{ ...p, slug: 'ai' }} className="font-semibold text-[#3291FF]">
-              llms.txt →
-            </Link>
-          </p>
+      {/* ── Facts: three numbers and a lot of air ── */}
+      <FrameSection inner="px-6 py-28 sm:px-10 md:py-40">
+        <h2 className={`${h2} mx-auto max-w-[20ch] text-center`}>{t.facts.title}</h2>
+        <div className="mt-16 grid gap-14 md:mt-24 md:grid-cols-3 md:gap-8">
+          {t.facts.items.map((item) => (
+            <div key={item.fig} className="flex flex-col items-center text-center">
+              <p className="font-mono text-caption text-muted-foreground">{item.fig}</p>
+              <p className="mt-6 text-[64px] leading-none font-semibold tracking-[-0.05em] text-foreground tabular-nums sm:text-[80px]">{item.stat}</p>
+              <p className="mt-4 text-lead font-medium tracking-[-0.01em] text-foreground">{item.title}</p>
+              <p className="mt-3 max-w-[32ch] text-body leading-relaxed text-pretty text-muted-foreground">{item.body}</p>
+            </div>
+          ))}
         </div>
-      </section>
+      </FrameSection>
+
+      {/* ── Install: an inset panel whose colour rises out of the page ── */}
+      <FrameSection id="start" className="scroll-mt-14" inner="p-2 sm:p-3">
+        <div className="rounded-[28px] bg-[linear-gradient(to_bottom,var(--background),var(--muted)_420px)] px-6 pt-24 pb-14 sm:px-12 md:pt-32 md:pb-16">
+          <div className="mx-auto flex max-w-[34rem] flex-col items-center gap-4 text-center">
+            <h2 className={h2}>{t.install.title}</h2>
+            <p className="max-w-[46ch] text-lead text-pretty text-muted-foreground">{t.install.description}</p>
+          </div>
+          <div className="mx-auto mt-14 grid max-w-[1040px] gap-5 md:grid-cols-[5fr_6fr] md:items-start">
+            <div className="flex min-w-0 flex-col gap-5">
+              <InstallCommand item="liquid-glass" locale={locale} />
+              <p className="px-1 text-body-sm leading-relaxed text-muted-foreground">
+                {t.install.ai}{' '}
+                <Link to="/{-$locale}/docs/$slug" params={{ ...p, slug: 'ai' }} className="text-foreground underline decoration-border-strong underline-offset-4 hover:decoration-foreground">
+                  {t.install.aiLink}
+                </Link>
+              </p>
+            </div>
+            <CodeBlock code={USAGE} title="toolbar.tsx" locale={locale} className="min-w-0" />
+          </div>
+        </div>
+      </FrameSection>
     </main>
   )
 }
-
-

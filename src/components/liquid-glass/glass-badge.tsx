@@ -181,7 +181,7 @@ export function GlassBadge({ children, dotColor, speed = 0.4, tint = 0.82, class
             blurEdge: 2.2,
             frost: 0,
           },
-          cursorLight: false,
+          cursorLight: true,
           screenX: box.left + w / 2,
           screenY: box.top + h / 2,
         }
@@ -230,7 +230,7 @@ export function GlassBadge({ children, dotColor, speed = 0.4, tint = 0.82, class
   return (
     <span
       data-glass-host=""
-      className={`pointer-events-none inline-flex h-[22px] w-16 items-center overflow-visible rounded-full bg-[#3291FF] text-xs leading-none font-semibold tracking-[-0.01em] text-white ${className}`}
+      className={`pointer-events-none inline-flex h-[22px] w-16 items-center overflow-visible rounded-full bg-[#3291FF] text-xs leading-none font-semibold tracking-[-0.01em] [:where(&)]:text-white ${className}`}
     >
       <GlassStyles />
       <canvas

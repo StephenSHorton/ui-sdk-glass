@@ -4,11 +4,11 @@
 //   public/r/registry.json, public/r/<item>.json      (gitignored, rebuilt on every build)
 //   skills/liquid-glass/references/components.md      (committed; the skill ships it)
 // Runs from vite.config.ts at build and dev start. Fails loudly on a broken reference.
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join, normalize, relative } from 'node:path'
 
-import { GROUPS, PAGES, REGISTRY, type Block, type DocPage, type RegistryItem } from '../src/docs/content'
-import { REPO_URL, SITE_ORIGIN, localizedPath, type Locale } from '../src/site/i18n'
+import { CATALOG, CHANGE_KINDS, GROUPS, PAGES, REGISTRY, RELEASES, minorOf, pageBySlug, type Block, type DocPage, type RegistryItem } from '../src/docs/content'
+import { REPO_URL, SITE_ORIGIN, installCommand, localizedPath, type Locale } from '../src/site/i18n'
 
 const ROOT = join(import.meta.dirname, '..')
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8')
@@ -18,7 +18,6 @@ const write = (p: string, body: string) => {
   writeFileSync(abs, body)
 }
 
-export const installCommand = (item: string) => `npx shadcn@latest add ${SITE_ORIGIN}/r/${item}.json`
 const demoSource = (id: string) => read(`src/docs/demos/${id}.tsx`).trimEnd()
 
 // ── Registry ──
@@ -47,8 +46,6 @@ function closure(entries: string[]) {
     }
   }
   entries.forEach(visit)
-  // three/webgpu ships no types we rely on: bring the tiny module shim along.
-  if (packages.has('three')) files.add('src/components/liquid-glass/controls/glass/three-webgpu.d.ts')
   return { files: [...files].sort(), packages: [...packages].sort() }
 }
 
@@ -65,7 +62,7 @@ function registryItem(item: RegistryItem) {
     dependencies: packages.map((p) => `${p}@${VERSIONS[p] ?? 'latest'}`),
     ...(item.cssVars ? { cssVars: item.cssVars } : {}),
     ...(item.css ? { css: item.css } : {}),
-    docs: `Docs: ${SITE_ORIGIN}/docs/${item.name}.md — copy verbatim; customise through props and classes only.`,
+    docs: `Docs: ${SITE_ORIGIN}/docs/${item.docs ?? item.name}.md — copy verbatim; customise through props and classes only.`,
     categories: ['liquid-glass'],
     files: files.map((path) => ({
       path,
@@ -79,6 +76,9 @@ function registryItem(item: RegistryItem) {
 // ── Markdown ──
 
 const md = (s: string) => s // the source strings are already Markdown (`code`, **bold**)
+
+/** Agents get the export they import (GlassButton); the site shows the shorter docs title. */
+const nameOf = (p: DocPage, locale: Locale) => p.name ?? p.title[locale]
 
 function blockToMd(b: Block, locale: Locale): string {
   switch (b.type) {
@@ -96,6 +96,15 @@ function blockToMd(b: Block, locale: Locale): string {
       return `\`\`\`${b.title === 'terminal' ? 'bash' : b.title === 'prompt' ? 'text' : 'tsx'}\n${b.code}\n\`\`\``
     case 'install':
       return `\`\`\`bash\n${installCommand(b.item)}\n\`\`\``
+    case 'when': {
+      const [use, avoid] = locale === 'tr' ? ['Şunun için', 'Şunun için değil'] : ['Use it for', 'Not for']
+      return [`**${use}**`, '', ...b.use.map((i) => `- ${md(i[locale])}`), '', `**${avoid}**`, '', ...b.avoid.map((i) => `- ${md(i[locale])}`)].join('\n')
+    }
+    case 'index':
+      return CATALOG.map(
+        (p, i) =>
+          `${String(i + 1).padStart(2, '0')}. **${p.verb?.[locale]}** — [${nameOf(p, locale)}](${SITE_ORIGIN}${localizedPath(`/docs/${p.slug}`, locale)}): ${(p.signature ?? p.description)[locale]}`,
+      ).join('\n')
     case 'props': {
       const head = locale === 'tr' ? '| Prop | Tür | Varsayılan | Açıklama |' : '| Prop | Type | Default | Description |'
       const rows = b.rows.map((r) => `| \`${r.name}\` | \`${r.type.replace(/\|/g, '\\|')}\` | ${r.default ? `\`${r.default}\`` : '—'} | ${r.description[locale]} |`)
@@ -105,7 +114,7 @@ function blockToMd(b: Block, locale: Locale): string {
 }
 
 export function pageToMarkdown(page: DocPage, locale: Locale): string {
-  const parts = [`# ${page.title[locale]}`, `> ${page.description[locale]}`]
+  const parts = [`# ${nameOf(page, locale)}`, `> ${page.description[locale]}`]
   if (page.hero) parts.push(`\`\`\`tsx\n${demoSource(page.hero)}\n\`\`\``)
   for (const b of page.blocks) parts.push(blockToMd(b, locale))
   parts.push(`Source: ${SITE_ORIGIN}${localizedPath(`/docs/${page.slug}`, locale)}`)
@@ -114,33 +123,65 @@ export function pageToMarkdown(page: DocPage, locale: Locale): string {
 
 const RULES = `## Rules for AI agents
 
-1. Install with the shadcn CLI command shown on each page, or copy the files from ${REPO_URL}/tree/main/src/components verbatim. Never re-implement, port or "simplify" the engine or shader: the look depends on its exact constants.
+1. Install with the shadcn CLI command shown on each page, or copy the files from ${REPO_URL}/tree/main/src/components/liquid-glass verbatim. Never re-implement, port or "simplify" the engine or shader: the look depends on its exact constants.
 2. Customise only through the documented props and class names (\`className\`, \`bg-*\`, \`text-*\`, \`--glass-tint\`).
-3. Liquid glass components (GlassButton, GlassTabs, GlassBadge, GlassLayer, GlassLens) have zero npm dependencies and wrap your own DOM. Prefer them. Canvas controls (Button, Switch, …) need \`three\`.
+3. The components, one verb each: GlassButton (press), GlassActionButton (merge), GlassTabs (travel), GlassBadge (flow), GlassSlideToConfirm (drag), GlassCard (hold), RangeSlider (slide), Switch (flip), Checkbox (tick). Pick by the verb; they never overlap. Zero npm dependencies, except RangeSlider, Switch and Checkbox (imported from \`controls/\`), which need \`three\`; they wrap your own DOM. The gooey droplet exists only in GlassActionButton: its arrow floats apart and melts into the body when pressed. For your own tabs markup (Radix Tabs), GlassLens ships with GlassTabs; for a router link, use \`<GlassButton asChild>\`.
 4. Requirements: React 19, Tailwind CSS v4, an \`@/\` alias to the source folder.`
 
 function llmsIndex(): string {
   const lines = [
     '# Liquid Glass UI',
     '',
-    '> Liquid glass React components drawn by one WebGL2 shader: clear lenses that bend what is behind them, swell under the pointer and separate icons as gooey droplets. Copy-paste components (shadcn registry), MIT.',
+    '> Glass React components drawn by one zero-dependency WebGL2 shader, one verb each: press (GlassButton), merge (GlassActionButton), travel (GlassTabs), flow (GlassBadge), drag (GlassSlideToConfirm), hold (GlassCard), slide (RangeSlider), flip (Switch), tick (Checkbox; these three need `three`). Copy-paste components (shadcn registry), MIT.',
     '',
     RULES,
     '',
   ]
   for (const g of GROUPS) {
     lines.push(`## ${g.title.en}`, '')
-    for (const p of PAGES.filter((x) => x.group === g.id)) lines.push(`- [${p.title.en}](${SITE_ORIGIN}/docs/${p.slug}.md): ${p.description.en}`)
+    for (const p of PAGES.filter((x) => x.group === g.id)) lines.push(`- [${nameOf(p, 'en')}](${SITE_ORIGIN}/docs/${p.slug}.md): ${p.description.en}`)
     lines.push('')
   }
-  lines.push('## Optional', '', `- [Full documentation in one file](${SITE_ORIGIN}/llms-full.txt)`, `- [Türkçe dokümantasyon](${SITE_ORIGIN}/tr/docs/introduction.md)`, `- [Source code](${REPO_URL})`, '')
+  lines.push('## Optional', '', `- [Full documentation in one file](${SITE_ORIGIN}/llms-full.txt)`, `- [Changelog](${SITE_ORIGIN}/changelog.md)`, `- [Türkçe dokümantasyon](${SITE_ORIGIN}/tr/docs/introduction.md)`, `- [Source code](${REPO_URL})`, '')
+  return lines.join('\n')
+}
+
+const KIND_LABEL = {
+  en: { new: 'New', improved: 'Improved', fixed: 'Fixed', removed: 'Removed' },
+  tr: { new: 'Yeni', improved: 'İyileştirildi', fixed: 'Düzeltildi', removed: 'Kaldırıldı' },
+} as const
+
+/** The release notes, newest first: a heading per version, its patch releases under it. */
+function changelogToMarkdown(locale: Locale): string {
+  const lines = [locale === 'tr' ? '# Sürüm notları' : '# Changelog', '']
+  let line = ''
+  for (const r of RELEASES) {
+    if (minorOf(r.version) !== line) {
+      line = minorOf(r.version)
+      lines.push(`## v${line}`, '')
+    }
+    lines.push(`### v${r.version} — ${r.date}`, '', r.title[locale], '')
+    for (const k of CHANGE_KINDS) {
+      const items = r.changes.filter((c) => c.kind === k)
+      if (!items.length) continue
+      lines.push(`**${KIND_LABEL[locale][k]}**`, '')
+      for (const c of items) {
+        const page = c.page ? pageBySlug(c.page) : undefined
+        lines.push(`- ${page ? `[${nameOf(page, locale)}](${SITE_ORIGIN}${localizedPath(`/docs/${page.slug}`, locale)}.md): ` : ''}${c.text[locale]}`)
+      }
+      lines.push('')
+    }
+  }
   return lines.join('\n')
 }
 
 export function generateAiFiles() {
+  // Start clean so a removed page or registry item never lingers in the output.
+  for (const dir of ['public/r', 'public/docs', 'public/tr/docs']) rmSync(join(ROOT, dir), { recursive: true, force: true })
   for (const locale of ['en', 'tr'] as const) {
     for (const p of PAGES) write(`public${localizedPath(`/docs/${p.slug}`, locale)}.md`, pageToMarkdown(p, locale))
   }
+  for (const locale of ['en', 'tr'] as const) write(`public${localizedPath('/changelog', locale)}.md`, changelogToMarkdown(locale))
   write('public/llms.txt', llmsIndex())
   write('public/llms-full.txt', ['# Liquid Glass UI — full documentation', '', RULES, '', ...PAGES.map((p) => pageToMarkdown(p, 'en'))].join('\n'))
 

@@ -14,11 +14,13 @@
 //   </div>
 //
 // Contract: options carry role="radio" or role="tab"; the selected option contains the
-// flat highlight element marked `data-glass-highlight` (its background colour is the
-// lens colour). When the selection changes the lens leaves the old highlight, swells
-// into clear glass that bends and magnifies the options it passes, then settles into
-// the flat highlight again. Press and hold opens the lens in place; drag it and release
-// to select. While the lens is visible the container carries:
+// flat highlight element marked `data-glass-highlight`. Its background colour is the
+// lens colour and its corners are the lens's corners: `rounded-full` travels as a pill,
+// `rounded-lg` as a rounded rectangle, and the corners grow with the lens as it swells.
+// When the selection changes the lens leaves the old highlight, swells into clear glass
+// that bends and magnifies the options it passes, then settles into the flat highlight
+// again. Press and hold opens the lens in place; drag it and release to select. While
+// the lens is visible the container carries:
 //   data-glass-moving     — hide the flat highlight:  [[data-glass-moving]_&]:opacity-0
 //   data-glass-traveling  — paint the selected label as unselected, so it reads under clear glass
 // Without WebGL2 or with reduced motion the highlight simply jumps. COPY VERBATIM. MIT.
@@ -35,7 +37,15 @@ const OPTICS = (OPTION_UNITS * 1.35) / 120
 const TRAVEL_W = 0.12
 const TRAVEL_H = 0.35
 
-type Box = { x: number; y: number; w: number; h: number }
+/** An option's centre and size; `r` = its corner radius in px, null for a pill. */
+type Box = { x: number; y: number; w: number; h: number; r: number | null }
+
+/** The corner radius of `el` in px (`rounded-lg`, `50%`) on a w × h box. */
+function cornerOf(el: Element, w: number, h: number) {
+  const v = getComputedStyle(el).borderTopLeftRadius
+  return v.endsWith('%') ? (Math.min(w, h) * parseFloat(v)) / 100 : parseFloat(v) || 0
+}
+
 const svgCache = new WeakMap<Element, Map<string, HTMLImageElement>>()
 
 function drawSvg(ctx: CanvasRenderingContext2D, el: SVGSVGElement, color: string, x: number, y: number, w: number, h: number, redraw: () => void) {
@@ -62,6 +72,12 @@ const visible = (c: string) => !!c && c !== 'transparent' && !/rgba\(.*,\s*0\)$/
 /** Paints the container into `back` (everything beneath the lens) and the labels into `front` in the selected colour. */
 function paintOptions(back: CanvasRenderingContext2D, front: CanvasRenderingContext2D, root: HTMLElement, selectedColor: string, redraw: () => void) {
   const o = root.getBoundingClientRect()
+  let lang: string | undefined
+  try {
+    lang = Intl.getCanonicalLocales(document.documentElement.lang)[0]
+  } catch {
+    // Not a language tag: the default locale's rules apply.
+  }
   const walk = (el: Element) => {
     if (el instanceof HTMLCanvasElement || el.hasAttribute('data-glass-highlight')) return
     const st = getComputedStyle(el)
@@ -99,7 +115,9 @@ function paintOptions(back: CanvasRenderingContext2D, front: CanvasRenderingCont
         range.selectNodeContents(n)
         const m = range.getBoundingClientRect()
         if (m.width < 1) continue
-        const text = n.textContent.trim()
+        // Labels are drawn as the page shows them (`uppercase` tabs).
+        const raw = n.textContent.trim()
+        const text = st.textTransform === 'uppercase' ? raw.toLocaleUpperCase(lang) : st.textTransform === 'lowercase' ? raw.toLocaleLowerCase(lang) : raw
         for (const [ctx, color] of [
           [back, st.color],
           [front, selectedColor],
@@ -147,13 +165,16 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
     const my: Spring = { x: 0, v: 0 }
     const mw: Spring = { x: 0, v: 0 }
     const mh: Spring = { x: 0, v: 0 }
+    /** Corner radius (px) of a rounded-rectangle lens; it travels with the size. */
+    const mr: Spring = { x: 0, v: 0 }
     const press: Spring = { x: 0, v: 0 }
     const place = (b: Box) => {
       mx.x = b.x
       my.x = b.y
       mw.x = b.w
       mh.x = b.h
-      mx.v = my.v = mw.v = mh.v = 0
+      mr.x = b.r ?? Math.min(b.w, b.h) / 2
+      mx.v = my.v = mw.v = mh.v = mr.v = 0
     }
     const options = () =>
       [...root.querySelectorAll<HTMLElement>('[role="radio"], [role="tab"]')].map((el) => {
@@ -208,7 +229,7 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
           const near = nearest(dragX, my.x)
           if (near && all.length) {
             const xs = all.map((o) => o.x)
-            goal = { x: clamp(dragX, Math.min(...xs), Math.max(...xs)), y: near.y, w: near.w, h: near.h }
+            goal = { x: clamp(dragX, Math.min(...xs), Math.max(...xs)), y: near.y, w: near.w, h: near.h, r: target.r }
           }
         }
         const spring = dragX !== null ? SPRINGS.drag : SPRINGS.slide
@@ -216,13 +237,14 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
         const b = stepSpring(my, goal.y, spring, dt)
         const c = stepSpring(mw, goal.w, spring, dt)
         const d = stepSpring(mh, goal.h, spring, dt)
+        const f = goal.r !== null && stepSpring(mr, goal.r, spring, dt)
         // The lens stays clear until it is within 6 % of an option's width from its target.
         const traveling = dragX === null && Math.hypot(mx.x - goal.x, my.x - goal.y) > target.w * 0.06
         const open = pressed || traveling
         if (!open) delete root.dataset.glassTraveling
         else if ('glassMoving' in root.dataset) root.dataset.glassTraveling = ''
         const e = stepSpring(press, open ? 1 : 0, SPRINGS.press, dt)
-        const moving = a || b || c || d || e
+        const moving = a || b || c || d || e || f
         if (!moving && !pressed) stop()
         return moving
       },
@@ -232,22 +254,36 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
         const pc = clamp(press.x)
         const frost = 1 - pc
         const padX = 16
-        const padTop = Math.round(target.h * 0.3 + 6)
-        const padBottom = Math.round(target.h * 1.1 + 8)
+        // Room for the larger of the lens and its target: it may travel between sizes.
+        const tall = Math.max(target.h, mh.x)
+        const padTop = Math.round(tall * 0.3 + 6)
+        const padBottom = Math.round(tall * 1.1 + 8)
         const box = root.getBoundingClientRect()
+        // The optics follow the lens's own height, so they scale as it changes size.
+        const unit = mh.x / OPTION_UNITS
+        const swell = 1 + TRAVEL_H * p
+        const hx = (mw.x / 2) * (1 + TRAVEL_W * p)
+        const hy = (mh.x / 2) * swell
+        const bevel = lerp(OPTION_UNITS * 0.42, 62 * OPTICS, pc)
+        const pill = target.r === null
+        // The highlight's corners, growing with the glass; a pill stays a pill.
+        const radius = pill ? 999 : Math.min(mr.x * swell, hx, hy)
         return {
           left: -padX,
           top: -padTop,
           width: root.offsetWidth + 2 * padX,
           height: root.offsetHeight + padTop + padBottom,
-          unit: target.h / OPTION_UNITS,
+          unit,
           cx: padX + mx.x,
           cy: padTop + my.x,
-          hx: (mw.x / 2) * (1 + TRAVEL_W * p),
-          hy: (mh.x / 2) * (1 + TRAVEL_H * p),
-          radius: 999,
+          hx,
+          hy,
+          radius,
           bodyX: 0,
-          bevel: lerp(OPTION_UNITS * 0.42, 62 * OPTICS, pc),
+          // Shading deeper than a square corner would meet in diagonal seams: the bevel stays
+          // within the corner, and the bend keeps the depth it has on a pill.
+          bevel: pill ? bevel : Math.min(bevel, (radius / unit) * 1.2),
+          band: pill ? undefined : bevel * 0.35,
           shadow: 0.12 * lerp(0.55, 1, pc),
           shadowSoftness: 34 * OPTICS * lerp(0.6, 1, pc),
           shadowOffset: 22 * OPTICS * lerp(0.5, 1, pc),
@@ -271,7 +307,7 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
             blurEdge: lerp(2.2, 4, frost),
             frost,
           },
-          cursorLight: false,
+          cursorLight: true,
           screenX: box.left + mx.x,
           screenY: box.top + my.x,
         }
@@ -300,14 +336,27 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
       color = [c[0], c[1], c[2]]
       const s = engine.resolveColor(surfaceColorOf(root.parentElement))
       surface = [s[0], s[1], s[2]]
-      if (!active) selectedColor = getComputedStyle(el).color
-      return { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2, w: b.width, h: b.height }
+      const st = getComputedStyle(el)
+      if (!active) selectedColor = st.color
+      // The corners the highlight shows: its own, or its option's when the option clips it.
+      let r = cornerOf(hl, b.width, b.height)
+      if (st.overflowX !== 'visible' || st.overflowY !== 'visible') r = Math.max(r, cornerOf(el, b.width, b.height))
+      const w = b.width
+      const h = b.height
+      return { x: b.left - a.left + w / 2, y: b.top - a.top + h / 2, w, h, r: r >= Math.min(w, h) / 2 - 0.5 ? null : r }
     }
     const sync = (slide: boolean) => {
       const keepColor = selectedColor
       const old = target
       const next = measure()
-      const same = !!next && !!old && Math.abs(next.x - old.x) < 0.5 && Math.abs(next.y - old.y) < 0.5 && Math.abs(next.w - old.w) < 0.5
+      const same =
+        !!next &&
+        !!old &&
+        Math.abs(next.x - old.x) < 0.5 &&
+        Math.abs(next.y - old.y) < 0.5 &&
+        Math.abs(next.w - old.w) < 0.5 &&
+        Math.abs(next.h - old.h) < 0.5 &&
+        next.r === old.r
       if (same) return
       if (!slide || !next || !old || !view.visible || reduced.matches) {
         target = next

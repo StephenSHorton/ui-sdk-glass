@@ -1,3 +1,5 @@
+'use client'
+
 import { useId, useRef, type ReactNode } from 'react'
 
 import { roundRect, scaleOptics } from './glass/draw'
@@ -12,6 +14,8 @@ export type CheckboxProps = {
   label?: string
   description?: string
   theme?: Theme
+  /** Colour of the box while checked: a hex, rgb() or named colour, not a CSS variable. Defaults to the kit's blue. */
+  color?: string
   shape?: 'rounded' | 'circle'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
@@ -23,6 +27,9 @@ const boxSizes = { sm: 18, md: 22, lg: 28 }
 // A 100-unit glass cap over a recessed box.
 const BOX = 100
 const MARGIN = { x: 40, top: 40, bottom: 120 }
+// The cap overhangs the box and bends it at rest too, so the glass always reads as glass.
+const CAP = 1.2
+const REST_BEND = 0.55
 
 /** Shared by Checkbox and RadioGroup: a glass cap over a recessed box whose mark draws beneath it. */
 export function useGlassCap({
@@ -31,6 +38,7 @@ export function useGlassCap({
   on,
   pressed,
   swell,
+  color,
   drawMark,
 }: {
   box: number
@@ -38,6 +46,7 @@ export function useGlassCap({
   on: boolean
   pressed: () => boolean
   swell: number
+  color?: string
   drawMark: (ctx: CanvasRenderingContext2D, progress: number, cx: number, cy: number, box: number, tokens: GlassTokens) => void
 }) {
   const unit = box / BOX
@@ -47,6 +56,7 @@ export function useGlassCap({
   const { canvasRef } = useGlassCanvas({
     ...size,
     unit,
+    cursorLight: true,
     step(dt, reduced) {
       const s = sim.current
       if (reduced) {
@@ -72,13 +82,14 @@ export function useGlassCap({
         bg.save()
         bg.globalAlpha = p
         roundRect(bg, x, y, box, box, r)
-        bg.fillStyle = tokens.accent
+        bg.fillStyle = color ?? tokens.accent
         bg.fill()
         bg.restore()
         drawMark(bg, p, x + box / 2, y + box / 2, box, tokens)
       }
-      const o = { ...scaleOptics(sliderOptics, (BOX * swell) / 120), cornerRadius: radius * swell }
-      const lens = pressedLens(s.press.x, { w: BOX, h: BOX }, { w: BOX * swell, h: BOX * swell }, 0, o)
+      const scaled = scaleOptics(sliderOptics, (BOX * CAP * swell) / 120)
+      const o = { ...scaled, restRefraction: scaled.refraction * REST_BEND, cornerRadius: radius * CAP * swell }
+      const lens = pressedLens(s.press.x, { w: BOX * CAP, h: BOX * CAP }, { w: BOX * CAP * swell, h: BOX * CAP * swell }, 0, o)
       lens.radius = radius * (lens.hy / (BOX / 2))
       return { ...lens, x: MARGIN.x + BOX / 2, y: MARGIN.top + BOX / 2, stretchX: 1, stretchY: 1, shiftX: 0 }
     },
@@ -101,6 +112,7 @@ export function Checkbox({
   label = 'Remember this device',
   description,
   theme,
+  color,
   shape = 'rounded',
   size = 'md',
   disabled = false,
@@ -116,6 +128,7 @@ export function Checkbox({
     on,
     pressed: () => pressedRef.current,
     swell,
+    color,
     drawMark(ctx, progress, cx, cy, b) {
       // The check stroke draws itself in as the fill arrives.
       const pts = [

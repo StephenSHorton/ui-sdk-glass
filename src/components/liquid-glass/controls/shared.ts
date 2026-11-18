@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState } from 'react'
 
 /** Per-component theme override; omit it to follow the page (data-theme="dark" or class="dark"). */

@@ -10,6 +10,19 @@ export const DEFAULT_LOCALE: Locale = 'en'
 export const LOCALE_KEY = 'liquid-glass-locale'
 /** localStorage key of an explicit theme choice. */
 export const THEME_KEY = 'liquid-glass-theme'
+/** sessionStorage key: the landing entrance has played this session. */
+export const ENTERED_KEY = 'liquid-glass-entered'
+
+/** localStorage key of the chosen package manager (install commands). */
+export const PM_KEY = 'liquid-glass-pm'
+
+export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
+export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
+
+const RUNNERS: Record<PackageManager, string> = { pnpm: 'pnpm dlx', npm: 'npx', yarn: 'yarn dlx', bun: 'bunx --bun' }
+
+/** The shadcn CLI command that installs one registry item. */
+export const installCommand = (item: string, pm: PackageManager = 'npm') => `${RUNNERS[pm]} shadcn@latest add ${SITE_ORIGIN}/r/${item}.json`
 
 /** A localized string. */
 export type L = { en: string; tr: string }

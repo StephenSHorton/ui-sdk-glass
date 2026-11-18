@@ -1,54 +1,49 @@
 'use client'
 
-// GlassButton — a button (or link, with `href`) made of liquid glass.
+// GlassButton — a button made of liquid glass. It swells under the pointer and grows when pressed.
 //
-//   <GlassButton icon={<ArrowRight />}>Get started</GlassButton>                    // clear glass
+//   <GlassButton icon={<ArrowRight />}>Get started</GlassButton>                     // clear glass
 //   <GlassButton material="tinted" className="bg-blue-500 text-white">Save</GlassButton>
-//   <GlassButton material="liquid" className="bg-orange-500 text-white" icon={<ArrowRight />}>Continue</GlassButton>
+//   <GlassButton asChild><Link href="/docs">Read the docs</Link></GlassButton>       // any element
 //
-// Tinted and liquid glass take their colour from the button's own CSS background,
-// so you colour it with a normal class. The icon must render an <svg>; on hover it
-// separates from the body as a gooey droplet. COPY VERBATIM. MIT.
+// Clear glass bends the page behind it. Tinted glass takes its colour from the button's
+// own CSS background, so you colour it with a normal class. With `asChild` the glass goes
+// on your own element (a router link, an <a>) instead of a <button>. COPY VERBATIM. MIT.
 
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react'
+import { Children, cloneElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from 'react'
 
-import { GlassLayer, type GlassDroplet, type GlassMaterial } from './glass-layer'
+import { GlassLayer, type GlassMaterial } from './glass-layer'
 
-export type GlassButtonSize = 'sm' | 'md' | 'lg'
+export type GlassButtonSize = 'sm' | 'md' | 'lg' | 'xl'
 
-type Common = {
+export type GlassButtonProps = {
   children?: ReactNode
-  /** Glass look. Default `clear`. See GlassLayer. */
+  /** Glass look. Default `clear`. */
   material?: GlassMaterial
   size?: GlassButtonSize
-  /** An <svg> icon (e.g. a lucide-react icon). */
+  /** An icon element (e.g. a lucide-react icon). */
   icon?: ReactNode
   iconPosition?: 'start' | 'end'
-  /** Icon separates as a gooey droplet: on hover (default), always, or never. */
-  droplet?: GlassDroplet
-  /** Clear glass tint (0–1). */
+  /** Clear glass: how much tint covers the backdrop (0–1). */
   tint?: number
+  /** Render the glass on the single child element (e.g. a router `<Link>`) instead of a `<button>`. */
+  asChild?: boolean
   className?: string
-}
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className'>
 
-export type GlassButtonProps = Common &
-  (
-    | ({ href?: undefined } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof Common>)
-    | ({ href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof Common>)
-  )
-
-const sizes: Record<GlassButtonSize, { box: string; cap: string }> = {
-  sm: { box: 'h-8 gap-1.5 px-4 text-[13px] [&_svg]:size-3.5', cap: '2rem' },
-  md: { box: 'h-10 gap-2 px-5 text-sm [&_svg]:size-4', cap: '2.5rem' },
-  lg: { box: 'h-12 gap-2 px-6 text-[15px] [&_svg]:size-[18px]', cap: '3rem' },
+const sizes: Record<GlassButtonSize, string> = {
+  sm: 'h-8 gap-1.5 px-4 text-[13px] [&_svg]:size-3.5',
+  md: 'h-10 gap-2 px-5 text-sm [&_svg]:size-4',
+  lg: 'h-12 gap-2 px-6 text-[15px] [&_svg]:size-[18px]',
+  xl: 'h-16 gap-2.5 px-8 text-lg [&_svg]:size-5',
 }
 
 // The look before the glass draws (first paint, and the permanent look without WebGL2).
 const fallback: Record<GlassMaterial, string> = {
+  // Text follows the glass's own tone once it draws, so it reads on any backdrop.
   clear:
-    'border border-black/10 bg-white/60 text-neutral-900 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white',
+    'border border-black/10 bg-white/60 text-neutral-900 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900',
   tinted: '',
-  liquid: '',
 }
 
 export function GlassButton({
@@ -57,38 +52,37 @@ export function GlassButton({
   size = 'md',
   icon,
   iconPosition = 'end',
-  droplet = 'hover',
   tint,
+  asChild = false,
   className = '',
+  type = 'button',
   ...rest
 }: GlassButtonProps) {
-  const s = sizes[size]
-  const props = {
-    'data-glass-host': '',
-    'data-glass-droplet': icon && droplet !== 'none' ? iconPosition : undefined,
-    'data-glass-droplet-mode': droplet,
-    style: { '--glass-cap': s.cap } as React.CSSProperties,
-    className: `inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full font-semibold whitespace-nowrap select-none outline-none focus-visible:ring-2 focus-visible:ring-[#3291FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:shrink-0 ${s.box} ${fallback[material]} ${className}`,
-  }
-  const content = (
+  // A pill unless you bring your own corners: any `rounded-*` class replaces `rounded-full`
+  // (the stylesheet's order, not the class order, would otherwise decide which one wins).
+  const own = asChild ? `${(Children.only(children) as ReactElement<{ className?: string }>).props.className ?? ''} ${className}` : className
+  const corners = /(^|\s)!?rounded-/.test(own) ? '' : 'rounded-full'
+  const classes = `inline-flex shrink-0 cursor-pointer items-center justify-center ${corners} font-semibold whitespace-nowrap select-none outline-none focus-visible:ring-2 focus-visible:ring-[#3291FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:opacity-40 [&_svg]:shrink-0 ${sizes[size]} ${fallback[material]}`
+  // The glass layer must be the host's first child.
+  const content = (label: ReactNode) => (
     <>
-      <GlassLayer material={material} droplet={droplet} tint={tint} />
+      <GlassLayer material={material} tint={tint} />
       {icon && iconPosition === 'start' && icon}
-      {children}
+      {label}
       {icon && iconPosition === 'end' && icon}
     </>
   )
-  if (rest.href !== undefined) {
-    return (
-      <a {...props} {...(rest as AnchorHTMLAttributes<HTMLAnchorElement>)}>
-        {content}
-      </a>
+  if (asChild) {
+    const child = Children.only(children) as ReactElement<{ className?: string; children?: ReactNode }>
+    return cloneElement(
+      child,
+      { ...rest, 'data-glass-host': '', className: `${classes} ${child.props.className ?? ''} ${className}` } as Record<string, unknown>,
+      content(child.props.children),
     )
   }
-  const { type = 'button', ...button } = rest as ButtonHTMLAttributes<HTMLButtonElement>
   return (
-    <button {...props} type={type} {...button}>
-      {content}
+    <button data-glass-host="" type={type} className={`${classes} ${className}`} {...rest}>
+      {content(children)}
     </button>
   )
 }

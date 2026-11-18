@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useRef } from 'react'
 
 import type { GlassViewHandle, GlassViewSpec, GlassViewStats } from './runtime'

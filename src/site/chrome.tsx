@@ -1,14 +1,15 @@
-import { Link, useLocation } from '@tanstack/react-router'
-import { Check, Copy, Moon, Sun } from 'lucide-react'
-import { Fragment, useState, type ReactNode } from 'react'
+import { Link, useHydrated } from '@tanstack/react-router'
+import { Fragment, type CSSProperties, type ReactNode } from 'react'
 
-import { GlassTabs } from '@/components/liquid-glass'
-import { DEMOS } from '@/docs/demos'
-import type { PropRow } from '@/docs/content'
+import { Badge } from '@/components/ui/badge'
+import { CATALOG, PAGES, VERSION } from '@/docs/content'
 
 import { LOCALES, LOCALE_KEY, REPO_URL, SITE_ORIGIN, localeParam, type Locale } from './i18n'
-import { useTheme } from './theme'
+import { DocLink, exactActive } from './links'
 import { UI } from './ui'
+
+// Site chrome is deliberately plain: the glass belongs to the components, not the frame.
+// The frame is lines: rails at the column edges, full-bleed dividers, a rivet where they cross.
 
 /** `code` and **bold** inside a docs string. */
 export function Inline({ text }: { text: string }) {
@@ -17,11 +18,11 @@ export function Inline({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         p.startsWith('`') ? (
-          <code key={i} className="rounded-[5px] bg-black/[0.05] px-1 py-px font-mono text-[0.88em] text-foreground dark:bg-white/[0.08]">
+          <code key={i} className="rounded-[5px] border border-border bg-muted px-1 py-px font-mono text-[0.86em] text-foreground">
             {p.slice(1, -1)}
           </code>
         ) : p.startsWith('**') ? (
-          <strong key={i} className="font-semibold text-foreground">
+          <strong key={i} className="font-medium text-foreground">
             {p.slice(2, -2)}
           </strong>
         ) : (
@@ -29,6 +30,17 @@ export function Inline({ text }: { text: string }) {
         ),
       )}
     </>
+  )
+}
+
+/** A pill track with a lens resting on it: the kit in one mark. */
+export function Logo({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <rect x="1.5" y="9" width="21" height="6" rx="3" fill="currentColor" opacity="0.18" />
+      <rect x="1.5" y="9" width="12" height="6" rx="3" fill="var(--brand)" />
+      <rect x="9.25" y="5.25" width="13.5" height="13.5" rx="6.75" fill="var(--background)" fillOpacity="0.55" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
   )
 }
 
@@ -40,31 +52,60 @@ export function GitHubMark({ className = 'size-4' }: { className?: string }) {
   )
 }
 
-function ThemeToggle({ locale }: { locale: Locale }) {
-  const [theme, setTheme] = useTheme()
-  const t = UI[locale].theme
+// ── Frame ──
+
+/** The column every page shares, header to footer: 1320px, rails on both sides. The header,
+ * the docs shell and every landing section use it, so the lines meet like one drawing. */
+export const column = 'relative mx-auto w-[calc(100%-2rem)] max-w-[1320px] border-x border-rail sm:w-[calc(100%-3rem)]'
+
+const rivetAt: Record<'tl' | 'tr' | 'bl' | 'br', CSSProperties> = {
+  tl: { left: -0.5, top: -0.5, translate: '-50% -50%' },
+  tr: { right: -0.5, top: -0.5, translate: '50% -50%' },
+  bl: { left: -0.5, bottom: -0.5, translate: '-50% 50%' },
+  br: { right: -0.5, bottom: -0.5, translate: '50% 50%' },
+}
+
+/** Rivets on the corners of the nearest positioned box. */
+export function Rivets({ at = ['tl', 'tr'] }: { at?: (keyof typeof rivetAt)[] }) {
   return (
-    <GlassTabs
-      aria-label={t.label}
-      size="sm"
-      value={theme}
-      onValueChange={setTheme}
-      options={[
-        { value: 'light', label: '', icon: <Sun />, 'aria-label': t.light },
-        { value: 'dark', label: '', icon: <Moon />, 'aria-label': t.dark },
-      ]}
-    />
+    <>
+      {at.map((k) => (
+        <i key={k} aria-hidden className="rivet" style={rivetAt[k]} />
+      ))}
+    </>
   )
 }
 
-function LangSwitch({ locale }: { locale: Locale }) {
+/** A full-bleed divider with the column inside it and rivets where the rails meet it. */
+export function FrameSection({ children, id, className = '', inner = '' }: { children: ReactNode; id?: string; className?: string; inner?: string }) {
   return (
-    <nav aria-label={UI[locale].lang.label} className="flex items-center rounded-full bg-black/[0.05] p-1 text-[12px] font-semibold dark:bg-white/[0.08]">
+    <section id={id} className={`border-t border-rail ${className}`}>
+      <div className={`${column} ${inner}`}>
+        <Rivets />
+        {children}
+      </div>
+    </section>
+  )
+}
+
+// ── Footer ──
+
+/** English · Türkçe: the same page in the other language. It sits at the foot of every page;
+ * the header stays for getting around. */
+function LangSwitch({ locale }: { locale: Locale }) {
+  const t = UI[locale].lang
+  // Keeps the changelog's filters and the #section once hydrated (the prerendered links carry
+  // neither, so the first client render must not either).
+  const hydrated = useHydrated()
+  return (
+    <nav aria-label={t.label} className="flex items-center rounded-full border border-border p-0.5">
       {LOCALES.map((l) => (
         <Link
           key={l}
           to="."
           params={(prev: Record<string, unknown>) => ({ ...prev, locale: localeParam(l) })}
+          search={hydrated ? true : undefined}
+          hash={hydrated ? true : undefined}
           hrefLang={l}
           lang={l}
           aria-current={l === locale ? 'true' : undefined}
@@ -73,150 +114,98 @@ function LangSwitch({ locale }: { locale: Locale }) {
               localStorage.setItem(LOCALE_KEY, l)
             } catch {}
           }}
-          className={`flex h-6 items-center rounded-full px-2.5 uppercase transition-colors ${
-            l === locale ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-700 dark:text-white' : 'text-muted-foreground hover:text-foreground'
+          className={`flex h-6 items-center rounded-full px-2.5 transition-colors duration-150 ${
+            l === locale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          {l}
+          {t[l]}
         </Link>
       ))}
     </nav>
   )
 }
 
-export function SiteHeader({ locale }: { locale: Locale }) {
-  const t = UI[locale].nav
-  const p = { locale: localeParam(locale) }
-  const path = useLocation({ select: (l) => l.pathname })
-  const inDocs = path.includes('/docs')
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded-md focus:bg-background focus:px-3 focus:py-2">
-        {t.skip}
-      </a>
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link to="/{-$locale}" params={p} aria-label="Liquid Glass UI" className="flex shrink-0 items-center gap-2 text-[14px] font-semibold tracking-[-0.01em] text-foreground">
-          <span aria-hidden className="size-4 rounded-full bg-gradient-to-br from-sky-300 via-white to-sky-500 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]" />
-          <span className="hidden whitespace-nowrap min-[420px]:inline">Liquid Glass UI</span>
-        </Link>
-        <nav aria-label="Primary" className="hidden items-center gap-5 text-[13px] text-muted-foreground sm:flex">
-          <Link to="/{-$locale}/docs" params={p} className={inDocs ? 'text-foreground' : 'hover:text-foreground'}>
-            {t.docs}
-          </Link>
-          <Link to="/{-$locale}/docs/$slug" params={{ ...p, slug: 'ai' }} className="hover:text-foreground">
-            {t.ai}
-          </Link>
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <LangSwitch locale={locale} />
-          <ThemeToggle locale={locale} />
-          <a href={REPO_URL} target="_blank" rel="noreferrer" aria-label={t.github} className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground">
-            <GitHubMark />
-          </a>
-        </div>
-      </div>
-    </header>
-  )
-}
-
 export function SiteFooter({ locale }: { locale: Locale }) {
+  const p = { locale: localeParam(locale) }
+  const t = UI[locale]
+  const head = 'pb-3 text-caption font-medium text-foreground'
+  const link = 'text-ui text-muted-foreground transition-colors duration-150 hover:text-foreground'
   return (
-    <footer className="w-full border-t border-border">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-[12px] text-muted-foreground sm:px-6">
-        <span>
-          <span className="font-semibold text-foreground">Liquid Glass UI</span> · {UI[locale].footer}
-        </span>
-        <span className="flex gap-4">
-          <a href={`${SITE_ORIGIN}/llms.txt`} className="hover:text-foreground">
+    <footer className="w-full border-t border-rail">
+      <div className={`${column} grid gap-10 px-6 pt-14 pb-10 sm:grid-cols-2 sm:px-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]`}>
+        <Rivets />
+        <div className="flex flex-col items-start gap-4">
+          <Link to="/{-$locale}" params={p} activeOptions={exactActive} className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
+            <span>
+              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass
+            </span>
+          </Link>
+          <p className="max-w-[30ch] text-ui leading-relaxed text-muted-foreground">{t.hero.subtitle}</p>
+          <Badge asChild size="lg" className="press h-7 gap-2 pr-3 pl-2.5 text-caption">
+            <Link to="/{-$locale}/changelog" params={p} activeOptions={exactActive}>
+              <span aria-hidden className="size-1.5 rounded-full bg-kind-new" />
+              <span className="font-mono">v{VERSION}</span>
+              <span aria-hidden className="text-faint">
+                ·
+              </span>
+              {t.nav.whatsNew}
+            </Link>
+          </Badge>
+        </div>
+        <nav aria-label={t.nav.docs} className="flex flex-col gap-2">
+          <p className={head}>{t.nav.docs}</p>
+          {PAGES.filter((x) => x.group === 'start').map((x) => (
+            <DocLink key={x.slug} page={x} locale={locale} className={link}>
+              {x.title[locale]}
+            </DocLink>
+          ))}
+        </nav>
+        <nav aria-label={t.nav.components} className="flex flex-col gap-2">
+          <p className={head}>{t.nav.components}</p>
+          {CATALOG.map((x) => (
+            <DocLink key={x.slug} page={x} locale={locale} className={link}>
+              {x.title[locale]}
+            </DocLink>
+          ))}
+        </nav>
+        <nav aria-label={t.docs.resources} className="flex flex-col gap-2">
+          <p className={head}>{t.docs.resources}</p>
+          <Link to="/{-$locale}/changelog" params={p} activeOptions={exactActive} className={link}>
+            {t.changelog.title}
+          </Link>
+          <a href={`${SITE_ORIGIN}/llms.txt`} className={link}>
             llms.txt
           </a>
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="hover:text-foreground">
+          <a href={REPO_URL} target="_blank" rel="noreferrer" className={link}>
             GitHub
           </a>
-        </span>
+        </nav>
+      </div>
+      <div className="border-t border-rail">
+        <div className={`${column} flex flex-wrap items-center justify-between gap-3 px-6 py-5 text-caption text-faint sm:px-10`}>
+          <Rivets />
+          <p>
+            {t.footer}{' '}
+            <a href="https://github.com/bilalgursen" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
+              bilalgursen
+            </a>
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <p className="font-mono">{t.stack}</p>
+            <LangSwitch locale={locale} />
+          </div>
+        </div>
       </div>
     </footer>
   )
 }
 
-function CopyButton({ text, locale }: { text: string; locale: Locale }) {
-  const [done, setDone] = useState(false)
-  const t = UI[locale].code
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void navigator.clipboard?.writeText(text)
-        setDone(true)
-        setTimeout(() => setDone(false), 1400)
-      }}
-      aria-label={done ? t.copied : t.copy}
-      className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]"
-    >
-      {done ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-    </button>
-  )
+/** The quiet surface every live preview sits on. The glass reads it as its backdrop. */
+export function Stage({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`relative flex items-center justify-center bg-stage ${className}`}>{children}</div>
 }
 
-export function CodeBlock({ code, title, locale, className = '' }: { code: string; title?: string; locale: Locale; className?: string }) {
-  return (
-    <div className={`overflow-hidden rounded-xl border border-border bg-[#fafafa] dark:bg-[#18191d] ${className}`}>
-      <div className="flex h-9 items-center justify-between border-b border-border pr-1.5 pl-4 font-mono text-[11px] text-muted-foreground">
-        <span>{title}</span>
-        <CopyButton text={code} locale={locale} />
-      </div>
-      <pre className="max-h-[480px] overflow-auto px-4 py-3.5 font-mono text-[12.5px] leading-[1.65] text-foreground">
-        <code>{code}</code>
-      </pre>
-    </div>
-  )
-}
-
-/** A live demo and, under it, its exact source file. */
-export function Preview({ id, title, locale }: { id: string; title?: ReactNode; locale: Locale }) {
-  const demo = DEMOS[id]
-  if (!demo) throw new Error(`Unknown demo "${id}"`)
-  const { Component, source } = demo
-  return (
-    <figure className="flex flex-col gap-3">
-      {title && <figcaption className="text-[13px] font-semibold text-foreground">{title}</figcaption>}
-      <div className="flex min-h-56 items-center justify-center rounded-xl border border-border bg-[#e6e7ea] p-8 dark:bg-[#1c1d21]">
-        <Component />
-      </div>
-      <CodeBlock code={source} title={`${id}.tsx`} locale={locale} />
-    </figure>
-  )
-}
-
-export function PropsTable({ rows, locale }: { rows: PropRow[]; locale: Locale }) {
-  const head = locale === 'tr' ? ['Prop', 'Tür', 'Varsayılan'] : ['Prop', 'Type', 'Default']
-  return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-left text-[13px]">
-        <thead className="border-b border-border text-[12px] text-muted-foreground">
-          <tr>
-            {head.map((h) => (
-              <th key={h} className="px-4 py-2.5 font-medium">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((r) => (
-            <tr key={r.name} className="align-top">
-              <td className="px-4 py-3">
-                <code className="font-mono text-[12.5px] font-semibold text-foreground">{r.name}</code>
-                <p className="mt-1 max-w-[46ch] text-muted-foreground">
-                  <Inline text={r.description[locale]} />
-                </p>
-              </td>
-              <td className="px-4 py-3 font-mono text-[12px] text-sky-700 dark:text-sky-300">{r.type}</td>
-              <td className="px-4 py-3 font-mono text-[12px] whitespace-nowrap text-muted-foreground">{r.default ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+/** Small mono label: "01", "Fig 0.2". */
+export function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <p className={`font-mono text-caption text-muted-foreground ${className}`}>{children}</p>
 }

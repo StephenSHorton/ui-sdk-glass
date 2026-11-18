@@ -41,7 +41,7 @@ export function GlassTabs<T extends string>({
   value,
   onValueChange,
   size = 'md',
-  highlightClassName = 'bg-white shadow-sm dark:bg-neutral-700',
+  highlightClassName = 'bg-white dark:bg-neutral-700',
   className = '',
   ...aria
 }: GlassTabsProps<T>) {

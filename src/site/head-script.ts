@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, LOCALES, LOCALE_KEY, THEME_KEY } from './i18n'
+import { DEFAULT_LOCALE, ENTERED_KEY, LOCALES, LOCALE_KEY, THEME_KEY } from './i18n'
 
 /**
  * Inline, render-blocking <head> script (runs before first paint):
@@ -14,6 +14,7 @@ export function headScript(): string {
     `var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});` +
     'if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";' +
     'document.documentElement.setAttribute("data-theme",t);document.documentElement.style.colorScheme=t;' +
+    `try{if(sessionStorage.getItem(${JSON.stringify(ENTERED_KEY)}))document.documentElement.setAttribute("data-entered","")}catch(e){}` +
     `var o=${JSON.stringify(others)},p=location.pathname,s=p.split("/")[1];` +
     `if(o.indexOf(s)>-1||localStorage.getItem(${JSON.stringify(LOCALE_KEY)}))return;` +
     'var a=navigator.languages||[navigator.language];' +

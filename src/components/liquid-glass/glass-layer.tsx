@@ -10,11 +10,15 @@
 //
 // The host keeps its own CSS look until the first glass frame is drawn, then the layer
 // sets `data-glass-ready` and the host drops its background, border and shadow (the
-// glass now draws them). Without WebGL2 nothing changes: the CSS look stays.
+// glass now draws them). Without WebGL2 nothing changes: the CSS look stays. Clear glass
+// also sets `data-glass-tone="light" | "dark"` from the colour it ends up, for the text.
 //
-// Hover swells the glass with wobbly springs, press grows it (the host scales with it),
-// and an icon that is the host's first or last direct <svg> child separates as a gooey
-// droplet. COPY VERBATIM. MIT — https://github.com/bilalgursen/liquid-glass
+// Hover swells the glass with wobbly springs and press grows it (the host scales with it);
+// `swell={false}` keeps it still, as a card's glass is. `blur` frosts what clear glass shows.
+// The gooey droplet (used only by GlassActionButton): the host's direct child marked
+// `data-glass-drop` sits at the end, and the glass separates around it (`apart`) or melts
+// back into one body (`merged`). Switching between the two animates. COPY VERBATIM.
+// MIT — https://github.com/bilalgursen/liquid-glass
 
 import { useEffect, useRef } from 'react'
 
@@ -35,20 +39,82 @@ import {
   type Spring,
 } from './engine'
 
-export type GlassMaterial = 'clear' | 'tinted' | 'liquid'
-export type GlassDroplet = 'hover' | 'always' | 'none'
+export type GlassMaterial = 'clear' | 'tinted'
+export type GlassDroplet = 'none' | 'apart' | 'merged'
+
+/**
+ * Fine-tuning of the glass. Read on every frame: changing a value redraws the glass without
+ * rebuilding it, so it can follow a slider. Colours and frost apply to clear glass.
+ */
+export type GlassOptics = {
+  /** Tint colour, any CSS colour. Default: white on a light page, black on a dark one. */
+  tintColor?: string
+  /** A line just inside the rim: its colour, opacity (0–1, default 0: none) and width in px (default 1). */
+  borderColor?: string
+  borderAlpha?: number
+  borderWidth?: number
+  /** With `blur`: how much of the frost shows over the sharp bend (0–1, default 1). */
+  frostMix?: number
+  /** With `blur`: × the frost at the rim, where the glass bends (default 1). */
+  frostEdge?: number
+  /** Saturation of what shows through the glass (default 1; 1.5 = more vivid, 0 = grey). */
+  saturation?: number
+  /** Without frost: blur of the clear glass in its middle and at its rim, in mip levels (default 0.35 and 2.2). */
+  clearBlur?: number
+  clearBlurEdge?: number
+  /** The bend at the rim, × the kit's own (default 1). */
+  refraction?: number
+  /**
+   * How the rim bends. `edge` (default): along the rim, as deep as the bevel. `radial`: towards
+   * the centre, by 6.5% of the viewport × `refraction`, fading over half the glass (`bendCurve`
+   * sets how fast, `bendDepth` how far), and the frost blurs the bent picture: the SVG card's rim.
+   */
+  bendMode?: 'edge' | 'radial'
+  /** × how far in from the rim the bend reaches (default 1). */
+  bendDepth?: number
+  /** How sharply the bend falls off from the rim inwards, an exponent (default 1.6; higher = tighter to the rim). */
+  bendCurve?: number
+  /** Colour split at the rim (default 0.12). */
+  dispersion?: number
+  /** Magnification of the middle (default 0). */
+  magnify?: number
+  /** Light on the glass, all of it (default 1). */
+  light?: number
+  /** × the rim light (default 1) and × its line's thickness (default 1). */
+  rim?: number
+  rimWidth?: number
+  /** × the width of the bevel that shades the rim (default 1). */
+  bevel?: number
+  /** × the fresnel glow, inner shading, top reflection and warm caustic (each default 1). */
+  fresnel?: number
+  inner?: number
+  reflection?: number
+  caustic?: number
+  /** The rim light leans towards the cursor (default true). */
+  cursorLight?: boolean
+  /** The drop shadow: × its strength, softness and offset (each default 1). */
+  shadow?: number
+  shadowSoftness?: number
+  shadowOffset?: number
+  /** Dark glass (a black tint, on a dark page): its own tint cover (in place of `tint`) and rim line. Unset values follow the rest. */
+  dark?: { tint?: number; borderColor?: string; borderAlpha?: number }
+}
 
 export type GlassLayerProps = {
   /**
    * `clear`: transparent glass that bends the page behind it (default).
    * `tinted`: glass painted in the host's own CSS background colour, with light and shadow.
-   * `liquid`: the host's flat colour, no light — only the liquid shape (swell, droplet).
    */
   material?: GlassMaterial
-  /** When the icon separates as a droplet: on hover (mouse only), always, or never. */
+  /**
+   * The host's `[data-glass-drop]` child as a gooey droplet: `apart` (separated; it melts in
+   * while pressed) or `merged` (one body). Changing it animates the split or the merge. Default `none`.
+   */
   droplet?: GlassDroplet
   /** Clear glass: how much of the tint covers the backdrop (0 = invisible, 1 = solid). */
   tint?: number
+  /** Clear glass: frost the backdrop with a blur of this many px, like CSS `blur()` (default 0: sharp). */
+  blur?: number
   /** Clear glass: CSS selector of the ancestor whose content is refracted (default: the page). */
   backdrop?: string
   /** Clear glass: repaint the backdrop every frame (for animated content behind the glass). */
@@ -57,6 +123,10 @@ export type GlassLayerProps = {
   trigger?: string
   /** Turn the glass off and keep the host's CSS look. */
   disabled?: boolean
+  /** Swell on hover and grow when pressed (default). `false` keeps the glass still under the pointer. */
+  swell?: boolean
+  /** Fine-tuning: tint colour, a rim line, frost mix, bend, light and shadow (see GlassOptics). */
+  optics?: GlassOptics
 }
 
 /** Size of the hover/press response. Matches the kit's Button. */
@@ -71,23 +141,19 @@ const DROPLET_GAP = 0.25
 export const GLASS_CSS = `
 /* Layered, so a utility class on the host (absolute, fixed) still wins over relative. */
 @layer components{:where([data-glass-host]){position:relative;isolation:isolate}}
-/* Unlayered on purpose: the droplet layout must beat the host's own padding utilities. */
+/* Unlayered on purpose: once the glass draws, it must beat the host's own fill utilities. */
 [data-glass-host][data-glass-ready]{background:transparent!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-[data-glass-droplet]{--glass-cap:2.5rem}
-[data-glass-droplet=end][data-glass-droplet-mode=always]:has(> svg:last-child){padding-right:calc(var(--glass-cap)*1.625)}
-[data-glass-droplet=end][data-glass-droplet-mode=always] > svg:last-child{position:absolute;top:50%;right:calc(var(--glass-cap)/2);translate:50% -50%}
-[data-glass-droplet=start][data-glass-droplet-mode=always]:has(> canvas:first-child + svg){padding-left:calc(var(--glass-cap)*1.625)}
-[data-glass-droplet=start][data-glass-droplet-mode=always] > canvas:first-child + svg{position:absolute;top:50%;left:calc(var(--glass-cap)/2);translate:-50% -50%}
-@media (hover:hover) and (pointer:fine){
-[data-glass-droplet=end][data-glass-droplet-mode=hover]:has(> svg:last-child){padding-right:calc(var(--glass-cap)*1.625)}
-[data-glass-droplet=end][data-glass-droplet-mode=hover] > svg:last-child{position:absolute;top:50%;right:calc(var(--glass-cap)/2);translate:50% -50%}
-[data-glass-droplet=start][data-glass-droplet-mode=hover]:has(> canvas:first-child + svg){padding-left:calc(var(--glass-cap)*1.625)}
-[data-glass-droplet=start][data-glass-droplet-mode=hover] > canvas:first-child + svg{position:absolute;top:50%;left:calc(var(--glass-cap)/2);translate:-50% -50%}
-}
 @keyframes glass-marquee{to{transform:translateX(-50%)}}
 [data-glass-marquee]{animation:glass-marquee var(--glass-marquee-duration,5s) linear infinite}
+/* Swapped labels and icons rise from a soft blur; a check draws itself in. */
+@keyframes glass-in{from{opacity:0;filter:blur(3px);transform:translateY(4px)}}
+[data-glass-in]{animation:glass-in .38s cubic-bezier(.2,.8,.2,1) both}
+@keyframes glass-draw{from{stroke-dashoffset:25}}
+[data-glass-draw]{stroke-dasharray:25;animation:glass-draw .42s cubic-bezier(.65,0,.35,1) .12s both}
+@keyframes glass-spin{to{transform:rotate(1turn)}}
+[data-glass-spin]{animation:glass-spin .8s linear infinite}
 [data-glass-ready] [data-glass-fallback]{visibility:hidden}
-@media (prefers-reduced-motion:reduce){[data-glass-marquee]{animation:none}}
+@media (prefers-reduced-motion:reduce){[data-glass-marquee],[data-glass-in],[data-glass-draw],[data-glass-spin]{animation:none}}
 `
 
 /** Injects GLASS_CSS once (React 19 hoists and dedupes `<style href precedence>`). */
@@ -101,14 +167,25 @@ export function GlassStyles() {
 
 export function GlassLayer({
   material = 'clear',
-  droplet = 'hover',
+  droplet = 'none',
   tint = 0.6,
+  blur = 0,
   backdrop,
   live = false,
   trigger,
   disabled = false,
+  swell = true,
+  optics,
 }: GlassLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // The droplet mode changes without rebuilding the glass, so the change itself animates.
+  const dropletRef = useRef(droplet)
+  dropletRef.current = droplet
+  // Tint, frost and optics are read on every frame: changing them redraws, never rebuilds.
+  const tuneRef = useRef({ tint, blur, optics })
+  tuneRef.current = { tint, blur, optics }
+  const pokeRef = useRef<(() => void) | null>(null)
+  useEffect(() => pokeRef.current?.(), [droplet, tint, blur, optics])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -118,11 +195,11 @@ export function GlassLayer({
     if (!canvas || !host || !ctx || !engine) return
 
     const clear = material === 'clear'
-    const flat = material === 'liquid'
     let w = 0
     let h = 0
     let hasDroplet = false
-    let side = 1
+    /** The host's own corner radius in px; null = a pill. */
+    let corner: number | null = null
     let surface: Rgb = [1, 1, 1]
     // Colours come from the host's own CSS (rest, hover, selected…) and cross-fade.
     let color: [Rgb, Rgb] = [
@@ -130,6 +207,10 @@ export function GlassLayer({
       [1, 1, 1],
     ]
     let border: [Rgb, Rgb] | null = null
+    /** Clear glass: opacity of the optional rim line (GlassOptics). */
+    let borderAlpha = 1
+    /** Clear glass: the tint ended up dark (optics.dark applies). */
+    let darkGlass = false
     let colorT = 1
     let unpaintable = false
     let sampled = false
@@ -143,7 +224,6 @@ export function GlassLayer({
     const scale: Spring = { x: 1, v: 0 }
     const drop: Spring = { x: 0, v: 0 }
     const maxScale = () => 1 + (2 * MAX_GROW_PX) / Math.max(w, 1)
-    const fine = window.matchMedia('(hover: hover) and (pointer: fine)')
 
     const view: GlassView = {
       canvas,
@@ -153,7 +233,7 @@ export function GlassLayer({
       step: (dt, still) => {
         if (still) {
           press.x = growX.x = growY.x = press.v = growX.v = growY.v = 0
-          drop.x = droplet === 'always' && hasDroplet ? 1 : 0
+          drop.x = hasDroplet && dropletRef.current === 'apart' ? 1 : 0
           drop.v = 0
           scale.x = 1
           host.style.scale = ''
@@ -167,7 +247,7 @@ export function GlassLayer({
         const b = stepSpring(growX, hov, SPRINGS.hoverX, dt)
         const c = stepSpring(growY, hov, SPRINGS.hoverY, dt)
         const d = stepSpring(scale, target, SPRINGS.press, dt)
-        const apart = (droplet === 'always' ? view.visible : hovered) && !pressed
+        const apart = dropletRef.current === 'apart' && view.visible && !pressed
         const e = hasDroplet ? stepSpring(drop, apart ? 1 : 0, apart ? SPRINGS.dropletOut : SPRINGS.dropletIn, dt) : false
         host.style.scale = scale.x === 1 ? '' : scale.x.toFixed(4)
         const fading = 1 - colorT > 0.004
@@ -178,36 +258,33 @@ export function GlassLayer({
         if (refresh) {
           w = host.offsetWidth
           h = host.offsetHeight
-          // The droplet icon: the host's last (or first) direct <svg> child next to other visible content.
-          const nodes = [...host.childNodes].filter((n) => {
-            if (n === canvas) return false
-            if (n instanceof SVGElement) return true
-            if (n instanceof HTMLElement) return n.offsetWidth > 1 && n.offsetHeight > 1
-            return !!n.textContent?.trim()
-          })
-          const first = nodes[0]
-          const last = nodes[nodes.length - 1]
-          const icon = droplet === 'none' || nodes.length < 2 ? null : last instanceof SVGElement ? last : first instanceof SVGElement ? first : null
-          side = icon && icon === first && icon !== last ? -1 : 1
-          hasDroplet = !!icon && (droplet === 'always' || fine.matches)
-          const end = !icon ? '' : side < 0 ? 'start' : 'end'
-          if ((host.dataset.glassDroplet ?? '') !== end) {
-            if (end) host.dataset.glassDroplet = end
-            else delete host.dataset.glassDroplet
-            host.dataset.glassDropletMode = droplet
-            view.dirty = true
-            engine.wake()
-          }
-          if (icon) host.style.setProperty('--glass-cap', `${h}px`)
+          // The glass takes the host's corners (`rounded-lg`); round enough is a pill.
+          const rounding = getComputedStyle(host).borderTopLeftRadius
+          const px = rounding.endsWith('%') ? (Math.min(w, h) * parseFloat(rounding)) / 100 : parseFloat(rounding) || 0
+          corner = px >= Math.min(w, h) / 2 - 0.5 ? null : px
+          // The droplet: a direct child marked `data-glass-drop`, laid out by its owner at the end.
+          const had = hasDroplet
+          hasDroplet = dropletRef.current !== 'none' && [...host.children].some((c) => c.hasAttribute('data-glass-drop'))
+          // Springs step before shapes are read: one more frame lets the droplet start moving.
+          if (hasDroplet !== had) engine.wake()
           const s = engine.resolveColor(surfaceColorOf(host.parentElement))
           surface = [s[0], s[1], s[2]]
           if (clear) {
-            const custom = getComputedStyle(host).getPropertyValue('--glass-tint').trim()
+            const o = tuneRef.current.optics
+            const custom = o?.tintColor || getComputedStyle(host).getPropertyValue('--glass-tint').trim()
             const luminance = 0.2126 * surface[0] + 0.7152 * surface[1] + 0.0722 * surface[2]
             const t = custom ? engine.resolveColor(custom) : null
             const tc: Rgb = t ? [t[0], t[1], t[2]] : luminance > 0.5 ? [1, 1, 1] : [0, 0, 0]
+            // Light or dark glass: lets the host pick a readable text colour (data-[glass-tone=…]:).
+            const tone = 0.2126 * tc[0] + 0.7152 * tc[1] + 0.0722 * tc[2] > 0.5 ? 'light' : 'dark'
+            if (host.dataset.glassTone !== tone) host.dataset.glassTone = tone
+            darkGlass = tone === 'dark'
             color = [tc, tc]
-            border = null
+            // An optional line just inside the rim.
+            const line = darkGlass ? { ...o, ...o?.dark } : o
+            const bc = line?.borderColor && (line.borderAlpha ?? 0) > 0 ? engine.resolveColor(line.borderColor) : null
+            border = bc ? [[bc[0], bc[1], bc[2]], [bc[0], bc[1], bc[2]]] : null
+            borderAlpha = bc ? clamp((line?.borderAlpha ?? 0) * bc[3]) : 1
             colorT = 1
             sampled = true
           } else {
@@ -260,38 +337,62 @@ export function GlassLayer({
         const hy = (h / 2) * k + grow * growY.x
         const rect = host.getBoundingClientRect()
         const pc = clamp(press.x)
+        const unit = h / DESIGN_HEIGHT
+        const bevel = lerp(DESIGN_HEIGHT * 0.42, 62, pc)
+        // Square corners swell with the glass.
+        const radius = corner === null ? 999 : corner * (hy / (h / 2))
+        const { tint, blur, optics: o } = tuneRef.current
+        // The engine scales the shadow with the light too; divide it back out, so they tune apart.
+        const strength = Math.max(clamp(o?.light ?? 1, 0, 3), 1e-4)
         return {
           // The canvas is placed against the padding box; the glass is measured on the border box.
           left: -padX - host.clientLeft,
           top: -padTop - host.clientTop,
           width: w + 2 * padX,
           height: h + padTop + padBottom,
-          unit: h / DESIGN_HEIGHT,
+          unit,
           cx: padX + w / 2,
           cy: padTop + h / 2,
           hx: (w / 2 - pull / 2) * k + grow * growX.x,
           hy,
-          radius: 999,
-          bodyX: ((-side * pull) / 2) * k,
+          radius,
+          bodyX: (-pull / 2) * k,
           droplet:
             t > 0.001
               ? {
-                  x: side * ((w / 2 - h / 2) * k + grow * growX.x * 0.5),
+                  x: (w / 2 - h / 2) * k + grow * growX.x * 0.5,
                   r: hy,
                   // The gooey bridge opens as the droplet leaves and closes once it has snapped.
                   k: h * 0.34 * smooth(0, 0.15, t) * (1 - smooth(0.8, 1, t)),
                 }
               : undefined,
-          bevel: lerp(DESIGN_HEIGHT * 0.42, 62, pc),
-          shadow: 0.12 * lerp(0.55, 1, pc),
-          shadowSoftness: 34 * lerp(0.6, 1, pc),
-          shadowOffset: 22 * lerp(0.5, 1, pc),
-          strength: flat ? 0 : 1,
+          // Shading bands deeper than a square corner would meet in diagonal seams: the bevel
+          // stays within the corner, and the bend keeps the depth it has on a pill.
+          bevel: (corner === null ? bevel : Math.min(bevel, (radius / unit) * 1.2)) * Math.max(0.05, o?.bevel ?? 1),
+          band: corner === null || hasDroplet ? undefined : bevel * 0.35 * Math.max(0.05, o?.bendDepth ?? 1),
+          shadow: (0.12 * lerp(0.55, 1, pc) * Math.max(0, o?.shadow ?? 1)) / strength,
+          shadowSoftness: 34 * lerp(0.6, 1, pc) * Math.max(0.05, o?.shadowSoftness ?? 1),
+          shadowOffset: 22 * lerp(0.5, 1, pc) * Math.max(0, o?.shadowOffset ?? 1),
+          strength,
+          tune: o && {
+            rim: o.rim,
+            rimWidth: o.rimWidth,
+            fresnel: o.fresnel,
+            inner: o.inner,
+            reflection: o.reflection,
+            caustic: o.caustic,
+            bendCurve: o.bendCurve,
+            bendDepth: o.bendDepth,
+            saturation: o.saturation,
+            frostEdge: o.frostEdge,
+          },
           color: mixRgb(color[0], color[1], colorT),
           border: border ? mixRgb(border[0], border[1], colorT) : undefined,
+          borderAlpha: clear ? borderAlpha : undefined,
+          borderWidth: clear ? o?.borderWidth : undefined,
           surface,
-          edgeClear: flat ? 0 : 0.2,
-          cursorLight: !flat,
+          edgeClear: 0.2,
+          cursorLight: o?.cursorLight ?? true,
           refraction: clear
             ? {
                 paint: (back) => {
@@ -335,12 +436,15 @@ export function GlassLayer({
                   back.drawImage(page.canvas, 0, 0)
                   back.restore()
                 },
-                refract: lerp(44, 37, pc),
-                magnify: 0,
-                dispersion: 0.12,
-                blurCenter: 0.35,
-                blurEdge: 2.2,
-                frost: clamp(tint),
+                refract: lerp(44, 37, pc) * Math.max(0, o?.refraction ?? 1),
+                magnify: Math.max(0, o?.magnify ?? 0),
+                dispersion: Math.max(0, o?.dispersion ?? 0.12),
+                blurCenter: Math.max(0, o?.clearBlur ?? 0.35),
+                blurEdge: Math.max(0, o?.clearBlurEdge ?? 2.2),
+                frost: clamp(darkGlass ? (o?.dark?.tint ?? tint) : tint),
+                blur,
+                blurMix: o?.frostMix,
+                radial: o?.bendMode === 'radial' ? 0.065 * Math.max(0, o?.refraction ?? 1) : undefined,
               }
             : undefined,
           screenX: rect.left + rect.width / 2,
@@ -363,8 +467,9 @@ export function GlassLayer({
       view.dirty = true
       engine.wake()
     }
+    pokeRef.current = dirty
     const onDown = () => {
-      if (isDisabled()) return
+      if (!swell || isDisabled()) return
       pressed = true
       engine.wake()
     }
@@ -373,7 +478,7 @@ export function GlassLayer({
       engine.wake()
     }
     const onEnter = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse' || isDisabled()) return
+      if (!swell || e.pointerType !== 'mouse' || isDisabled()) return
       hovered = true
       dirty()
     }
@@ -395,7 +500,7 @@ export function GlassLayer({
     io.observe(host)
     const ro = new ResizeObserver(dirty)
     ro.observe(host)
-    // Content changes (arrow ↔ spinner, selected state) re-check the droplet and colours.
+    // Content changes (label, selected state) re-check the droplet and colours.
     const mo = new MutationObserver(dirty)
     mo.observe(host, {
       childList: true,
@@ -418,10 +523,11 @@ export function GlassLayer({
       target.removeEventListener('pointerenter', onEnter)
       target.removeEventListener('pointerleave', onLeave)
       delete host.dataset.glassReady
+      delete host.dataset.glassTone
       host.style.scale = ''
-      host.style.removeProperty('--glass-cap')
+      pokeRef.current = null
     }
-  }, [material, droplet, tint, backdrop, live, trigger, disabled])
+  }, [material, backdrop, live, trigger, disabled, swell])
 
   return (
     <>

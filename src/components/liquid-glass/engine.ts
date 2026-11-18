@@ -2,9 +2,8 @@
 // page and copies each result into the surface's own 2D <canvas>, so a page full of
 // glass never hits the browser's WebGL context limit.
 //
-// Zero dependencies (no three.js). The shader is a GLSL port of the kit's TSL lens
-// (src/components/liquid-glass/controls/glass/runtime.ts) extended with a gooey droplet, tinted glass,
-// a 1 px border and a frosted resting state.
+// Zero dependencies. A GLSL lens with tinted glass, a 1 px border, a frosted resting
+// state, an opt-in gooey droplet and an opt-in frosted blur (cards).
 //
 // Cost model: the loop runs only while a spring moves, a surface is dirty or the
 // cursor light changes; at rest it stops completely. Off-screen surfaces are not
@@ -38,6 +37,12 @@ export type GlassLens = {
   droplet?: { x: number; r: number; k: number }
   /** Bevel width (design units). */
   bevel: number
+  /**
+   * Width of the band that bends the backdrop (design units), when it must not follow
+   * the bevel: a lens with square corners keeps its bevel within the corner radius but
+   * still bends as deep as a pill. Omit for the default, `bevel × 0.35`.
+   */
+  band?: number
   shadow: number
   shadowSoftness: number
   shadowOffset: number
@@ -48,6 +53,10 @@ export type GlassLens = {
   /** How much the rim thins towards the surface colour (tinted glass). */
   edgeClear: number
   border?: Rgb
+  /** Opacity of the border line (0–1, default 1). */
+  borderAlpha?: number
+  /** Width of the border line in CSS px (default 1). */
+  borderWidth?: number
   /** Textured lens: paints what lies beneath and bends it. */
   refraction?: {
     paint: (back: CanvasRenderingContext2D, front: CanvasRenderingContext2D) => void
@@ -58,6 +67,33 @@ export type GlassLens = {
     blurEdge: number
     /** 1 = frosted (flat `color`), 0 = perfectly clear. */
     frost: number
+    /** Frosted blur of the backdrop: a gaussian deviation in CSS px, like CSS `blur()`. 0 or omitted = sharp. */
+    blur?: number
+    /** How much of the frost shows over the sharp bend (0–1, default 1). */
+    blurMix?: number
+    /**
+     * Radial bend, as the old SVG card drew it: each point near the rim looks towards the
+     * centre, by this fraction of the viewport (0.065 there), falling off as (1 − d/half)^bendCurve,
+     * and the frost blurs the bent picture. `refract`, `magnify` and the bend band are then unused.
+     */
+    radial?: number
+  }
+  /** Fine-tuning of the look. Every field defaults to the kit's own value, noted in brackets. */
+  tune?: {
+    /** × rim light [1] and × its line's thickness [1]. */
+    rim?: number
+    rimWidth?: number
+    /** × fresnel glow on the lit side [1], × inner shading [1], × top reflection [1], × warm caustic [1]. */
+    fresnel?: number
+    inner?: number
+    reflection?: number
+    caustic?: number
+    /** Falloff of the bend from the rim inwards, an exponent [1.6]; × how far in it reaches [1]. */
+    bendCurve?: number
+    bendDepth?: number
+    /** Saturation of what shows through [1]; × the frost at the rim [1]. */
+    saturation?: number
+    frostEdge?: number
   }
   /** Rim light leans towards the cursor. */
   cursorLight: boolean
@@ -165,15 +201,18 @@ void main() { gl_Position = vec4(a, 0.0, 1.0); }
 const FRAGMENT = `#version 300 es
 precision highp float;
 uniform vec2 uSize, uCenter, uHalf, uLightDir;
-uniform float uUnit, uDevicePx, uRadius, uBevel, uBodyX;
+uniform float uUnit, uDevicePx, uRadius, uBevel, uBodyX, uBand, uFieldRadius;
 uniform vec3 uDrop;
-uniform float uRim, uCaustic, uInner, uTopRefl, uTopBase;
+uniform float uRim, uCaustic, uInner, uTopRefl, uTopBase, uRimWidth, uFresnel;
 uniform float uShadow, uShadowSoft, uShadowOffset;
 uniform float uLightMix, uEdgeClear;
 uniform vec3 uSurface, uColor, uBorder;
-uniform float uBorderWidth;
+uniform float uBorderWidth, uBorderAlpha;
 uniform sampler2D uBack, uFront;
-uniform float uTextured, uRefract, uMag, uDisp, uBlurCenter, uBlurEdge, uBlurShift, uFrost;
+uniform float uTextured, uRefract, uMag, uDisp, uBlurCenter, uBlurEdge, uBlurShift, uFrost, uFrostBlur, uFrostMix;
+uniform float uFrostEdge, uSaturation, uBendCurve, uEdgeBand;
+uniform vec2 uRadial;
+uniform float uCssPx;
 out vec4 outColor;
 
 // design units -> texture uv (textures are uploaded flipped: top row at v = 1)
@@ -184,6 +223,30 @@ vec2 toUv(vec2 d) {
 vec3 backdrop(vec2 st, float lod) {
   vec4 c = textureLod(uBack, st, lod);
   return c.rgb + (1.0 - c.a) * uSurface;
+}
+// Frosted glass: the backdrop under a gaussian blur of deviation sigma (design units),
+// gathered from 32 taps on a golden-angle spiral out to 2.5 deviations. Each tap reads a
+// mip about as wide as the gap between taps, so the frost stays smooth while the backdrop moves.
+vec3 frosted(vec2 p, float sigma) {
+  float lod = max(log2(sigma * 0.8 * uUnit) - 0.5, 0.0);
+  vec3 sum = vec3(0.0);
+  float total = 0.0;
+  for (int i = 0; i < 32; i++) {
+    float f = float(i) + 0.5;
+    float r = sqrt(f / 32.0) * 2.5 * sigma;
+    float a = f * 2.39996323;
+    float w = exp(-0.5 * r * r / (sigma * sigma));
+    sum += backdrop(toUv(p + r * vec2(cos(a), sin(a))), lod) * w;
+    total += w;
+  }
+  return sum / total;
+}
+// The sharp bend: the backdrop at p pushed by bend, its colours split slightly.
+vec3 bent(vec2 p, vec2 bend, float split, float lod) {
+  return vec3(
+    backdrop(toUv(p + bend * (1.0 + split)), lod).r,
+    backdrop(toUv(p + bend), lod).g,
+    backdrop(toUv(p + bend * (1.0 - split)), lod).b);
 }
 float roundRect(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
@@ -198,12 +261,42 @@ float shape(vec2 p) {
   float h = clamp(0.5 + 0.5 * (d - body) / k, 0.0, 1.0);
   return mix(d, body, h) - k * h * (1.0 - h);
 }
+// The body with corners at least as round as the bend is deep (see uBand in main).
+float field(vec2 p) { return roundRect(p - vec2(uBodyX, 0.0), uHalf, uFieldRadius); }
 // The reference darkens linear colour; on sRGB values the same factor is k^(1/2.2).
 float dim(float k) { return pow(clamp(k, 0.0, 1.0), 1.0 / 2.2); }
 vec3 dim(vec3 k) { return pow(clamp(k, 0.0, 1.0), vec3(1.0 / 2.2)); }
 float height(vec2 p) {
   float t = pow(clamp(-shape(p) / uBevel, 0.0, 1.0), 1.0 / 1.4);
   return sqrt(1.0 - (1.0 - t) * (1.0 - t));
+}
+// Radial bend (the SVG card's): towards the centre, strongest at the rim, fading over the
+// half size. uRadial is the full bend per axis (design units); uEdgeBand / 0.35 = bendDepth.
+float radialRatio(float d) {
+  return clamp(1.0 - abs(d) / (min(uHalf.x, uHalf.y) * uEdgeBand / 0.35), 0.0, 1.0);
+}
+vec2 radialBend(vec2 q) {
+  float d = shape(q);
+  vec2 c = q - vec2(uBodyX, 0.0);
+  float k = pow(radialRatio(d), uBendCurve) * smoothstep(1.5 * uCssPx, -0.5 * uCssPx, d);
+  return -c / max(length(c), 1e-4) * k * uRadial;
+}
+// Frost after the bend: every tap is bent on its own, and taps outside the glass are left
+// out (the SVG filter saw nothing beyond the card), so the rim keeps its colour.
+vec3 frostedRadial(vec2 q, float sigma) {
+  float lod = max(log2(sigma * 0.8 * uUnit) - 0.5, 0.0);
+  vec3 sum = vec3(0.0);
+  float total = 0.0;
+  for (int i = 0; i < 32; i++) {
+    float f = float(i) + 0.5;
+    float r = sqrt(f / 32.0) * 2.5 * sigma;
+    float a = f * 2.39996323;
+    vec2 t = q + r * vec2(cos(a), sin(a));
+    float w = exp(-0.5 * r * r / (sigma * sigma)) * step(shape(t), 0.0);
+    sum += backdrop(toUv(uCenter + t + radialBend(t)), lod) * w;
+    total += w;
+  }
+  return total > 1e-4 ? sum / total : backdrop(toUv(uCenter + q + radialBend(q)), lod);
 }
 
 void main() {
@@ -226,20 +319,48 @@ void main() {
   vec2 grad = vec2(height(local + vec2(e, 0.0)) - h, height(local + vec2(0.0, e)) - h) / e;
   vec3 normal = normalize(vec3(-grad * 42.0, 1.0));
   float depth = clamp(1.0 - h, 0.0, 1.0);
-  float edge = 1.0 - smoothstep(0.0, uBevel * 0.35, -dist);
+  float edge = 1.0 - smoothstep(0.0, uBevel * uEdgeBand, -dist);
   vec2 dir = normalize(vec2(shape(local + vec2(e, 0.0)) - dist, shape(local + vec2(0.0, e)) - dist) + 1e-6);
 
   vec3 glass;
-  if (uTextured > 0.5) {
+  if (uTextured > 0.5 && (uRadial.x > 0.0 || uRadial.y > 0.0)) {
+    // Radial bend, then frost: the old SVG card's rim.
+    float ratio = radialRatio(dist);
+    float sharpLod = max(uBlurShift, 0.0);
+    if (uFrostBlur > 0.0 && dist < 1.0) {
+      vec3 frost = frostedRadial(local, uFrostBlur * mix(1.0, uFrostEdge, pow(ratio, 1.3)));
+      glass = uFrostMix < 1.0 ? mix(bent(uCenter + local, radialBend(local), uDisp * 0.35, sharpLod), frost, uFrostMix) : frost;
+    } else {
+      glass = bent(uCenter + local, radialBend(local), uDisp * 0.35, sharpLod);
+    }
+    if (uSaturation != 1.0) glass = max(mix(vec3(dot(glass, vec3(0.2126, 0.7152, 0.0722))), glass, uSaturation), 0.0);
+  } else if (uTextured > 0.5) {
     // Refraction: magnify the middle, bend inwards at the rim, split colours slightly.
+    // A lens with square corners (uBand > 0) bends deeper than its corner radius. The
+    // bend then follows a shape whose corners are at least that round: on the real
+    // shape its direction would break along the diagonals. Mask and light keep the real shape.
+    float bendEdge = edge;
+    vec2 bendDir = dir;
+    if (uBand > 0.0) {
+      float fd = field(local);
+      bendDir = normalize(vec2(field(local + vec2(e, 0.0)) - fd, field(local + vec2(0.0, e)) - fd) + 1e-6);
+      bendEdge = 1.0 - smoothstep(0.0, uBand, -fd);
+    }
     vec2 magnified = local / (uMag * h + 1.0);
-    vec2 bend = -dir * uRefract * pow(edge, 1.6);
+    vec2 bend = -bendDir * uRefract * pow(bendEdge, uBendCurve);
     float split = uDisp * 0.35;
-    float lod = max(mix(uBlurCenter, uBlurEdge, pow(edge, 1.3)) + uBlurShift, 0.0);
-    glass = vec3(
-      backdrop(toUv(uCenter + magnified + bend * (1.0 + split)), lod).r,
-      backdrop(toUv(uCenter + magnified + bend), lod).g,
-      backdrop(toUv(uCenter + magnified + bend * (1.0 - split)), lod).b);
+    float lod = max(mix(uBlurCenter, uBlurEdge, pow(bendEdge, 1.3)) + uBlurShift, 0.0);
+    vec2 at = uCenter + magnified;
+    if (uFrostBlur > 0.0 && dist < 1.0) {
+      // Frosted (inside the glass only: outside, nothing of it shows). The frost hides the
+      // colour split, so one bent point is enough; uFrostMix lets the sharp bend show through.
+      vec3 frost = frosted(at + bend, uFrostBlur * mix(1.0, uFrostEdge, pow(bendEdge, 1.3)));
+      glass = uFrostMix < 1.0 ? mix(bent(at, bend, split, lod), frost, uFrostMix) : frost;
+    } else {
+      glass = bent(at, bend, split, lod);
+    }
+    // Vibrancy: what shows through, more (or less) saturated.
+    if (uSaturation != 1.0) glass = max(mix(vec3(dot(glass, vec3(0.2126, 0.7152, 0.0722))), glass, uSaturation), 0.0);
   } else {
     // Tinted glass: its own colour in the middle, thinning towards the rim.
     glass = mix(uSurface, uColor, 1.0 - edge * uEdgeClear);
@@ -269,7 +390,7 @@ void main() {
 
   // Rim light + fresnel; leans a little towards the cursor when there is one.
   float fresnel = pow(clamp(1.0 - normal.z, 0.0, 1.0), 6.0);
-  float rimW = max(uDevicePx * 1.1, 1.0);
+  float rimW = max(uDevicePx * 1.1, 1.0) * uRimWidth;
   float rimLine = 1.0 - smoothstep(0.0, rimW * 1.6, abs(dist + rimW * 1.8));
   float fall = exp(-(local.y / 30.0) * (local.y / 30.0));
   float studio = right * right * fall * 0.9 + down * down * 0.2 + left * left * 0.55;
@@ -284,7 +405,7 @@ void main() {
   vec3 warmCool = mix(vec3(0.82, 0.9, 1.08), vec3(1.2, 0.95, 0.78), 1.0 - smoothstep(-0.5, 0.1, nx));
   vec3 rimCol = mix(vec3(1.0), warmCool, down * 0.6);
   rimCol = mix(rimCol, vec3(0.12, 0.6, 1.2), back * 0.85);
-  glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * 0.02 * step(0.001, uRim));
+  glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * uFresnel * step(0.001, uRim));
 
   // Caustic: warm light gathering inside the bottom edge.
   glass += vec3(1.0, 0.92, 0.86) * smoothstep(0.72, 0.98, depth) * down * uCaustic;
@@ -292,7 +413,7 @@ void main() {
   float aa = max(fwidth(dist), 1e-4);
   float mask = 1.0 - smoothstep(-aa, aa, dist);
   // Bordered body (outline buttons): a flat line just inside the edge.
-  glass = mix(glass, uBorder, smoothstep(-uBorderWidth - aa, -uBorderWidth + aa, dist) * step(1e-4, uBorderWidth));
+  glass = mix(glass, uBorder, smoothstep(-uBorderWidth - aa, -uBorderWidth + aa, dist) * step(1e-4, uBorderWidth) * uBorderAlpha);
   vec4 col = mix(outsideCol, vec4(clamp(glass, 0.0, 1.0), 1.0), mask);
   // Front layer (selected labels) sits on the frosted pill and fades as the lens clears.
   vec4 fg = texture(uFront, gl_FragCoord.xy / uSize) * mask * uFrost * step(0.5, uTextured);
@@ -437,20 +558,37 @@ function createEngine(): GlassEngine | null {
     // Blur level follows screen density (reference: 2.27 device px per design unit).
     gl.uniform1f(u('uBlurShift'), Math.log2(Math.max((unit * dpr) / 2.27, 1e-3)))
     gl.uniform1f(u('uFrost'), r?.frost ?? 0)
+    gl.uniform1f(u('uFrostBlur'), Math.max(0, r?.blur ?? 0) / unit)
+    gl.uniform1f(u('uFrostMix'), clamp(r?.blurMix ?? 1))
+    // Radial bend: a share of the viewport per axis, as the SVG card's map was.
+    const radial = Math.max(0, r?.radial ?? 0)
+    gl.uniform2f(u('uRadial'), (radial * window.innerWidth) / unit, (radial * window.innerHeight) / unit)
+    gl.uniform1f(u('uCssPx'), 1 / unit)
     gl.uniform2f(u('uSize'), devW, devH)
     gl.uniform1f(u('uUnit'), unit * dpr)
     gl.uniform1f(u('uDevicePx'), 1 / (unit * dpr))
     gl.uniform2f(u('uCenter'), m.cx / unit, m.cy / unit)
     gl.uniform2f(u('uHalf'), Math.max(m.hx / unit, 0.5), Math.max(m.hy / unit, 0.5))
-    gl.uniform1f(u('uRadius'), Math.max(0, Math.min(m.radius, m.hx - 0.5, m.hy - 0.5) / unit))
+    const radius = Math.max(0, Math.min(m.radius, m.hx - 0.5, m.hy - 0.5) / unit)
+    gl.uniform1f(u('uRadius'), radius)
+    const band = r ? (m.band ?? 0) : 0
+    gl.uniform1f(u('uBand'), band)
+    gl.uniform1f(u('uFieldRadius'), Math.min(Math.max(radius, band), Math.max(0, (Math.min(m.hx, m.hy) - 0.5) / unit)))
     gl.uniform1f(u('uBodyX'), m.bodyX / unit)
     gl.uniform3f(u('uDrop'), (m.droplet?.x ?? 0) / unit, (m.droplet?.r ?? 0) / unit, (m.droplet?.k ?? 0) / unit)
     gl.uniform1f(u('uBevel'), Math.max(m.bevel, 2))
-    gl.uniform1f(u('uRim'), 0.55 * m.strength)
-    gl.uniform1f(u('uCaustic'), 0.08 * m.strength)
-    gl.uniform1f(u('uInner'), 0.1 * m.strength)
-    gl.uniform1f(u('uTopRefl'), 0.3 * m.strength)
-    gl.uniform1f(u('uTopBase'), 0.02 * m.strength)
+    const k = m.tune ?? {}
+    gl.uniform1f(u('uRim'), 0.55 * m.strength * (k.rim ?? 1))
+    gl.uniform1f(u('uCaustic'), 0.08 * m.strength * (k.caustic ?? 1))
+    gl.uniform1f(u('uInner'), 0.1 * m.strength * (k.inner ?? 1))
+    gl.uniform1f(u('uTopRefl'), 0.3 * m.strength * (k.reflection ?? 1))
+    gl.uniform1f(u('uTopBase'), 0.02 * m.strength * (k.reflection ?? 1))
+    gl.uniform1f(u('uRimWidth'), Math.max(0.05, k.rimWidth ?? 1))
+    gl.uniform1f(u('uFresnel'), 0.02 * (k.fresnel ?? 1))
+    gl.uniform1f(u('uBendCurve'), Math.max(0.05, k.bendCurve ?? 1.6))
+    gl.uniform1f(u('uEdgeBand'), 0.35 * Math.max(0.05, k.bendDepth ?? 1))
+    gl.uniform1f(u('uSaturation'), Math.max(0, k.saturation ?? 1))
+    gl.uniform1f(u('uFrostEdge'), Math.max(0.05, k.frostEdge ?? 1))
     gl.uniform1f(u('uShadow'), m.shadow * m.strength)
     gl.uniform1f(u('uShadowSoft'), m.shadowSoftness)
     gl.uniform1f(u('uShadowOffset'), m.shadowOffset)
@@ -458,7 +596,8 @@ function createEngine(): GlassEngine | null {
     gl.uniform3f(u('uColor'), ...m.color)
     gl.uniform1f(u('uEdgeClear'), m.edgeClear)
     gl.uniform3f(u('uBorder'), ...(m.border ?? m.color))
-    gl.uniform1f(u('uBorderWidth'), m.border ? 1 / unit : 0)
+    gl.uniform1f(u('uBorderWidth'), m.border ? Math.max(0, m.borderWidth ?? 1) / unit : 0)
+    gl.uniform1f(u('uBorderAlpha'), clamp(m.borderAlpha ?? 1))
     const dx = pointer.x - m.screenX
     const dy = pointer.y - m.screenY
     const d = Math.hypot(dx, dy)
@@ -530,6 +669,8 @@ function createEngine(): GlassEngine | null {
   })
   new MutationObserver(invalidateAll).observe(document.body, { attributes: true, attributeFilter: ['data-theme'], subtree: true })
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', invalidateAll)
+  // A radial bend scales with the viewport.
+  window.addEventListener('resize', invalidateAll, { passive: true })
   glCanvas.addEventListener('webglcontextlost', () => {
     dead = true
     for (const v of views) {

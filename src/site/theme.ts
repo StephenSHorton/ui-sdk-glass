@@ -21,10 +21,16 @@ export function useTheme(): [Theme, (t: Theme) => void] {
 }
 
 export function setTheme(t: Theme) {
+  // Switch with every transition off, so the colours swap at once instead of smearing.
+  const freeze = document.createElement('style')
+  freeze.textContent = '*,*::before,*::after{transition:none!important}'
+  document.head.appendChild(freeze)
   document.documentElement.setAttribute('data-theme', t)
   document.documentElement.style.colorScheme = t
   try {
     localStorage.setItem(THEME_KEY, t)
   } catch {}
   listeners.forEach((l) => l())
+  void getComputedStyle(document.body).opacity
+  requestAnimationFrame(() => requestAnimationFrame(() => freeze.remove()))
 }

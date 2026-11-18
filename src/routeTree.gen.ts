@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
 import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
 import { Route as Char123LocaleChar125404RouteImport } from './routes/{-$locale}/404'
+import { Route as Char123LocaleChar125ChangelogRouteImport } from './routes/{-$locale}/changelog'
 import { Route as Char123LocaleChar125DocsRouteRouteImport } from './routes/{-$locale}/docs/route'
+import { Route as Char123LocaleChar125TuneRouteImport } from './routes/{-$locale}/tune'
 import { Route as Char123LocaleChar125DocsIndexRouteImport } from './routes/{-$locale}/docs/index'
 import { Route as Char123LocaleChar125DocsSlugRouteImport } from './routes/{-$locale}/docs/$slug'
 
@@ -33,10 +35,22 @@ const Char123LocaleChar125404Route = Char123LocaleChar125404RouteImport.update({
   path: '/404',
   getParentRoute: () => Char123LocaleChar125RouteRoute,
 } as any)
+const Char123LocaleChar125ChangelogRoute =
+  Char123LocaleChar125ChangelogRouteImport.update({
+    id: '/changelog',
+    path: '/changelog',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125DocsRouteRoute =
   Char123LocaleChar125DocsRouteRouteImport.update({
     id: '/docs',
     path: '/docs',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125TuneRoute =
+  Char123LocaleChar125TuneRouteImport.update({
+    id: '/tune',
+    path: '/tune',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125DocsIndexRoute =
@@ -56,12 +70,16 @@ export interface FileRoutesByFullPath {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/{-$locale}/docs': typeof Char123LocaleChar125DocsRouteRouteWithChildren
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
+  '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
   '/{-$locale}/docs/': typeof Char123LocaleChar125DocsIndexRoute
 }
 export interface FileRoutesByTo {
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
+  '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
   '/{-$locale}/docs': typeof Char123LocaleChar125DocsIndexRoute
@@ -71,6 +89,8 @@ export interface FileRoutesById {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/{-$locale}/docs': typeof Char123LocaleChar125DocsRouteRouteWithChildren
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
+  '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
   '/{-$locale}/docs/': typeof Char123LocaleChar125DocsIndexRoute
@@ -81,12 +101,16 @@ export interface FileRouteTypes {
     | '/{-$locale}'
     | '/{-$locale}/docs'
     | '/{-$locale}/404'
+    | '/{-$locale}/changelog'
+    | '/{-$locale}/tune'
     | '/{-$locale}/'
     | '/{-$locale}/docs/$slug'
     | '/{-$locale}/docs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/{-$locale}/404'
+    | '/{-$locale}/changelog'
+    | '/{-$locale}/tune'
     | '/{-$locale}'
     | '/{-$locale}/docs/$slug'
     | '/{-$locale}/docs'
@@ -95,6 +119,8 @@ export interface FileRouteTypes {
     | '/{-$locale}'
     | '/{-$locale}/docs'
     | '/{-$locale}/404'
+    | '/{-$locale}/changelog'
+    | '/{-$locale}/tune'
     | '/{-$locale}/'
     | '/{-$locale}/docs/$slug'
     | '/{-$locale}/docs/'
@@ -127,11 +153,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125404RouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/changelog': {
+      id: '/{-$locale}/changelog'
+      path: '/changelog'
+      fullPath: '/{-$locale}/changelog'
+      preLoaderRoute: typeof Char123LocaleChar125ChangelogRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/docs': {
       id: '/{-$locale}/docs'
       path: '/docs'
       fullPath: '/{-$locale}/docs'
       preLoaderRoute: typeof Char123LocaleChar125DocsRouteRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/tune': {
+      id: '/{-$locale}/tune'
+      path: '/tune'
+      fullPath: '/{-$locale}/tune'
+      preLoaderRoute: typeof Char123LocaleChar125TuneRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/docs/': {
@@ -170,6 +210,8 @@ const Char123LocaleChar125DocsRouteRouteWithChildren =
 interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125DocsRouteRoute: typeof Char123LocaleChar125DocsRouteRouteWithChildren
   Char123LocaleChar125404Route: typeof Char123LocaleChar125404Route
+  Char123LocaleChar125ChangelogRoute: typeof Char123LocaleChar125ChangelogRoute
+  Char123LocaleChar125TuneRoute: typeof Char123LocaleChar125TuneRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
 }
 
@@ -178,6 +220,8 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125DocsRouteRoute:
       Char123LocaleChar125DocsRouteRouteWithChildren,
     Char123LocaleChar125404Route: Char123LocaleChar125404Route,
+    Char123LocaleChar125ChangelogRoute: Char123LocaleChar125ChangelogRoute,
+    Char123LocaleChar125TuneRoute: Char123LocaleChar125TuneRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
   }
 

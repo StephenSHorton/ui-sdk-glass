@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, notFound } from '@tanstack/react-router'
 
-import { SiteFooter, SiteHeader } from '#/site/chrome'
+import { SiteFooter } from '#/site/chrome'
+import { SiteHeader } from '#/site/header'
 import { localeFromParam } from '#/site/i18n'
 
 // One layout for both languages: "/…" is English, "/tr/…" is Turkish.

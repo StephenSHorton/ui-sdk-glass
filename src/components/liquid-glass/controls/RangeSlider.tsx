@@ -1,3 +1,5 @@
+'use client'
+
 import { useId, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 
 import { drawTrack } from './glass/draw'
@@ -14,11 +16,13 @@ export type RangeSliderProps = {
   step?: number
   label?: string
   theme?: Theme
+  /** Colour of the filled part of the track: a hex, rgb() or named colour, not a CSS variable. Defaults to the kit's blue. */
+  color?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
   startIcon?: IconName | 'none'
   endIcon?: IconName | 'none'
   showValue?: boolean
-  /** 0 = clear resting glass (as the hero slider), 1 = frosted pill. */
+  /** At rest: 1 (default) = a flat white pill, 0 = clear glass. Held, it is always clear glass. */
   restFrost?: number
   refraction?: number
   dispersion?: number
@@ -46,11 +50,12 @@ export function RangeSlider({
   step = 1,
   label = 'Volume',
   theme,
+  color,
   size = 'md',
   startIcon = 'none',
   endIcon = 'none',
   showValue = true,
-  restFrost = 0,
+  restFrost = 1,
   refraction = 37,
   dispersion = 0.12,
   rimIntensity = 0.55,
@@ -85,6 +90,7 @@ export function RangeSlider({
     width: areaW + MARGIN.x * 2 * unit,
     height: (MARGIN.top + MARGIN.bottom) * unit,
     unit,
+    cursorLight: true,
     step(dt, reduced) {
       const s = sim.current
       const pressTarget = s.pressed ? 1 : 0
@@ -112,7 +118,7 @@ export function RangeSlider({
         height: TRACK * unit,
         fillEnd: (MARGIN.x + s.value.x * length) * unit,
         track: tokens.track,
-        accent: tokens.accent,
+        accent: color ?? tokens.accent,
       })
       const { lens, x } = glassCenter()
       return {
@@ -122,6 +128,9 @@ export function RangeSlider({
         stretchX: 1 + Math.abs(s.stretch),
         stretchY: 1 - Math.abs(s.stretch) * 0.45,
         shiftX: s.stretch * -60,
+        // The resting thumb is a white pill in both themes; it turns to glass only while held.
+        frostCenter: '#ffffff',
+        frostEdge: '#e9ebef',
       }
     },
   })

@@ -1,3 +1,5 @@
+'use client'
+
 import { useId, useRef, type PointerEvent } from 'react'
 
 import { drawTrack, scaleOptics } from './glass/draw'
@@ -11,6 +13,8 @@ export type SwitchProps = {
   label?: string
   description?: string
   theme?: Theme
+  /** Colour of the track while on: a hex, rgb() or named colour, not a CSS variable. Defaults to the kit's blue. */
+  color?: string
   size?: 'sm' | 'md' | 'lg'
   labelSide?: 'left' | 'right'
   disabled?: boolean
@@ -33,6 +37,7 @@ export function Switch({
   label = 'Notifications',
   description,
   theme,
+  color,
   size = 'md',
   labelSide = 'right',
   disabled = false,
@@ -60,6 +65,7 @@ export function Switch({
     width: (TRACK.w + MARGIN.x * 2) * unit,
     height: (TRACK.h + MARGIN.top + MARGIN.bottom) * unit,
     unit,
+    cursorLight: true,
     step(dt, reduced) {
       const s = sim.current
       const target = s.dragPos ?? (on ? 1 : 0)
@@ -83,7 +89,7 @@ export function Switch({
         height: h,
         fillEnd: (MARGIN.x + TRACK.w) * unit,
         track: tokens.track,
-        accent: tokens.accent,
+        accent: color ?? tokens.accent,
         fillOpacity: saturate(s.pos.x),
       })
       const k = (KNOB.h * lensScale) / 120

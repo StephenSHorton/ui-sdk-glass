@@ -1,10 +1,36 @@
-# Forge project
+# Liquid Glass UI — working on this repo
 
-This project is built and previewed in **Forge**. All agent documentation
-lives in the **`forge` MCP server** — this file intentionally carries none.
+Open-source React liquid glass kit + its bilingual (EN/TR) docs site. MIT.
+Agents that only *use* the kit in another project: read `skills/liquid-glass/SKILL.md` instead.
 
-Call `get_forge_docs` before the matching work:
+## Layout
 
-- `{"topic": "components"}` — create components/pages, project ground rules.
-- `{"topic": "story-docs"}` — the `.stories.json` canvas contract.
-- `{"topic": "site-meta"}` — favicon and Open Graph.
+| Path | What |
+| --- | --- |
+| `src/components/liquid-glass/` | The whole kit, zero dependencies: `engine.ts` (shared WebGL2 renderer + shader + springs), `dom-snapshot.ts`, the components `glass-button.tsx` (press), `glass-action-button.tsx` (merge), `glass-tabs.tsx` (travel), `glass-badge.tsx` (flow), `glass-slide-to-confirm.tsx` (drag), `glass-card.tsx` (hold), and their building blocks `glass-layer.tsx` (button glass, used by asChild) and `glass-lens.tsx` (the tabs lens, documented on the GlassTabs page). `controls/` holds `RangeSlider.tsx` (slide), `Switch.tsx` (flip) and `Checkbox.tsx` (tick), restored as they were in the first previews: they keep their own renderer (`controls/glass/`, three.js) and are the only files that need a package (`three`); don't rewrite them on `engine.ts` unless asked. Shipped to users verbatim. |
+| `src/docs/content.ts` | **Single source of truth** for docs: pages (EN + TR), props tables, registry items, and `RELEASES` (the changelog: the sidebar New pills, "What's new", each component's latest-change line, `/changelog` and `changelog.md` all read it). |
+| `src/docs/demos/*.tsx` | Live examples. The code shown on a page is the file itself; write them as copy-ready user code importing from `@/components/...`. |
+| `scripts/ai-files.ts` | Generates `llms.txt`, `llms-full.txt`, `/docs/*.md`, `/r/*.json` (shadcn registry) and `skills/liquid-glass/references/components.md` at build. |
+| `src/components/ui/`, `src/lib/utils.ts`, `components.json` | shadcn/ui for the site chrome only: Button, Badge, Tabs, NavigationMenu (the header dock), Sheet (the phone menu), ToggleGroup, Table, NativeSelect. Restyled to the site's tokens; `cn` is the `cn` package taught the type scale in `utils.ts`. The kit never imports them. |
+| `src/site/`, `src/routes/` | Site chrome (plain on purpose: glass only appears in previews and the component grid). The page is one frame: `column` in `chrome.tsx` (1320px, rails) is shared by the header (`header.tsx`, dock + morphing panel), the docs shell and every landing section, with a rivet only where a rail meets a divider. `release.tsx` / `changelog.tsx` render releases; code blocks, docs page, `component-grid.tsx` (the live tiles on the landing page and the docs index), i18n (`{-$locale}` route: `/` English, `/tr` Turkish; the language switch sits in the footer, not the header), theme, head script. |
+
+## Rules
+
+- Files under `src/components/liquid-glass/` are copied into users' projects: only relative imports between them (the build fails on `#/` or `@/` there), no site code, keep `"use client"` on React files.
+- Every user-facing string exists in English and Turkish (`src/site/ui.ts`, `src/docs/content.ts`, component `COPY` objects). Add both or neither.
+- The set keeps growing toward every HTML primitive. A new component must do one thing no existing one does. Never write a component count ("six components") or numbered verb tags ("01 · Press") in site, docs, README or skill copy: they go stale. Component = files + demo(s) + a page in `content.ts` (with `verb`, a one-line `signature` and a `when` block) + a registry entry. Building blocks (GlassLayer, GlassLens) are documented inside their component's page, never as pages of their own. Routes, Markdown, llms files and registry are generated.
+- Each component appears once on the landing page (in the component grid). Demos get their own backdrop; don't reuse one scene everywhere.
+- Ship a change to a component or the docs → add it to `RELEASES` (newest first, EN + TR, `page` set when it is about one page). Versions have two levels: a version (`1.3`) and its patch releases (`1.3.1`…). Bump the minor only when a component is added; everything else (fixes, new props, examples, site work) is a patch. Visitors are told about versions only: the site shows `VERSION` (`v1.3`), "What's new" and the New pills read `FEATURED` (the last release that added a component), and patches sit folded under their version in `/changelog`. There is no Updated pill.
+- Restraint: a clean UI first. Stages are one quiet neutral (`bg-stage`); colour lives only inside demos, where the glass needs something to bend. No glows, light effects, tinted panels, textures or patterns in the chrome; sections are separated by space. The only grid on the site is the one inside the Press demo, centred on the glass. Rails stay faint and a rivet sits only where a rail meets a full-bleed divider. Backdrops the glass must bend in demos are flat colour and plain DOM (coloured shapes, lines, text): no gradients (not even as a mask or a fade), images or SVG there; the DOM snapshot can't see masks, rotation or CSS filters either. Landing entrance is CSS (`.enter`, `.enter-fade`, `.wipe`) and plays once per session.
+- Docs titles drop the prefix: the site is Liquid Glass, so the pages say Button, Action Button, Tabs, Badge, Slide to Confirm, Card (`title`). The export stays `GlassButton` … (`name`): code samples, llms files and the Markdown use it. URLs and registry items drop it too: `/docs/button`, `/r/button.json` (slug `button`, never `glass-button`); only the kit's files and exports keep `glass-` / `Glass`. The old `glass-` URLs redirect in `public/_redirects`.
+- Chrome controls are shadcn/ui (`pnpm dlx shadcn@latest add <name>`), then restyled: import `cn` from `@/lib/utils`, no ring utilities (one focus ring for the whole site, `:focus-visible` in `styles.css`), `press` on anything pressable (0.96, one transition list), overlays animate on `data-state` in `styles.css`. Prefer a native element where it already works (`<details>`, `NativeSelect`).
+- Type: the scale in `styles.css` (`text-micro` 11 · `caption` 12 · `ui` 13 · `body-sm` 14 · `body` 15 · `lead` 17 · `title` 22, rem); a new step also goes into `src/lib/utils.ts`. Landing display sizes are one-offs. Page titles (`h1`), the landing section headings and the wordmark use `font-display` (Cal Sans, one weight: no `font-semibold` with it); everything else is Geist. The wordmark is one word, `LiquidGlass`: "Liquid" in Geist Light (300, loaded for this alone), "Glass" in Cal Sans. Never redefine Tailwind's own `text-sm`… or radii: the demos use them and must match users' projects.
+- Colour: text is `foreground`, `muted-foreground` or `faint`, each 4.5:1 on its surfaces (faint not on `stage`); release kinds keep 4.5:1 on their 13% wash. `--brand` is the logo and selection blue, `--ring` the focus ring; shadcn's `accent` is a hover surface, not a hue.
+- Motion: hover nudges and rotations are `motion-safe:`; anything that moves has an opacity-only fallback under reduced motion.
+- Do not tune shader constants or spring values casually: they define the look and the docs promise copies match the demo.
+- `pnpm build` must pass (prerenders every page in both languages and runs `scripts/verify-static-build.mjs`). Deploy: Cloudflare Pages, output `.output/public`.
+- pnpm only. Generated: `src/routeTree.gen.ts`, `public/llms*.txt`, `public/docs`, `public/tr`, `public/r` (gitignored).
+
+## Forge
+
+The project also opens in Forge. Forge docs live in the `forge` MCP server: call `get_forge_docs` with topic `components`, `story-docs` or `site-meta` before Forge-specific work.

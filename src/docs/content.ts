@@ -1,0 +1,1674 @@
+// The single source of truth for the documentation. Plain data, no React:
+// the site renders it (EN + TR), and the build turns it into llms.txt, llms-full.txt,
+// per-page Markdown, the shadcn registry and the agent skill reference (scripts/ai-files.ts).
+// Live examples are files in ./demos — the code shown on a page IS that file.
+import type { L } from '../site/i18n'
+
+export type PropRow = { name: string; type: string; default?: string; description: L }
+
+export type Block =
+  | { type: 'p'; text: L }
+  | { type: 'h'; text: L }
+  | { type: 'list'; items: L[] }
+  | { type: 'note'; text: L }
+  | { type: 'demo'; id: string; title?: L }
+  | { type: 'code'; code: string; title?: string }
+  | { type: 'install'; item: string }
+  | { type: 'props'; rows: PropRow[] }
+  /** "Use it for / Not for": what sets this component apart from the others. */
+  | { type: 'when'; use: L[]; avoid: L[] }
+  /** The components as live cards. */
+  | { type: 'index' }
+
+export type DocGroup = 'start' | 'components'
+
+export type DocPage = {
+  slug: string
+  group: DocGroup
+  /** What the docs call it. The site is Liquid Glass, so components drop the prefix: "Button". */
+  title: L
+  /** Components: the export you import (`GlassButton`). Code, llms files and Markdown use it. */
+  name?: string
+  description: L
+  /** Components: the one verb that names what it does (Press, Merge, Travel, Flow, Drag). */
+  verb?: L
+  /** One line: the single thing this component does that the others don't. */
+  signature?: L
+  /** Shown first on the page and used as the card preview. */
+  hero?: string
+  blocks: Block[]
+}
+
+export const GROUPS: { id: DocGroup; title: L }[] = [
+  { id: 'start', title: { en: 'Get started', tr: 'Başlarken' } },
+  { id: 'components', title: { en: 'Components', tr: 'Bileşenler' } },
+]
+
+// ── Registry ────────────────────────────────────────────────────────────────
+// Every item installs into components/liquid-glass/. Files are copied byte-for-byte;
+// nothing is generated or rewritten.
+
+export type RegistryItem = {
+  name: string
+  title: string
+  description: string
+  /**
+   * Entry files (repo paths). The build follows their relative imports and ships the
+   * whole closure, each file to the same path under the user's `components/` folder
+   * (src/components/liquid-glass/x.tsx → components/liquid-glass/x.tsx).
+   */
+  entries: string[]
+  /** The docs page (slug) the item points to. Defaults to its name. */
+  docs?: string
+  dependencies?: string[]
+  /** Tailwind v4 CSS the CLI merges into the user's stylesheet. */
+  css?: Record<string, unknown>
+  cssVars?: Record<string, Record<string, string>>
+}
+
+const liquid = (file: string) => `src/components/liquid-glass/${file}`
+
+export const REGISTRY: RegistryItem[] = [
+  {
+    name: 'liquid-glass',
+    title: 'Liquid Glass (everything)',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm and GlassCard with the zero-dependency WebGL2 engine.',
+    entries: [liquid('index.ts')],
+    docs: 'introduction',
+  },
+  { name: 'button', title: 'GlassButton', description: 'Press: a clear or tinted glass button that swells under the pointer.', entries: [liquid('glass-button.tsx')] },
+  {
+    name: 'action-button',
+    title: 'GlassActionButton',
+    description: 'Merge: an async action button whose arrow droplet melts into the body when pressed, and stays.',
+    entries: [liquid('glass-action-button.tsx')],
+  },
+  { name: 'tabs', title: 'GlassTabs', description: 'Travel: a segmented control whose selection travels as a lens (GlassLens included).', entries: [liquid('glass-tabs.tsx')] },
+  { name: 'badge', title: 'GlassBadge', description: 'Flow: a glass badge with its text flowing through the lens.', entries: [liquid('glass-badge.tsx')] },
+  {
+    name: 'slide-to-confirm',
+    title: 'GlassSlideToConfirm',
+    description: 'Drag: a slide-to-confirm track whose glass thumb is dragged to the end to run one deliberate action.',
+    entries: [liquid('glass-slide-to-confirm.tsx')],
+  },
+  {
+    name: 'card',
+    title: 'GlassCard',
+    description: 'Hold: a frosted glass card that holds your content while its rim bends what slides behind.',
+    entries: [liquid('glass-card.tsx')],
+  },
+  // The controls below are drawn by their own renderer (controls/glass), which needs `three`.
+  { name: 'slider', title: 'RangeSlider', description: 'Slide: a range slider whose glass thumb opens into a wide lens while held. Needs three.', entries: [liquid('controls/RangeSlider.tsx')] },
+  { name: 'switch', title: 'Switch', description: 'Flip: an on/off switch whose knob swells into a clear lens as it crosses the track. Needs three.', entries: [liquid('controls/Switch.tsx')] },
+  { name: 'checkbox', title: 'Checkbox', description: 'Tick: a checkbox under a cap of clear glass. Needs three.', entries: [liquid('controls/Checkbox.tsx')] },
+]
+
+// ── Pages ───────────────────────────────────────────────────────────────────
+
+const t = (en: string, tr: string): L => ({ en, tr })
+
+const h = (en: string, tr: string): Block => ({ type: 'h', text: t(en, tr) })
+
+export const PAGES: DocPage[] = [
+  {
+    slug: 'introduction',
+    group: 'start',
+    title: t('Introduction', 'Giriş'),
+    description: t(
+      'Glass components for React. Copy a file, get exactly what the demo shows.',
+      'React için cam bileşenleri. Dosyayı kopyala, demoda gördüğünün aynısını al.',
+    ),
+    blocks: [
+      {
+        type: 'p',
+        text: t(
+          'Liquid Glass UI is a set of React components drawn by one WebGL2 glass shader. Each does one thing the others don\'t. There is no npm package: you copy the files into your project, and they are yours.',
+          'Liquid Glass UI, tek bir WebGL2 cam gölgelendiricisiyle çizilen React bileşenleridir. Her biri, diğerlerinin yapmadığı tek bir işi yapar. npm paketi yok: dosyaları projene kopyalarsın ve artık senindir.',
+        ),
+      },
+      { type: 'index' },
+      h('How it works', 'Nasıl çalışır'),
+      {
+        type: 'list',
+        items: [
+          t('**Zero dependencies.** One WebGL2 context for the whole page, plain TypeScript files, no three.js.', '**Bağımlılık yok.** Tüm sayfa için tek WebGL2 bağlamı, düz TypeScript dosyaları, three.js yok.'),
+          t('**Your DOM.** The glass is a canvas behind your own elements, so any router, any styling and your own markup keep working.', '**Senin DOM\'un.** Cam, senin öğelerinin arkasındaki bir tuvaldir; her router, her stil ve kendi işaretlemen çalışmaya devam eder.'),
+          t('**Free at rest.** The render loop runs only while a spring moves and stops completely when nothing does.', '**Dururken bedava.** Çizim döngüsü yalnız bir yay hareket ederken çalışır, hiçbir şey kıpırdamıyorsa tamamen durur.'),
+        ],
+      },
+      h('Browser support', 'Tarayıcı desteği'),
+      {
+        type: 'p',
+        text: t(
+          'The glass needs WebGL2, which current desktop and mobile browsers have. Without it, or before the first frame, every component keeps its plain CSS look: never a blank box. With reduced motion the springs stand still and the badge text stops.',
+          'Cam WebGL2 ister; güncel masaüstü ve mobil tarayıcılarda vardır. Yoksa ya da ilk kare çizilene dek her bileşen sade CSS görünümünü korur: asla boş bir kutu değil. Hareketi azalt açıksa yaylar durur, rozetteki yazı akmaz.',
+        ),
+      },
+      h('The one rule', 'Tek kural'),
+      {
+        type: 'p',
+        text: t(
+          'Copy the files verbatim. The look lives in the exact shader constants and spring values. Customise through props and class names, never by editing the engine.',
+          'Dosyaları birebir kopyala. Görünüm gölgelendiricinin ve yayların tam değerlerinde yaşar. Özelleştirmeyi prop ve sınıf adlarıyla yap, motoru düzenleyerek değil.',
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'installation',
+    group: 'start',
+    title: t('Installation', 'Kurulum'),
+    description: t('Add components with the shadcn CLI, or copy the folder by hand.', 'Bileşenleri shadcn CLI ile ekle ya da klasörü elle kopyala.'),
+    blocks: [
+      h('Requirements', 'Gereksinimler'),
+      {
+        type: 'list',
+        items: [
+          t('React 19 (Next.js 15+, Vite, TanStack Start, React Router…)', 'React 19 (Next.js 15+, Vite, TanStack Start, React Router…)'),
+          t('Tailwind CSS v4', 'Tailwind CSS v4'),
+          t('An `@/` import alias pointing at your source folder (the shadcn default).', 'Kaynak klasörünü gösteren bir `@/` içe aktarma takma adı (shadcn varsayılanı).'),
+        ],
+      },
+      h('With the CLI', 'CLI ile'),
+      {
+        type: 'p',
+        text: t(
+          'Every component page has its own command. This one installs all of them into `components/liquid-glass/`:',
+          'Her bileşen sayfasının kendi komutu var. Bu komut hepsini birden `components/liquid-glass/` içine kurar:',
+        ),
+      },
+      { type: 'install', item: 'liquid-glass' },
+      h('By hand', 'Elle'),
+      {
+        type: 'p',
+        text: t(
+          'Copy `src/components/liquid-glass/` from the repository into your project as `components/liquid-glass/`. Nothing else is needed: no npm package, no CSS file (the components inject the few rules they need).',
+          'Depodaki `src/components/liquid-glass/` klasörünü projene `components/liquid-glass/` olarak kopyala. Başka bir şey gerekmez: npm paketi yok, CSS dosyası yok (bileşenler ihtiyaç duydukları birkaç kuralı kendileri ekler).',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassButton } from '@/components/liquid-glass'
+
+export function Hero() {
+  return <GlassButton material="tinted" className="bg-sky-500 text-white">Get started</GlassButton>
+}`,
+      },
+      h('Dark mode', 'Karanlık mod'),
+      {
+        type: 'p',
+        text: t(
+          'The glass reads its colours from your CSS (the nearest opaque background and the element\'s own colours), so it follows whatever theme system you use. Clear glass picks its text colour from the tone it ends up, so labels stay readable on light and dark backdrops alike.',
+          'Cam renklerini senin CSS\'inden okur (en yakın opak arka plan ve öğenin kendi renkleri); hangi tema sistemini kullanırsan onu izler. Berrak cam yazı rengini vardığı tondan seçer; etiketler açık ve koyu zeminlerde aynı şekilde okunur.',
+        ),
+      },
+      h('Next.js', 'Next.js'),
+      {
+        type: 'p',
+        text: t(
+          'The files already start with `"use client"`. Import them from server components as usual.',
+          'Dosyalar zaten `"use client"` ile başlıyor. Sunucu bileşenlerinden her zamanki gibi içe aktar.',
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'ai',
+    group: 'start',
+    title: t('For AI agents', 'Yapay zekâ ajanları için'),
+    description: t(
+      'Machine-readable docs and a skill, so assistants install the real components instead of re-inventing them.',
+      'Makinece okunur dokümanlar ve bir skill: asistanlar bileşenleri yeniden icat etmek yerine gerçeğini kursun.',
+    ),
+    blocks: [
+      {
+        type: 'p',
+        text: t(
+          'Every page of these docs exists as Markdown, and the whole set is published as `llms.txt` and `llms-full.txt`. Point your assistant at them, or install the skill.',
+          'Bu dokümanın her sayfası Markdown olarak da var; tamamı `llms.txt` ve `llms-full.txt` olarak yayımlanır. Asistanını bunlara yönlendir ya da skill\'i kur.',
+        ),
+      },
+      {
+        type: 'list',
+        items: [
+          t('`/llms.txt` — index of every page with one line each.', '`/llms.txt` — her sayfanın tek satırlık dizini.'),
+          t('`/llms-full.txt` — every page, every example, every prop in one file.', '`/llms-full.txt` — tüm sayfalar, örnekler ve prop\'lar tek dosyada.'),
+          t('`/docs/<page>.md` — one page as Markdown (also under `/tr/docs/`).', '`/docs/<sayfa>.md` — tek sayfa Markdown olarak (`/tr/docs/` altında da).'),
+          t('`/r/<item>.json` — shadcn registry items.', '`/r/<öğe>.json` — shadcn registry öğeleri.'),
+        ],
+      },
+      h('Install the skill', 'Skill\'i kur'),
+      { type: 'code', title: 'terminal', code: `npx skills add bilalgursen/liquid-glass` },
+      {
+        type: 'p',
+        text: t(
+          'The skill teaches an agent which component fits which need, the install command, the props, and the rule that matters most: copy the files verbatim and customise only through props and classes.',
+          'Skill, ajana hangi bileşenin hangi ihtiyaca uyduğunu, kurulum komutunu, prop\'ları ve en önemli kuralı öğretir: dosyaları birebir kopyala, yalnız prop ve sınıflarla özelleştir.',
+        ),
+      },
+      h('A prompt that works', 'İşe yarayan bir istem'),
+      {
+        type: 'code',
+        title: 'prompt',
+        code: `Add a glass "Deploy" button that shows Deploying… then Deployed ✓.
+Use Liquid Glass UI (https://liquid-glass-interface.pages.dev/llms.txt):
+install it with the shadcn CLI, use its GlassActionButton as documented,
+and do not modify the files in components/liquid-glass/.`,
+      },
+    ],
+  },
+
+  // ── Components ──
+  {
+    slug: 'button',
+    group: 'components',
+    title: t('Button', 'Button'),
+    name: 'GlassButton',
+    description: t(
+      'A button made of glass. Clear glass bends the page behind it; tinted glass takes your background colour.',
+      'Camdan bir buton. Berrak cam arkasındaki sayfayı büker; renkli cam senin arka plan rengini alır.',
+    ),
+    verb: t('Press', 'Bas'),
+    signature: t('Swells under the pointer, bends the page behind it.', 'İmleç altında şişer, arkasındaki sayfayı büker.'),
+    hero: 'glass-button-clear',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('One action: a call to action, a toolbar button, a link that looks like a button.', 'Tek bir eylem: harekete geçirici buton, araç çubuğu butonu, buton gibi görünen bir bağlantı.'),
+          t('Clear glass over imagery or colour, where the bend shows.', 'Bükülmenin göründüğü görsel ya da renk üstünde berrak cam.'),
+        ],
+        avoid: [
+          t('An async action whose result should show on the button: use GlassActionButton.', 'Sonucu butonda görünmesi gereken asenkron bir eylem: GlassActionButton kullan.'),
+          t('Choosing between options: use GlassTabs.', 'Seçenekler arasında seçim: GlassTabs kullan.'),
+          t('Every button of a dense form: keep the glass for the action that matters.', 'Yoğun bir formun her butonu: camı önemli olan eyleme sakla.'),
+        ],
+      },
+      { type: 'install', item: 'button' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassButton } from '@/components/liquid-glass'
+
+<GlassButton>Get started</GlassButton>
+<GlassButton material="tinted" className="bg-sky-500 text-white">Save</GlassButton>
+<GlassButton asChild>
+  <Link href="/docs">Read the docs</Link>
+</GlassButton>`,
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-button-tinted', title: t('Tinted colours and sizes', 'Renkli cam ve boyutlar') },
+      {
+        type: 'p',
+        text: t(
+          'Colour tinted glass with a normal class such as `bg-sky-500`; the glass paints itself in that colour and adds light and shadow. A `border-*` class becomes the glass rim.',
+          'Renkli camı `bg-sky-500` gibi sıradan bir sınıfla boya; cam kendini o renge boyar, ışık ve gölge ekler. Bir `border-*` sınıfı camın kenarı olur.',
+        ),
+      },
+      { type: 'demo', id: 'glass-button-link', title: t('As a link (asChild)', 'Bağlantı olarak (asChild)') },
+      {
+        type: 'p',
+        text: t(
+          'With `asChild` the glass goes on your single child element instead of a `<button>`: an `<a>`, a Next.js `<Link>`, a TanStack Router `<Link>`. Your element keeps its own props and navigation.',
+          '`asChild` ile cam, `<button>` yerine tek çocuk öğene gelir: bir `<a>`, Next.js `<Link>`, TanStack Router `<Link>`. Öğen kendi prop\'larını ve gezinmesini korur.',
+        ),
+      },
+      { type: 'demo', id: 'glass-button-scrim', title: t('Over colour with a scrim', 'Örtülü renkler üstünde') },
+      {
+        type: 'p',
+        text: t(
+          'Clear glass repaints what lies behind it: background colours, gradients and images, `<img>` and `<video>` the way the page crops them (`object-fit`), text, inline SVG icons and backdrop blur, in their stacking order. Shadows, `::before`/`::after` and conic gradients are not painted.',
+          'Berrak cam arkasında kalanı yeniden boyar: arka plan renkleri, gradyanlar ve görseller, sayfanın kırptığı haliyle `<img>` ve `<video>` (`object-fit`), yazı, satır içi SVG ikonlar ve arka plan bulanıklığı; hepsi kendi yığın sırasıyla. Gölgeler, `::before`/`::after` ve konik gradyanlar boyanmaz.',
+        ),
+      },
+      {
+        type: 'note',
+        text: t(
+          'An image from another origin must be served with CORS headers (image CDNs usually send them): the glass requests it again with CORS, and leaves it out if the server refuses.',
+          'Başka bir kaynaktan gelen görsel CORS başlıklarıyla sunulmalıdır (görsel CDN\'leri çoğunlukla gönderir): cam görseli CORS ile yeniden ister, sunucu izin vermezse onu dışarıda bırakır.',
+        ),
+      },
+      { type: 'demo', id: 'glass-button-corners', title: t('Square corners', 'Köşeli') },
+      {
+        type: 'p',
+        text: t(
+          'The glass takes the corners of the element it sits on. Add a `rounded-*` class and the lens, its rim and its shadow follow; the bend stays as deep as on a pill.',
+          'Cam, üstünde durduğu öğenin köşelerini alır. Bir `rounded-*` sınıfı ekle; mercek, kenarı ve gölgesi onu izler, bükülme haptaki kadar derin kalır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('Clear bends the page; tinted uses the background colour.', 'Clear sayfayı büker; tinted arka plan rengini kullanır.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg' | 'xl'", default: "'md'", description: t('Height 32, 40, 48 or 64 px.', 'Yükseklik 32, 40, 48 ya da 64 px.') },
+          { name: 'icon', type: 'ReactNode', description: t('An icon element (e.g. a lucide-react icon).', 'Bir ikon öğesi (ör. lucide-react ikonu).') },
+          { name: 'iconPosition', type: "'start' | 'end'", default: "'end'", description: t('Which side the icon sits on.', 'İkonun hangi tarafta durduğu.') },
+          { name: 'tint', type: 'number', default: '0.6', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: renk tonunun arkayı ne kadar örttüğü (0–1).') },
+          { name: 'asChild', type: 'boolean', default: 'false', description: t('Put the glass on the single child element instead of a `<button>`.', 'Camı `<button>` yerine tek çocuk öğeye koy.') },
+          { name: '…rest', type: 'button attributes', description: t('Passed to the element (`onClick`, `disabled`, `type`…).', 'Öğeye aktarılır (`onClick`, `disabled`, `type`…).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A real `<button>` (or your own element with `asChild`): focus, Enter and Space work as usual.', 'Gerçek bir `<button>` (ya da `asChild` ile kendi öğen): odak, Enter ve Space her zamanki gibi çalışır.'),
+          t('The glass canvas is `aria-hidden`; only your label is announced.', 'Cam tuvali `aria-hidden`; yalnız senin etiketin okunur.'),
+          t('Icon-only buttons need an `aria-label`.', 'Yalnız ikonlu butonlar `aria-label` ister.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'action-button',
+    group: 'components',
+    title: t('Action Button', 'Action Button'),
+    name: 'GlassActionButton',
+    description: t(
+      'A button for one async action. Its arrow floats apart as a glass droplet; press it and the droplet melts into the body, and stays.',
+      'Tek bir asenkron eylem için buton. Oku ayrı bir cam damlası olarak durur; basınca damla gövdeye karışır ve öyle kalır.',
+    ),
+    verb: t('Merge', 'Birleş'),
+    signature: t('The arrow is a droplet: press it and it melts in for good.', 'Ok bir damla: basınca gövdeye karışır ve öyle kalır.'),
+    hero: 'glass-action-button-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('One async commit whose result belongs on the button: Deploy, Publish, Add to cart, Subscribe.', 'Sonucu butonun üstünde görünmesi gereken tek bir asenkron eylem: Yayınla, Gönder, Sepete ekle, Abone ol.'),
+          t('Actions that stay done: the merged "Deployed ✓" is the new state of the page.', 'Bir kez yapılınca öyle kalan eylemler: birleşmiş "Deployed ✓" sayfanın yeni durumudur.'),
+        ],
+        avoid: [
+          t('Plain links and instant actions: use GlassButton.', 'Sıradan bağlantılar ve anlık eylemler: GlassButton kullan.'),
+          t('Toggling back and forth between two states: use GlassTabs.', 'İki durum arasında gidip gelmek: GlassTabs kullan.'),
+          t('More than one per screen: the droplet is the kit\'s one gooey effect, keep it special.', 'Ekran başına birden fazla: damla setin tek yapışkan efekti, özel kalsın.'),
+        ],
+      },
+      { type: 'install', item: 'action-button' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassActionButton } from '@/components/liquid-glass'
+
+<GlassActionButton
+  material="tinted"
+  className="bg-neutral-900 text-white"
+  pendingLabel="Deploying"
+  successLabel="Deployed"
+  onAction={deploy} // return the promise
+>
+  Deploy
+</GlassActionButton>`,
+      },
+      h('The flow', 'Akış'),
+      {
+        type: 'list',
+        items: [
+          t('**Idle.** The arrow floats apart from the body as a separate glass droplet.', '**Boşta.** Ok, gövdeden ayrı bir cam damlası olarak durur.'),
+          t('**Press.** The droplet stretches back on a gooey bridge and melts into the body.', '**Bas.** Damla yapışkan bir köprüyle geri uzanır ve gövdeye karışır.'),
+          t('**Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.', '**Bekleme.** Tek gövde; etiket `pendingLabel`\'a dönüşür ve okun yerinde bir döner simge, `onAction`\'ın döndürdüğü söz sonuçlanana dek döner.'),
+          t('**Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. `resetAfter` vermezsen öyle kalır.'),
+          t('**Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.', '**Hata.** `onAction` hata fırlatırsa damla yeniden ayrılır ve hata `onActionError`\'a gider.'),
+        ],
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-action-button-reset', title: t('Reset after success, and a failing action', 'Başarıdan sonra sıfırlama ve başarısız bir eylem') },
+      {
+        type: 'p',
+        text: t(
+          'With `resetAfter={2400}` the droplet splits off again 2.4 seconds after a success, ready for the next press. Any icon element can be the droplet with `icon`; the spinner and the check are built in.',
+          '`resetAfter={2400}` ile damla, başarıdan 2,4 saniye sonra yeniden ayrılır ve bir sonraki basışa hazır olur. `icon` ile herhangi bir ikon damla olabilir; döner simge ve onay işareti hazır gelir.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'ReactNode', description: t('The idle label, and the button\'s accessible name.', 'Boştaki etiket; butonun erişilebilir adı da budur.') },
+          { name: 'onAction', type: '() => unknown', description: t('Required. Runs on press; return a promise to stay pending until it settles.', 'Zorunlu. Basınca çalışır; sonuçlanana dek beklemede kalmak için bir söz (promise) döndür.') },
+          { name: 'onActionError', type: '(error) => void', description: t('Called when `onAction` throws; the button returns to idle.', '`onAction` hata fırlatınca çağrılır; buton boşta durumuna döner.') },
+          { name: 'pendingLabel', type: 'ReactNode', default: 'children', description: t('Label while `onAction` runs.', '`onAction` çalışırken etiket.') },
+          { name: 'successLabel', type: 'ReactNode', default: 'children', description: t('Label after it succeeds.', 'Başarıdan sonraki etiket.') },
+          { name: 'resetAfter', type: 'number', default: '0', description: t('Milliseconds before splitting off again after a success. `0` stays merged.', 'Başarıdan sonra yeniden ayrılmadan önceki milisaniye. `0` birleşik kalır.') },
+          { name: 'icon', type: 'ReactNode', default: 'arrow', description: t('The droplet\'s idle icon.', 'Damlanın boştaki ikonu.') },
+          { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('As on GlassButton.', 'GlassButton\'daki gibi.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Height 32, 40 or 48 px.', 'Yükseklik 32, 40 ya da 48 px.') },
+          { name: '…rest', type: 'button attributes', description: t('Passed to the `<button>` (not `onClick`: use `onAction`).', '`<button>`\'a aktarılır (`onClick` değil: `onAction` kullan).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A real `<button>`; Enter and Space run the action.', 'Gerçek bir `<button>`; Enter ve Space eylemi çalıştırır.'),
+          t('Pending sets `aria-busy`, and pending or done sets `aria-disabled` instead of `disabled`, so focus stays on the button.', 'Bekleme `aria-busy` koyar; bekleme ya da bitmiş durum `disabled` yerine `aria-disabled` koyar, böylece odak butonda kalır.'),
+          t('A `role="status"` region announces the pending and success labels.', 'Bir `role="status"` bölgesi bekleme ve başarı etiketlerini duyurur.'),
+          t('With reduced motion the droplet and labels switch without animation.', 'Hareketi azalt açıksa damla ve etiketler animasyonsuz değişir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'tabs',
+    group: 'components',
+    title: t('Tabs', 'Tabs'),
+    name: 'GlassTabs',
+    description: t('A segmented control whose selection travels as a glass lens.', 'Seçimi bir cam mercek olarak yolculuk eden bölümlü seçici.'),
+    verb: t('Travel', 'Kay'),
+    signature: t('The selection travels as a lens that magnifies what it passes.', 'Seçim, geçtiğini büyüten bir mercek olarak yolculuk eder.'),
+    hero: 'glass-tabs-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Switching a view or a range in place: Day / Week / Month, List / Grid.', 'Yerinde görünüm ya da aralık değiştirmek: Gün / Hafta / Ay, Liste / Izgara.'),
+          t('Two to five short options.', 'İki ile beş arası kısa seçenek.'),
+        ],
+        avoid: [
+          t('Navigating between pages: use links.', 'Sayfalar arası gezinme: bağlantı kullan.'),
+          t('Long lists of options: use a select.', 'Uzun seçenek listeleri: select kullan.'),
+        ],
+      },
+      { type: 'install', item: 'tabs' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassTabs } from '@/components/liquid-glass'
+
+const [view, setView] = useState('week')
+
+<GlassTabs
+  aria-label="Range"
+  value={view}
+  onValueChange={setView}
+  options={[
+    { value: 'day', label: 'Day' },
+    { value: 'week', label: 'Week' },
+  ]}
+/>`,
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-tabs-icons', title: t('With icons', 'İkonlarla') },
+      {
+        type: 'p',
+        text: t(
+          'When the selection changes, the highlight leaves its option, becomes clear glass that bends the labels it passes, and settles as a flat pill again. Press and hold to open the lens in place; drag and release to choose.',
+          'Seçim değişince vurgu seçeneğinden ayrılır, geçtiği etiketleri büken berrak bir cama dönüşür ve yine düz bir hap olarak oturur. Basılı tutunca mercek yerinde açılır; sürükleyip bırakarak seçersin.',
+        ),
+      },
+      h('Your own markup', 'Kendi işaretlemen'),
+      {
+        type: 'p',
+        text: t(
+          'Already have tabs (Radix Tabs, your own radio group)? Put the lens on them with `GlassLens`, which ships with GlassTabs:',
+          'Zaten sekmelerin mi var (Radix Tabs, kendi radyo grubun)? Merceği GlassTabs ile birlikte gelen `GlassLens` ile onlara koy:',
+        ),
+      },
+      {
+        type: 'list',
+        items: [
+          t('The container is `relative isolate` and `<GlassLens value={value} />` is its first child.', 'Kap `relative isolate` olur ve `<GlassLens value={value} />` ilk çocuğudur.'),
+          t('Options carry `role="radio"` or `role="tab"` (Radix Tabs works as is)', 'Seçenekler `role="radio"` ya da `role="tab"` taşır (Radix Tabs olduğu gibi çalışır)'),
+          t(
+            'The selected option contains the resting highlight, marked `data-glass-highlight`. Its background colour is the lens colour and its corners are the lens corners: `rounded-full` travels as a pill, `rounded-lg` as a rounded rectangle.',
+            'Seçili seçenek, `data-glass-highlight` ile işaretli duran vurguyu içerir. Arka plan rengi merceğin rengi, köşeleri merceğin köşeleridir: `rounded-full` hap olarak, `rounded-lg` köşeleri yuvarlatılmış dikdörtgen olarak kayar.',
+          ),
+          t('Hide the highlight while the lens moves: `[[data-glass-moving]_&]:opacity-0`.', 'Mercek hareket ederken vurguyu gizle: `[[data-glass-moving]_&]:opacity-0`.'),
+        ],
+      },
+      { type: 'demo', id: 'glass-tabs-custom', title: t('A billing switch with GlassLens', 'GlassLens ile bir ödeme seçici') },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'options', type: '{ value, label, icon?, aria-label? }[]', description: t('The segments.', 'Bölümler.') },
+          { name: 'value', type: 'string | null', description: t('Selected value (controlled).', 'Seçili değer (kontrollü).') },
+          { name: 'onValueChange', type: '(value) => void', description: t('Called with the new value.', 'Yeni değerle çağrılır.') },
+          { name: 'aria-label', type: 'string', description: t('Required: names the group for screen readers.', 'Zorunlu: grubu ekran okuyuculara adlandırır.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Segment height 28, 32 or 40 px.', 'Bölüm yüksekliği 28, 32 ya da 40 px.') },
+          { name: 'highlightClassName', type: 'string', default: "'bg-white dark:bg-neutral-700'", description: t('Classes of the resting pill; its background is the lens colour.', 'Duran hapın sınıfları; arka planı merceğin rengidir.') },
+          { name: 'GlassLens value', type: 'string | number | null', description: t('Your own markup: the selected value; any change moves the lens.', 'Kendi işaretlemen: seçili değer; her değişiklik merceği taşır.') },
+          { name: 'GlassLens disabled', type: 'boolean', default: 'false', description: t('No lens; the highlight simply jumps.', 'Mercek yok; vurgu doğrudan yer değiştirir.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('Radiogroup pattern: one tab stop, arrow keys move the selection.', 'Radiogroup kalıbı: tek sekme durağı, ok tuşları seçimi taşır.'),
+          t('Icon-only options take an `aria-label` each.', 'Yalnız ikonlu seçenekler kendi `aria-label`\'ını alır.'),
+          t('With reduced motion the pill simply jumps.', 'Hareketi azalt açıksa hap doğrudan yer değiştirir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'badge',
+    group: 'components',
+    title: t('Badge', 'Badge'),
+    name: 'GlassBadge',
+    description: t('A small glass badge with its text flowing through the lens.', 'İçinden yazısı akan küçük bir cam rozet.'),
+    verb: t('Flow', 'Ak'),
+    signature: t('Text flows through the glass; the rim bends each letter.', 'Yazı camın içinden akar; kenar her harfi büker.'),
+    hero: 'glass-badge-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [t('One short word on a card or a tab: New, Beta, Live.', 'Bir kartta ya da sekmede tek kısa kelime: Yeni, Beta, Canlı.')],
+        avoid: [
+          t('Counts or status that must be read at a glance: the text is moving.', 'Bir bakışta okunması gereken sayı ya da durum: yazı hareket ediyor.'),
+          t('Several on one screen: the motion competes.', 'Bir ekranda birkaç tane: hareketler yarışır.'),
+        ],
+      },
+      { type: 'install', item: 'badge' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassBadge } from '@/components/liquid-glass'
+
+<div className="relative">
+  <Card />
+  <GlassBadge className="absolute -top-2 -right-2">New</GlassBadge>
+</div>`,
+      },
+      h('Behaviour', 'Davranış'),
+      {
+        type: 'p',
+        text: t(
+          'The text is drawn beneath the glass, so the rim bends the letters as they pass. Whatever sits behind the badge shows through, softly blurred. Hovering the badge\'s positioned parent speeds the flow up. Colour it with `bg-*` and `text-*`.',
+          'Yazı camın altında çizilir; kenar, geçen harfleri büker. Rozetin arkasındaki her şey yumuşakça bulanık görünür. Rozetin konumlu atasının üstüne gelince akış hızlanır. `bg-*` ve `text-*` ile renklendir.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-badge-colors', title: t('Your colours', 'Kendi renklerin') },
+      {
+        type: 'p',
+        text: t(
+          'The badge takes its colour from its own classes: `bg-*` is the glass, `text-*` the text that flows through it, and `dotColor` the square between repeats. Hover speeds up only the badge whose positioned parent is under the pointer.',
+          'Rozet rengini kendi sınıflarından alır: `bg-*` camın, `text-*` içinden akan yazının, `dotColor` ise tekrarlar arasındaki karenin rengidir. İmleç hangi konumlu atanın üstündeyse yalnız onun rozeti hızlanır.',
+        ),
+      },
+      { type: 'demo', id: 'glass-badge-palette', title: t('A palette', 'Bir palet') },
+      {
+        type: 'p',
+        text: t(
+          'Any `bg-*` works as the glass. Pair it with a `text-*` that reads on it (dark text on amber, white on the rest) and a `dotColor` a shade away from the text. They sit side by side here only to compare: in a product, keep to one badge per view.',
+          'Her `bg-*` cam rengi olur. Yanına üstünde okunan bir `text-*` (amberde koyu, diğerlerinde beyaz yazı) ve yazıdan bir ton farklı bir `dotColor` koy. Burada yalnız karşılaştırmak için yan yanalar: üründe ekran başına tek rozet kullan.',
+        ),
+      },
+      { type: 'demo', id: 'glass-badge-product', title: t('On a product, for a sale', 'Bir ürünün üstünde, indirim için') },
+      {
+        type: 'p',
+        text: t(
+          'A rose badge hangs off the corner of the cover. Half of it is over the yellow and half over the page, so the glass shows both.',
+          'Gül rengi bir rozet kapağın köşesinden taşar. Yarısı sarının, yarısı sayfanın üstündedir; cam ikisini de gösterir.',
+        ),
+      },
+      { type: 'demo', id: 'glass-badge-dock', title: t('On a dock item', 'Bir dock öğesinin üstünde') },
+      {
+        type: 'p',
+        text: t(
+          'Put the badge inside the button and give the button `relative`: the orange badge then speeds up when that item is hovered, not the whole dock.',
+          'Rozeti düğmenin içine koy ve düğmeye `relative` ver: turuncu rozet o zaman bütün dock\'ta değil, yalnız o öğenin üstüne gelince hızlanır.',
+        ),
+      },
+      { type: 'demo', id: 'glass-badge-tint', title: t('Clearer glass over colour', 'Rengin üstünde daha berrak cam') },
+      {
+        type: 'p',
+        text: t(
+          '`tint` is how much of the badge colour covers what is behind it. At the default `0.82` the badge reads as a solid colour; lower it over a colourful backdrop and the backdrop shows in the glass, softly blurred. `speed` is the pace at rest, in loops per second. The badge is 64 px wide by default: widen it with a `w-*` class for a longer word.',
+          '`tint`, rozet renginin arkasında kalanı ne kadar örttüğüdür. Varsayılan `0.82` değerinde rozet düz bir renk gibi okunur; renkli bir zeminde düşürürsen zemin camın içinde yumuşakça bulanık görünür. `speed`, dururkenki hızdır (saniyedeki tur sayısı). Rozet varsayılan olarak 64 px genişliğindedir: daha uzun bir kelime için `w-*` sınıfıyla genişlet.',
+        ),
+      },
+      { type: 'demo', id: 'glass-badge-inline', title: t('Inline, next to a label', 'Satır içinde, bir etiketin yanında') },
+      {
+        type: 'p',
+        text: t(
+          'Without a position class the badge sits in the line like any inline element. Give the row `relative` so the hover that speeds the text up belongs to that row.',
+          'Konum sınıfı vermezsen rozet, satır içi herhangi bir öğe gibi satırda durur. Yazıyı hızlandıran hover o satıra ait olsun diye satıra `relative` ver.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'string', description: t('The text: one short word.', 'Yazı: tek kısa kelime.') },
+          { name: 'dotColor', type: 'string', default: 'currentColor', description: t('Separator colour between repeats.', 'Tekrarlar arasındaki ayracın rengi.') },
+          { name: 'speed', type: 'number', default: '0.4', description: t('Loops per second at rest.', 'Dururken saniyedeki tur sayısı.') },
+          { name: 'tint', type: 'number', default: '0.82', description: t('Opacity of the badge colour over the backdrop.', 'Rozet renginin arka plan üzerindeki opaklığı.') },
+          { name: 'className', type: 'string', description: t('Position and colour (`bg-*`, `text-*`).', 'Konum ve renk (`bg-*`, `text-*`).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('The text is announced once, not as a loop.', 'Yazı döngü olarak değil, bir kez okunur.'),
+          t('With reduced motion the text stands still, centred.', 'Hareketi azalt açıksa yazı ortada durur.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'slide-to-confirm',
+    group: 'components',
+    title: t('Slide to Confirm', 'Slide to Confirm'),
+    name: 'GlassSlideToConfirm',
+    description: t(
+      'A slide-to-confirm track. Drag its glass thumb to the end to run one deliberate action; let go early and it springs back.',
+      'Kaydırarak onaylama rayı. Cam topuzu sona kadar sürükleyince tek bir bilinçli eylem çalışır; erken bırakırsan geri yaylanır.',
+    ),
+    verb: t('Drag', 'Sürükle'),
+    signature: t('Drag the glass thumb to the end to confirm.', 'Cam topuzu sona kadar sürükle, onaylansın.'),
+    hero: 'glass-slide-to-confirm-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A routine action a stray tap must not trigger: send money, pay, unlock, start a shift.', 'Yanlışlıkla dokunuşun tetiklememesi gereken sıradan bir eylem: para gönder, öde, kilidi aç, vardiyayı başlat.'),
+          t('Phone-first surfaces, where a deliberate horizontal gesture replaces a confirm dialog.', 'Bilinçli bir yatay hareketin onay penceresinin yerini aldığı, önce telefon için tasarlanan yüzeyler.'),
+        ],
+        avoid: [
+          t('Easily undone actions: use GlassButton.', 'Kolayca geri alınan eylemler: GlassButton kullan.'),
+          t('An async action a single press may start: use GlassActionButton.', 'Tek basışla başlayabilecek asenkron bir eylem: GlassActionButton kullan.'),
+          t('Consequences people must read first: use a dialog.', 'Önce okunması gereken sonuçlar: bir onay penceresi kullan.'),
+        ],
+      },
+      { type: 'install', item: 'slide-to-confirm' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassSlideToConfirm } from '@/components/liquid-glass'
+
+<GlassSlideToConfirm
+  pendingLabel="Sending"
+  successLabel="Sent"
+  errorLabel="Not sent, slide to retry"
+  onConfirm={send} // return the promise
+>
+  Slide to send $240
+</GlassSlideToConfirm>`,
+      },
+      h('The flow', 'Akış'),
+      {
+        type: 'list',
+        items: [
+          t('**Idle.** The thumb rests at the start as frosted white glass; the instruction is written in the track.', '**Boşta.** Topuz başta buzlu beyaz cam olarak durur; yönerge rayın içinde yazar.'),
+          t('**Drag.** The thumb turns to clear glass and bends the fill and the label it passes; its chevron stays in place, in the fill\'s text colour. It stays round while held, and speed stretches it along its travel. The fill trails a moment behind, joined to the thumb by a bridge that thins as they pull apart, and the track and the fill swell around the thumb like a membrane. Pushed past the end the track stretches like a rubber band; pushed against the start the wall gives a little. The thumb stays round at both.', '**Sürükle.** Topuz berrak cama dönüşür, geçtiği dolguyu ve etiketi büker; oku yerinde kalır ve dolgunun yazı rengini alır. Tutulurken yuvarlak kalır, hız onu gittiği yönde uzatır. Dolgu bir an geriden gelir; topuza, aralarındaki mesafe açıldıkça incelen bir köprüyle bağlıdır. Ray ve dolgu da topuzun çevresinde bir zar gibi şişer. Sonu aşacak kadar itilince ray lastik gibi uzar; başa doğru itilince duvar biraz esner. Topuz iki uçta da yuvarlak kalır.'),
+          t('**Let go early.** Below `threshold` the thumb springs back; the fill\'s tail follows and is absorbed after it.', '**Erken bırak.** `threshold` altında topuz geri yaylanır; dolgunun kuyruğu arkasından gelir ve emilir.'),
+          t('**Pending.** Past the threshold the thumb lands at the end, the track draws in to a ring around it and `pendingLabel` appears beside it while a spinner takes the chevron\'s place, until the promise from `onConfirm` settles.', '**Bekleme.** Eşiği geçince topuz sona oturur, ray onun çevresinde bir halkaya çekilir ve `pendingLabel` yanında belirir, okun yerini bir döner simge alır; `onConfirm`\'in döndürdüğü söz sonuçlanana dek.'),
+          t('**Success.** The white glass takes the fill\'s colour and the chevron\'s stroke bends into a check, beside `successLabel`. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.', '**Başarı.** Beyaz cam dolgunun rengine bürünür, okun çizgisi `successLabel`\'ın yanında bir onay işaretine bükülür. `resetAfter` vermezsen onaylı kalır; verirsen önce ray açılır ve `successLabel` onun kenarıyla birlikte çekilir, topuz ardından hızla başa döner ve başa çarparken hafifçe ezilir.'),
+          t('**Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.', '**Hata.** `onConfirm` hata fırlatırsa ray yeniden açılır, topuz geri döner ve `errorLabel` bir sonraki sürüklemeye dek yönergenin yerini alır.'),
+        ],
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-slide-to-confirm-error', title: t('A coloured fill, and a failing action', 'Renkli dolgu ve başarısız bir eylem') },
+      {
+        type: 'p',
+        text: t(
+          'Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is the label written on it, and the thumb\'s icon while the glass is clear. At rest the thumb is always frosted white glass with a dark icon (a flat white disc without WebGL2). The control fills its container, so set the width on a parent or with `className`.',
+          'Dolguyu `fillClassName` ile renklendir: `bg-*` dolgunun rengi, `text-*` ise üstüne yazılan etiketin ve cam berrakken topuzdaki ikonun rengidir. Topuz dururken her zaman koyu ikonlu buzlu beyaz camdır (WebGL2 yoksa düz beyaz bir disk). Bileşen kabını doldurur; genişliği bir üst öğede ya da `className` ile ver.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'string', description: t('The instruction in the track, and the slider\'s accessible name.', 'Raydaki yönerge; kaydırıcının erişilebilir adı da budur.') },
+          { name: 'onConfirm', type: '() => unknown', description: t('Required. Runs once the thumb reaches the end; return a promise to stay pending until it settles.', 'Zorunlu. Topuz sona varınca bir kez çalışır; sonuçlanana dek beklemede kalmak için bir söz (promise) döndür.') },
+          { name: 'onConfirmError', type: '(error) => void', description: t('Called when `onConfirm` throws; the thumb springs back.', '`onConfirm` hata fırlatınca çağrılır; topuz geri yaylanır.') },
+          { name: 'pendingLabel', type: 'string', description: t('Written beside the spinner while `onConfirm` runs.', '`onConfirm` çalışırken döner simgenin yanında yazar.') },
+          { name: 'successLabel', type: 'string', description: t('Written beside the check after it succeeds.', 'Başarıdan sonra onay işaretinin yanında yazar.') },
+          { name: 'errorLabel', type: 'string', description: t('Replaces the instruction after a failure, until the next slide.', 'Hatadan sonra, bir sonraki sürüklemeye dek yönergenin yerini alır.') },
+          { name: 'threshold', type: 'number', default: '0.9', description: t('Share of the track the thumb must pass before letting go confirms.', 'Bırakınca onaylanması için topuzun geçmesi gereken ray payı.') },
+          { name: 'resetAfter', type: 'number', default: '0', description: t('Milliseconds after a success before the track opens again. `0` stays confirmed.', 'Başarıdan sonra rayın yeniden açılmasından önceki milisaniye. `0` onaylı kalır.') },
+          { name: 'hint', type: 'boolean', default: 'true', description: t('Nudges the thumb every few seconds until it has been touched. Off with reduced motion.', 'Dokunulana dek topuzu birkaç saniyede bir hafifçe iter. Hareketi azalt açıksa kapalıdır.') },
+          { name: 'icon', type: 'ReactNode', default: 'chevron', description: t('The thumb\'s idle icon.', 'Topuzun boştaki ikonu.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Track height 40, 48 or 56 px.', 'Ray yüksekliği 40, 48 ya da 56 px.') },
+          { name: 'fillClassName', type: 'string', default: "'bg-[#3291FF] text-white'", description: t('Classes of the fill: its colour and the colour of the text on it.', 'Dolgunun sınıfları: rengi ve üstündeki yazının rengi.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dims the control and ignores pointer and keyboard.', 'Bileşeni soluklaştırır; imleç ve klavyeyi yok sayar.') },
+          { name: 'className', type: 'string', description: t('Width and position of the track.', 'Rayın genişliği ve konumu.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A real `role="slider"` named by its label, with `aria-valuenow` kept in step with the thumb.', 'Etiketiyle adlandırılan gerçek bir `role="slider"`; `aria-valuenow` topuzla birlikte güncellenir.'),
+          t('Arrow keys move the thumb in tenths, Page Up and Page Down in quarters, Home returns it and End confirms. Holding Space or Enter glides it to the end; letting go early springs it back.', 'Ok tuşları topuzu onda bir, Page Up ve Page Down dörtte bir oynatır; Home geri döndürür, End onaylar. Space ya da Enter basılı tutulunca topuz sona süzülür; erken bırakılırsa geri yaylanır.'),
+          t('A `role="status"` region announces the pending, success and error labels. While pending or confirmed the slider is `aria-disabled`.', 'Bir `role="status"` bölgesi bekleme, başarı ve hata etiketlerini duyurur. Beklemede ya da onaylıyken kaydırıcı `aria-disabled` olur.'),
+          t('Success is never colour alone: the chevron becomes a check and the label is written beside it.', 'Başarı yalnız renkle anlatılmaz: ok onay işaretine dönüşür ve etiket yanına yazılır.'),
+          t('Vertical page scroll still works over the control on touch. With reduced motion each state shows at once.', 'Dokunmatik ekranda bileşenin üstünde dikey kaydırma çalışmaya devam eder. Hareketi azalt açıksa her durum anında gösterilir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'card',
+    group: 'components',
+    title: t('Card', 'Card'),
+    name: 'GlassCard',
+    description: t(
+      'A card made of frosted glass. Your content sits on it; its face blurs and tints whatever lies behind so the text stays readable, and its rim pulls it towards the centre.',
+      'Buzlu camdan bir kart. İçeriğin üstünde durur; yüzü arkasında kalanı bulanıklaştırıp tonlar, yazı okunur kalır; kenarı da onu merkeze doğru çeker.',
+    ),
+    verb: t('Hold', 'Tut'),
+    signature: t('Holds your content; its rim bends what slides behind.', 'İçeriğini tutar; kenarı arkasından kayanı büker.'),
+    hero: 'glass-card-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A small surface of content over colour, imagery or motion: a widget, a now-playing card, a summary.', 'Renk, görsel ya da hareket üstünde küçük bir içerik yüzeyi: bir widget, çalan parça kartı, bir özet.'),
+          t('One or two cards, where what is behind them is part of the design.', 'Arkalarında kalanın tasarımın parçası olduğu bir ya da iki kart.'),
+        ],
+        avoid: [
+          t('Long text and forms: the backdrop shows through. Use a plain card.', 'Uzun metin ve formlar: arka plan görünür. Sade bir kart kullan.'),
+          t('A card on a flat background: there is nothing to bend.', 'Düz bir zemindeki kart: bükülecek bir şey yok.'),
+          t('One clickable action: use GlassButton.', 'Tıklanan tek bir eylem: GlassButton kullan.'),
+        ],
+      },
+      { type: 'install', item: 'card' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassCard } from '@/components/liquid-glass'
+
+<GlassCard className="w-64 p-5">
+  <p className="font-semibold">Wednesday</p>
+  <p className="text-sm opacity-60">Design review · 10:00</p>
+</GlassCard>
+
+// Something moves behind it: repaint what it bends every frame.
+<GlassCard live className="size-44 p-4">…</GlassCard>
+
+// Clearer glass: no frost, less tint.
+<GlassCard blur={0} tint={0.3} className="w-64 p-5">…</GlassCard>`,
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-card-widgets', title: t('Widgets over a wallpaper', 'Bir duvar kâğıdının üstünde widget\'lar') },
+      {
+        type: 'p',
+        text: t(
+          'Over a still backdrop, like the wallpaper here, the card needs no `live`. Like every glass in the kit it repaints only when something changes, and draws nothing at rest. Turn `live` on only when content moves behind the card, as with the rows of colour above: the card then draws every frame while it is on screen.',
+          'Buradaki duvar kâğıdı gibi durağan bir zeminin üstünde kartın `live`a ihtiyacı yok. Setteki her cam gibi yalnız bir şey değişince yeniden boyanır, dururken hiçbir şey çizmez. `live`ı yalnız kartın arkasında bir şey hareket ediyorsa aç (yukarıdaki renk sıraları gibi): kart o zaman ekranda kaldığı sürece her kare çizer.',
+        ),
+      },
+      {
+        type: 'p',
+        text: t(
+          'The rim pulls what is behind towards the card\'s centre, by 6.5% of the viewport, fading over half the card, so type and colour stretch along the edge. The face then frosts the bent picture with a 5 px blur (`blur`) and covers it with a tint (`tint`): 70% white on a light page, 70% black on a dark one. A 1.3 px white line runs inside the rim; there is no colour split or light, only a soft drop shadow. Unlike a button, the card stays still under the pointer: it holds content, it does not swell. Size and padding come from your classes, and the glass takes the card\'s corners: `rounded-[28px]` by default, any `rounded-*` class to change them. Text on clear glass follows the tone the glass ends up (`data-glass-tone`), so it reads on light and dark backdrops. For a coloured card, use `material="tinted"` with a `bg-*` class.',
+          'Kenar, arkada kalanı kartın merkezine doğru çeker (görüntü alanının %6.5\'i kadar) ve bu çekiş kartın yarısı boyunca söner; yazı ve renk kenar boyunca uzar. Ardından yüz, bükülmüş görüntüyü 5 px bulanıklıkla buzlar (`blur`) ve bir tonla örter (`tint`): açık sayfada %70 beyaz, koyu sayfada %70 siyah. Kenarın içinde 1.3 px beyaz bir çizgi uzanır; renk ayrışması ya da ışık yok, yalnız yumuşak bir gölge var. Butondan farklı olarak kart imlecin altında sabit kalır: içerik tutar, şişmez. Boyut ve iç boşluk senin sınıflarından gelir; cam kartın köşelerini alır: varsayılan `rounded-[28px]`, değiştirmek için herhangi bir `rounded-*` sınıfı. Berrak camdaki yazı, camın vardığı tonu izler (`data-glass-tone`); açık ve koyu zeminde okunur. Renkli bir kart için `material="tinted"` ile bir `bg-*` sınıfı kullan.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'ReactNode', description: t('The card\'s content.', 'Kartın içeriği.') },
+          { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('Clear bends what is behind; tinted uses the background colour.', 'Clear arkasında kalanı büker; tinted arka plan rengini kullanır.') },
+          { name: 'tint', type: 'number', default: '0.7', description: t('Clear glass only: how much tint covers the backdrop (0–1): white on a light page, black on a dark one.', 'Yalnız clear: renk tonunun arkayı ne kadar örttüğü (0–1): açık sayfada beyaz, koyu sayfada siyah.') },
+          { name: 'blur', type: 'number', default: '5', description: t('Clear glass only: how much the backdrop is frosted, in px like CSS `blur()`. `0` shows it sharp.', 'Yalnız clear: arkanın ne kadar buzlandığı, CSS `blur()` gibi px. `0` keskin gösterir.') },
+          { name: 'live', type: 'boolean', default: 'false', description: t('Repaint the backdrop every frame, for content that moves behind the card.', 'Kartın arkasında hareket eden içerik için arkayı her karede yeniden boya.') },
+          { name: 'className', type: 'string', description: t('Size, padding, corners (`rounded-*`) and, for tinted glass, colour (`bg-*`).', 'Boyut, iç boşluk, köşeler (`rounded-*`) ve renkli camda renk (`bg-*`).') },
+          { name: '…rest', type: 'div attributes', description: t('Passed to the `<div>` (`role`, `aria-label`, `onClick`…).', '`<div>`\'e aktarılır (`role`, `aria-label`, `onClick`…).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A plain `<div>`: when the card stands for one thing, name it (`role="group"` with an `aria-label`).', 'Sade bir `<div>`: kart tek bir şeyi temsil ediyorsa adlandır (`role="group"` ve bir `aria-label`).'),
+          t('The glass canvas is `aria-hidden`; only your content is read.', 'Cam tuvali `aria-hidden`; yalnız senin içeriğin okunur.'),
+          t('Content that moves behind it should respect reduced motion: the rows above stop.', 'Arkasında hareket eden içerik hareketi azalt tercihine uymalı: yukarıdaki sıralar durur.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'slider',
+    group: 'components',
+    title: t('Slider', 'Slider'),
+    name: 'RangeSlider',
+    description: t(
+      'A range slider with a glass thumb: a small pill at rest that opens into a wide lens while you hold it.',
+      'Cam tutamaklı aralık kaydırıcısı: dururken küçük bir hap, basılı tutunca geniş bir merceğe açılır.',
+    ),
+    verb: t('Slide', 'Kaydır'),
+    signature: t('The thumb opens into a wide lens that bends the track and stretches as it moves.', 'Tutamak, rayı büken ve hareket ederken esneyen geniş bir merceğe açılır.'),
+    hero: 'range-slider',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Picking a value on a continuous range: volume, brightness, opacity.', 'Sürekli bir aralıkta değer seçmek: ses, parlaklık, opaklık.'),
+        ],
+        avoid: [
+          t('Exact numbers the user must type: use a number input.', 'Kullanıcının yazması gereken kesin sayılar: sayı girişi kullan.'),
+          t('Confirming one action: that is Slide to Confirm.', 'Tek bir eylemi onaylamak: o iş Slide to Confirm\'in.'),
+        ],
+      },
+      { type: 'install', item: 'slider' },
+      {
+        type: 'note',
+        text: t(
+          'Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`. The install command adds it; the rest of the kit stays dependency-free.',
+          'Slider, Switch ve Checkbox kendi çizicileriyle çizilir ve `three` paketine ihtiyaç duyar. Kurulum komutu onu ekler; kitin geri kalanı bağımlılıksız kalır.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { RangeSlider } from '@/components/liquid-glass/controls/RangeSlider'
+
+const [volume, setVolume] = useState(60)
+
+<RangeSlider label="Volume" value={volume} onChange={setVolume} />`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'Drag the glass, or press the track to bring it there. While held, the pill swells into a clear lens that bends the track and the fill beneath it, and squashes and stretches with its speed; released, it springs back to the small pill.',
+          'Camı sürükle ya da raya basıp oraya getir. Basılı tutulduğunda hap, altındaki rayı ve dolguyu büken berrak bir merceğe şişer, hızına göre basılıp esner; bırakınca yay gibi küçük hapa döner.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'range-slider-colors', title: t('Colours', 'Renkler') },
+      {
+        type: 'p',
+        text: t(
+          '`color` is the filled part of the track; without it the slider is the kit\'s blue. The thumb stays white at rest and clear glass while held.',
+          '`color` rayın dolu kısmıdır; verilmezse kaydırıcı kitin mavisidir. Tutamak dururken beyaz, basılıyken berrak cam kalır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'value', type: 'number', default: '50', description: t('Current value.', 'Geçerli değer.') },
+          { name: 'onChange', type: '(value: number) => void', description: t('Called with the new value.', 'Yeni değerle çağrılır.') },
+          { name: 'min / max / step', type: 'number', default: '0 / 100 / 1', description: t('The range and its step.', 'Aralık ve adımı.') },
+          { name: 'label', type: 'string', default: "'Volume'", description: t('Label above the track; an empty string hides it.', 'Rayın üstündeki etiket; boş dize gizler.') },
+          { name: 'showValue', type: 'boolean', default: 'true', description: t('Shows the value next to the label.', 'Değeri etiketin yanında gösterir.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg' | 'xl'", default: "'md'", description: t('Track height 8, 12, 18 or 26 px; the glass scales with it.', 'Ray yüksekliği 8, 12, 18 ya da 26 px; cam onunla ölçeklenir.') },
+          { name: 'startIcon / endIcon', type: "IconName | 'none'", default: "'none'", description: t('Icons at either end of the track.', 'Rayın iki ucundaki ikonlar.') },
+          { name: 'color', type: 'string', default: "'#3291FF'", description: t('The filled part of the track: a hex, `rgb()` or named colour, not a CSS variable.', 'Rayın dolu kısmı: hex, `rgb()` ya da adlandırılmış bir renk; CSS değişkeni olmaz.') },
+          { name: 'theme', type: "'light' | 'dark'", description: t('Overrides the page theme for this slider.', 'Bu kaydırıcı için sayfa temasını ezer.') },
+          { name: 'restFrost', type: 'number', default: '1', description: t('The thumb at rest: 1 = a white pill, 0 = clear glass. Held, it is always clear glass.', 'Dururken tutamak: 1 = beyaz hap, 0 = berrak cam. Basılıyken hep berrak cam.') },
+          { name: 'refraction', type: 'number', default: '37', description: t('How far the lens bends what lies beneath.', 'Merceğin altındakini ne kadar büktüğü.') },
+          { name: 'dispersion / rimIntensity / magnification', type: 'number', default: '0.12 / 0.55 / 0', description: t('Colour fringing, rim light and zoom of the lens.', 'Merceğin renk saçılması, kenar ışığı ve büyütmesi.') },
+          { name: 'motionStretch / motionSmoothing', type: 'number', default: '3 / 30', description: t('Squash and stretch with speed; how tightly the glass follows.', 'Hıza göre basılıp esneme; camın ne kadar sıkı izlediği.') },
+          { name: 'pressSpeed / pressBounce', type: 'number', default: '16 / 0.4', description: t('The spring that opens and closes the lens.', 'Merceği açıp kapatan yay.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A native range input does the work: arrow keys, Home, End and Page Up / Down, and screen readers announce the value.', 'İşi yerel bir range girişi yapar: ok tuşları, Home, End ve Page Up / Down; ekran okuyucular değeri okur.'),
+          t('The `label` names the input.', '`label` girişi adlandırır.'),
+          t('With reduced motion the glass follows without springs.', 'Hareketi azalt açıksa cam yaysız izler.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'switch',
+    group: 'components',
+    title: t('Switch', 'Switch'),
+    name: 'Switch',
+    description: t(
+      'An on/off toggle whose knob swells into a clear lens while it crosses the track.',
+      'Topuzu rayı geçerken berrak bir merceğe şişen aç/kapa anahtarı.',
+    ),
+    verb: t('Flip', 'Çevir'),
+    signature: t('The knob swells into clear glass as it crosses, then settles white.', 'Topuz geçerken berrak cama şişer, sonra beyaz olarak oturur.'),
+    hero: 'switch',
+    blocks: [
+      {
+        type: 'when',
+        use: [t('A setting that takes effect at once: Wi-Fi, notifications, dark mode.', 'Hemen etkili olan bir ayar: Wi-Fi, bildirimler, koyu mod.')],
+        avoid: [
+          t('A choice that is saved later with a form: use Checkbox.', 'Sonradan formla kaydedilen bir seçim: Checkbox kullan.'),
+          t('More than two states: use Tabs.', 'İkiden fazla durum: Tabs kullan.'),
+        ],
+      },
+      { type: 'install', item: 'switch' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { Switch } from '@/components/liquid-glass/controls/Switch'
+
+const [on, setOn] = useState(false)
+
+<Switch label="Notifications" description="Banners and sounds" checked={on} onChange={setOn} />`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'Tap to flip, or hold the knob and drag it across. Needs `three`, like Slider.',
+          'Dokununca çevrilir; ya da topuzu tutup karşıya sürükle. Slider gibi `three` gerektirir.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'switch-colors', title: t('Colours', 'Renkler') },
+      {
+        type: 'p',
+        text: t(
+          '`color` is the track while on; without it the switch is the kit\'s blue. The knob stays white. Without `onChange` a switch keeps its own state, starting from `checked`.',
+          '`color` açıkken rayın rengidir; verilmezse anahtar kitin mavisidir. Topuz beyaz kalır. `onChange` vermezsen anahtar, `checked` ile başlayıp kendi durumunu tutar.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'checked', type: 'boolean', default: 'false', description: t('On or off.', 'Açık ya da kapalı.') },
+          { name: 'onChange', type: '(checked: boolean) => void', description: t('Called with the new state.', 'Yeni durumla çağrılır.') },
+          { name: 'label', type: 'string', default: "'Notifications'", description: t('Text beside the switch; an empty string leaves the switch alone.', 'Anahtarın yanındaki metin; boş dize yalnız anahtarı bırakır.') },
+          { name: 'description', type: 'string', description: t('A second, quieter line under the label.', 'Etiketin altında ikinci, daha sessiz bir satır.') },
+          { name: 'labelSide', type: "'left' | 'right'", default: "'right'", description: t('Which side the label sits on.', 'Etiketin hangi yanda durduğu.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Track height 22, 28 or 36 px.', 'Ray yüksekliği 22, 28 ya da 36 px.') },
+          { name: 'color', type: 'string', default: "'#3291FF'", description: t('The track while on: a hex, `rgb()` or named colour, not a CSS variable.', 'Açıkken rayın rengi: hex, `rgb()` ya da adlandırılmış bir renk; CSS değişkeni olmaz.') },
+          { name: 'theme', type: "'light' | 'dark'", description: t('Overrides the page theme for this switch.', 'Bu anahtar için sayfa temasını ezer.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dimmed and not interactive.', 'Soluk ve etkileşimsiz.') },
+          { name: 'lensScale', type: 'number', default: '1.55', description: t('Size of the travelling lens relative to the resting knob.', 'Yolculuk eden merceğin duran topuza göre boyutu.') },
+          { name: 'refraction / knobBounce', type: 'number', default: '26 / 0.3', description: t('How far the lens bends the track; how much the knob overshoots.', 'Merceğin rayı ne kadar büktüğü; topuzun ne kadar taştığı.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A `<button role="switch">` with `aria-checked`: Space and Enter flip it.', '`aria-checked` taşıyan bir `<button role="switch">`: Space ve Enter çevirir.'),
+          t('The `label` is a real `<label>` tied to the button.', '`label`, butona bağlı gerçek bir `<label>` öğesidir.'),
+          t('With reduced motion the knob simply jumps.', 'Hareketi azalt açıksa topuz doğrudan yer değiştirir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'checkbox',
+    group: 'components',
+    title: t('Checkbox', 'Checkbox'),
+    name: 'Checkbox',
+    description: t(
+      'A checkbox under a cap of clear glass: the box and its mark are always seen through the lens.',
+      'Berrak bir cam kapağın altındaki onay kutusu: kutu ve işareti hep merceğin içinden görünür.',
+    ),
+    verb: t('Tick', 'İşaretle'),
+    signature: t('Always glass: the mark draws itself beneath a clear cap that swells when pressed.', 'Hep cam: işaret, basınca şişen berrak bir kapağın altında kendini çizer.'),
+    hero: 'checkbox',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Choosing any number of items in a list or a form.', 'Bir listede ya da formda istediğin kadar öğe seçmek.'),
+          t('Agreeing to something that is submitted later.', 'Sonradan gönderilecek bir şeyi onaylamak.'),
+        ],
+        avoid: [
+          t('A setting that takes effect at once: use Switch.', 'Hemen etkili olan bir ayar: Switch kullan.'),
+          t('One choice out of several: use Tabs.', 'Birkaç seçenekten biri: Tabs kullan.'),
+        ],
+      },
+      { type: 'install', item: 'checkbox' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { Checkbox } from '@/components/liquid-glass/controls/Checkbox'
+
+const [remember, setRemember] = useState(true)
+
+<Checkbox label="Remember this device" checked={remember} onChange={setRemember} />`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The glass cap is there at rest, not only while pressed. Needs `three`, like Slider.',
+          'Cam kapak yalnız basılıyken değil, dururken de oradadır. Slider gibi `three` gerektirir.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'checkbox-colors', title: t('Colours', 'Renkler') },
+      {
+        type: 'p',
+        text: t(
+          '`color` is the box while checked; without it the checkbox is the kit\'s blue. The mark stays white.',
+          '`color` işaretliyken kutunun rengidir; verilmezse onay kutusu kitin mavisidir. İşaret beyaz kalır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'checked', type: 'boolean', default: 'true', description: t('Checked or not.', 'İşaretli ya da değil.') },
+          { name: 'onChange', type: '(checked: boolean) => void', description: t('Called with the new state.', 'Yeni durumla çağrılır.') },
+          { name: 'label', type: 'string', default: "'Remember this device'", description: t('Text beside the box; an empty string leaves the box alone.', 'Kutunun yanındaki metin; boş dize yalnız kutuyu bırakır.') },
+          { name: 'description', type: 'string', description: t('A second, quieter line under the label.', 'Etiketin altında ikinci, daha sessiz bir satır.') },
+          { name: 'shape', type: "'rounded' | 'circle'", default: "'rounded'", description: t('A rounded square or a circle.', 'Köşeleri yuvarlak kare ya da daire.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Box size 18, 22 or 28 px.', 'Kutu boyutu 18, 22 ya da 28 px.') },
+          { name: 'color', type: 'string', default: "'#3291FF'", description: t('The box while checked: a hex, `rgb()` or named colour, not a CSS variable.', 'İşaretliyken kutunun rengi: hex, `rgb()` ya da adlandırılmış bir renk; CSS değişkeni olmaz.') },
+          { name: 'theme', type: "'light' | 'dark'", description: t('Overrides the page theme for this checkbox.', 'Bu onay kutusu için sayfa temasını ezer.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dimmed and not interactive.', 'Soluk ve etkileşimsiz.') },
+          { name: 'swell', type: 'number', default: '1.18', description: t('How much the cap grows while pressed.', 'Kapağın basılıyken ne kadar büyüdüğü.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A `<button role="checkbox">` with `aria-checked`: Space toggles it.', '`aria-checked` taşıyan bir `<button role="checkbox">`: Space ile işaretlenir.'),
+          t('The `label` is a real `<label>` tied to the button.', '`label`, butona bağlı gerçek bir `<label>` öğesidir.'),
+          t('With reduced motion the mark and the cap change without springs.', 'Hareketi azalt açıksa işaret ve kapak yaysız değişir.'),
+        ],
+      },
+    ],
+  },
+]
+
+export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
+
+/** The components, numbered in reading order (01, 02, …). */
+export const CATALOG = PAGES.filter((p) => p.group === 'components')
+
+// ── Releases ────────────────────────────────────────────────────────────────
+// Newest first. One list feeds the sidebar card, the New pills, each component's latest
+// change, /changelog and changelog.md, so they never disagree. Versions have two levels:
+// x.y is a version (announced when it adds a component), x.y.z its patch releases.
+
+export type ChangeKind = 'new' | 'improved' | 'fixed' | 'removed'
+
+export type Change = {
+  kind: ChangeKind
+  /** The docs page (slug) the change is about, when it is about one. */
+  page?: string
+  text: L
+}
+
+export type Release = {
+  version: string
+  /** ISO date. */
+  date: string
+  title: L
+  changes: Change[]
+}
+
+export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
+
+export const RELEASES: Release[] = [
+  {
+    version: '1.3.10',
+    date: '2026-11-19',
+    title: t('Dark text on a light badge.', 'Açık renkli rozette koyu yazı.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'badge',
+        text: t(
+          'A `text-*` class on the badge now always wins over its built-in white. Dark text on a light badge stayed white before: the Live badge in the examples was white on white.',
+          'Rozete verilen `text-*` sınıfı artık yerleşik beyazı her zaman ezer. Açık renkli rozette koyu yazı önceden beyaz kalıyordu: örneklerdeki Live rozeti beyaz üstüne beyazdı.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.9',
+    date: '2026-11-19',
+    title: t('Shorter URLs, without the glass- prefix.', 'glass- öneki olmadan, daha kısa URL\'ler.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Component pages and registry items lose the `glass-` prefix: `/docs/button`, `/r/button.json`. The old addresses redirect.',
+          'Bileşen sayfaları ve registry öğeleri `glass-` önekini bıraktı: `/docs/button`, `/r/button.json`. Eski adresler yönlendirilir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'tabs',
+        text: t('The icons example uses the plain lens, with no colour of its own.', 'İkonlu örnek artık kendi rengi olmayan sade merceği kullanıyor.'),
+      },
+    ],
+  },
+  {
+    version: '1.3.8',
+    date: '2026-11-19',
+    title: t('Your colour on Slider, Switch and Checkbox.', 'Slider, Switch ve Checkbox\'ta kendi rengin.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slider',
+        text: t('A `color` prop for the filled part of the track. The examples are now the slider in a few colours, nothing else.', 'Rayın dolu kısmı için `color` prop\'u. Örnekler artık yalnızca birkaç renkte kaydırıcı.'),
+      },
+      {
+        kind: 'improved',
+        page: 'switch',
+        text: t('A `color` prop for the track while on. The examples are now the switch in a few colours, nothing else.', 'Açıkken rayın rengi için `color` prop\'u. Örnekler artık yalnızca birkaç renkte anahtar.'),
+      },
+      {
+        kind: 'improved',
+        page: 'checkbox',
+        text: t('A `color` prop for the box while checked. The examples are now the checkbox in a few colours, nothing else.', 'İşaretliyken kutunun rengi için `color` prop\'u. Örnekler artık yalnızca birkaç renkte onay kutusu.'),
+      },
+    ],
+  },
+  {
+    version: '1.3.7',
+    date: '2026-11-19',
+    title: t('Badges in more colours.', 'Daha çok renkte rozetler.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'badge',
+        text: t(
+          'Three more examples: a palette of six colours, a rose sale badge on a product and an orange badge on a dock item.',
+          'Üç örnek daha: altı renkli bir palet, bir ürünün üstünde gül rengi indirim rozeti ve bir dock öğesinin üstünde turuncu rozet.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.6',
+    date: '2026-11-19',
+    title: t('Glass sees hairlines.', 'Cam ince çizgileri görür.'),
+    changes: [
+      {
+        kind: 'fixed',
+        text: t(
+          'Clear glass now bends 1 px lines behind it (dividers, grid lines). They were left out of the picture, so the glass looked filled over a fine grid.',
+          'Berrak cam artık arkasındaki 1 piksellik çizgileri (ayraçlar, ızgara çizgileri) de büker. Bunlar görüntüye girmiyordu; ince bir ızgaranın üstünde cam dolu görünüyordu.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'The Play example is fully clear (`tint={0}`): only the bent grid shows through.',
+          'Play örneği tamamen şeffaf (`tint={0}`): içinden yalnızca bükülen ızgara görünür.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.5',
+    date: '2026-11-19',
+    title: t('One light for every glass.', 'Bütün camlarda tek ışık.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The rim light leans towards the cursor on Tabs, Badge, Slider, Switch and Checkbox too, as it does on Button. Card stays unlit.',
+          'Kenar ışığı artık Tabs, Badge, Slider, Switch ve Checkbox\'ta da Button\'daki gibi imlece doğru yatar. Card ışıksız kalır.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.4',
+    date: '2026-11-19',
+    title: t('Widgets made of Card.', 'Card\'dan yapılmış widget\'lar.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'A new example in place of the notification: an activity ring, a battery list and a now-playing card over a still wallpaper of plain CSS. It scales down to fit a phone.',
+          'Bildirim örneğinin yerine yeni bir örnek: düz CSS\'ten durağan bir duvar kâğıdının üstünde bir hareket halkası, bir pil listesi ve çalan parça kartı. Telefona sığacak şekilde küçülür.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.3',
+    date: '2026-11-19',
+    title: t('More examples, and news that only means new components.', 'Daha fazla örnek; yenilik artık yalnız yeni bileşen demek.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'No gradients in the examples any more. Backdrops are flat colour and plain DOM: discs under the scrim, ruled lines behind the square corners, a grid drawn cell by cell on the Button page, solid tiles and bands behind the badges, and a stepped edge blur on the Card rows.',
+          'Örneklerde artık gradyan yok. Zeminler düz renk ve sade DOM: örtünün altında diskler, köşeli butonların arkasında yatay çizgiler, Button sayfasında hücre hücre çizilen ızgara, rozetlerin arkasında düz karolar ve bantlar, Card satırlarında kademeli kenar bulanıklığı.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'badge',
+        text: t(
+          'Three examples: your own colours, clearer glass over a colourful backdrop (`tint`, `speed`, a wider badge), and a badge inline next to a label.',
+          'Üç örnek: kendi renklerin, renkli bir zeminde daha berrak cam (`tint`, `speed`, daha geniş rozet) ve bir etiketin yanında satır içi rozet.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'slider',
+        text: t('Examples for the four sizes, a range of its own with `min`, `max` and `step`, icons, and clear glass at rest.', 'Dört boyut, `min`, `max` ve `step` ile kendi aralığı, ikonlar ve dururken berrak cam için örnekler.'),
+      },
+      {
+        kind: 'improved',
+        page: 'switch',
+        text: t('Examples: a settings list with a disabled switch, the three sizes and the label on either side.', 'Örnekler: devre dışı bir anahtar içeren ayar listesi, üç boyut ve iki yandaki etiket.'),
+      },
+      {
+        kind: 'improved',
+        page: 'checkbox',
+        text: t('Examples: a list of choices with descriptions, both shapes in three sizes and a disabled box.', 'Örnekler: açıklamalı bir seçim listesi, üç boyutta iki biçim ve devre dışı bir kutu.'),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Versions have two levels. A version (v1.3) is announced when it adds a component; the fixes and refinements after it are its patch releases (v1.3.1, v1.3.2…), folded under it in the changelog. The site shows the version, the New pill marks only the components of the latest one, and the Updated pill is gone.',
+          'Sürümler artık iki katmanlı. Bir sürüm (v1.3) bileşen eklediğinde duyurulur; ardından gelen düzeltme ve iyileştirmeler onun alt sürümleridir (v1.3.1, v1.3.2…) ve sürüm notlarında onun altında katlanır. Site sürümü gösterir, Yeni etiketi yalnız son sürümün bileşenlerini işaretler, Güncellendi etiketi kalktı.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.2',
+    date: '2026-11-19',
+    title: t('Numbers roll to their new value.', 'Rakamlar yeni değerine kayarak geçiyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'tabs',
+        text: t(
+          'In the Tabs examples the figure above the control rolls to its new value with NumberFlow instead of swapping. The examples now import `@number-flow/react`; the component itself still needs no package.',
+          'Tabs örneklerinde kontrolün üstündeki rakam, yer değiştirmek yerine NumberFlow ile yeni değerine kayıyor. Örnekler artık `@number-flow/react` içe aktarıyor; bileşenin kendisi hâlâ paket istemiyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t('The counts in the changelog filters animate as the filters change.', 'Değişiklik günlüğü filtrelerindeki sayılar, filtre değiştikçe animasyonla güncelleniyor.'),
+      },
+    ],
+  },
+  {
+    version: '1.3.1',
+    date: '2026-11-19',
+    title: t('Bigger, clearer examples.', 'Daha büyük, daha anlaşılır örnekler.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The examples for Button, Action Button, Tabs, Badge, Slide to Confirm and Card show the component at a larger size in a scene of its own, with no boxed card around it. What sits behind the clear glass is plain CSS and text: no pictures, no SVG.',
+          'Button, Action Button, Tabs, Badge, Slide to Confirm ve Card örnekleri bileşeni daha büyük ve kendi sahnesinde gösteriyor; etrafında kutu yok. Berrak camın arkasında yalnız düz CSS ve yazı var: görsel yok, SVG yok.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2026-11-19',
+    title: t('Slider, Switch and Checkbox are back.', 'Slider, Switch ve Checkbox geri döndü.'),
+    changes: [
+      { kind: 'new', page: 'slider', text: t('The range slider of the first previews: a glass pill that opens into a wide lens while held.', 'İlk önizlemelerdeki aralık kaydırıcısı: basılı tutunca geniş bir merceğe açılan cam hap.') },
+      { kind: 'new', page: 'switch', text: t('The switch of the first previews: its knob swells into clear glass as it crosses the track.', 'İlk önizlemelerdeki anahtar: topuzu rayı geçerken berrak cama şişer.') },
+      { kind: 'new', page: 'checkbox', text: t('The checkbox of the first previews: always under a cap of clear glass.', 'İlk önizlemelerdeki onay kutusu: hep berrak bir cam kapağın altında.') },
+    ],
+  },
+  {
+    version: '1.2.2',
+    date: '2026-11-19',
+    title: t('A softer, deeper shadow under Card.', 'Card\'ın altında daha yumuşak, daha derin bir gölge.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'card',
+        text: t(
+          'Card\'s drop shadow is two soft layers (16.5 px and 26.4 px down, 8% black each), the same at every card size.',
+          'Card\'ın gölgesi iki yumuşak katman (16.5 px ve 26.4 px aşağıda, her biri %8 siyah); her kart boyutunda aynı.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'In the example, the rows of colour blur progressively as they reach either end, and the shadow is no longer cut off.',
+          'Örnekte renk sıraları iki uca yaklaştıkça kademeli olarak bulanıklaşıyor ve gölge artık kesilmiyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t('Page titles, landing headings and the wordmark are set in Cal Sans.', 'Sayfa başlıkları, ana sayfa başlıkları ve logo yazısı Cal Sans ile yazılıyor.'),
+      },
+      {
+        kind: 'removed',
+        text: t(
+          'The number and verb tags ("01 · Press") on the component tiles, the docs pages and the header menu.',
+          'Bileşen kutularındaki, doküman sayfalarındaki ve üst menüdeki numara ve fiil etiketleri ("01 · Bas").',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.2.1',
+    date: '2026-11-19',
+    title: t('Flat resting pill for Tabs.', 'Tabs için düz bir duran hap.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'tabs',
+        text: t(
+          'The resting pill has no shadow, like a plain shadcn tab; the examples are back to their first versions.',
+          'Duran hapın gölgesi yok, sade bir shadcn sekmesi gibi; örnekler ilk hallerine döndü.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '2026-11-19',
+    title: t('Card brings back its radial rim.', 'Card radyal kenarına geri dönüyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'Card\'s glass is the first card\'s again: the rim pulls what is behind towards the centre, deep and wide, and a 5 px frost blurs the bent picture, under a 70% tint (white on a light page, black on a dark one) and a 1.3 px white line. It is drawn by the WebGL glass, so it now looks the same in Safari, Firefox and on phones. Your `tint`, `blur` and `optics` still override it.',
+          'Card\'ın camı yeniden ilk kartınki: kenar arkada kalanı merkeze doğru, derin ve geniş çeker; 5 px buz bükülmüş görüntüyü bulanıklaştırır; üstünde %70 ton (açık sayfada beyaz, koyu sayfada siyah) ve 1.3 px beyaz bir çizgi var. WebGL camla çizildiği için artık Safari\'de, Firefox\'ta ve telefonlarda da aynı görünür. `tint`, `blur` ve `optics` hâlâ bunun üstüne yazar.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.1.4',
+    date: '2026-11-19',
+    title: t('A glass thumb for Slide to Confirm.', 'Slide to Confirm için cam bir tutamaç.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'The thumb is drawn by the same glass as Button in every state, not only while it moves: frosted white glass with the chevron at rest and with the spinner while pending, and glass in the fill\'s colour with the check once it succeeds. Without WebGL2 or with reduced motion it stays a flat white disc.',
+          'Tutamaç artık yalnızca hareket ederken değil, her hâlde Button\'la aynı camla çiziliyor: beklerken okla, yüklenirken dönen simgeyle buzlu beyaz cam; başarınca tikle, dolgunun renginde cam. WebGL2 yoksa ya da hareket azaltılmışsa düz beyaz bir disk olarak kalır.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.1.3',
+    date: '2026-11-18',
+    title: t('A new look for Card.', 'Card için yeni bir görünüm.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'Card has a new default glass: a lighter 3.5 px frost with more vivid colour, a 68% white tint on light pages and 79% black on dark ones, a hairline of white at the rim, and a tighter bend with a slight colour split. The face carries no light or shadow. Your `tint`, `blur` and `optics` still override it.',
+          'Card\'ın varsayılan camı yenilendi: daha hafif 3.5 px buz ve daha canlı renk, açık sayfada %68 beyaz, koyu sayfada %79 siyah ton, kenarda kıl inceliğinde beyaz bir çizgi ve hafif renk ayrışmalı daha sıkı bir bükülme. Yüzde ışık ya da gölge yok. `tint`, `blur` ve `optics` hâlâ bunun üstüne yazar.',
+        ),
+      },
+      {
+        kind: 'new',
+        page: 'card',
+        text: t(
+          'GlassOptics: `dark` gives dark glass its own tint and rim line.',
+          'GlassOptics: `dark`, koyu cama kendi tonunu ve kenar çizgisini verir.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.1.2',
+    date: '2026-11-18',
+    title: t(
+      'Shorter names in the docs, and a site built on shadcn/ui that works with a keyboard, a screen reader and a phone.',
+      'Dokümanda kısa adlar ve klavyeyle, ekran okuyucuyla, telefonla çalışan, shadcn/ui üstüne kurulu bir site.',
+    ),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The docs say Button, Action Button, Tabs, Badge, Slide to Confirm and Card. The site is Liquid Glass already; the prefix stays in the code (`GlassButton`).',
+          'Doküman artık Button, Action Button, Tabs, Badge, Slide to Confirm ve Card diyor. Site zaten Liquid Glass; ön ek kodda kalıyor (`GlassButton`).',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'The site chrome is shadcn/ui in the site\'s own look: the header menus, the phone menu, the Preview / Code and package-manager tabs, the release filters and the props tables.',
+          'Site arayüzü, sitenin kendi görünümüyle shadcn/ui: header menüleri, telefon menüsü, Önizleme / Kod ve paket yöneticisi sekmeleri, sürüm filtreleri ve prop tabloları.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Keyboard: Tab from an open header menu goes into it, the tabs answer the arrow keys, and the phone menu keeps focus inside and gives it back when it closes.',
+          'Klavye: açık bir header menüsünden Tab içine girer, sekmeler ok tuşlarına yanıt verir; telefon menüsü odağı içinde tutar ve kapanınca geri verir.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Screen readers: only the page you are on is announced as current, landmarks on Turkish pages have Turkish names, and copying says "Copied".',
+          'Ekran okuyucular: yalnız bulunduğun sayfa "geçerli" diye okunur, Türkçe sayfalardaki bölgelerin adı Türkçe ve kopyalayınca "Kopyalandı" denir.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Small grey text, release labels and code comments reach 4.5:1 contrast in both themes.',
+          'Küçük gri metinler, sürüm etiketleri ve kod yorumları iki temada da 4.5:1 kontrasta ulaşıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Phones: the install command wraps instead of hiding its end, the release filters move to a second row, and the component picker no longer zooms the page on iOS.',
+          'Telefonda: kurulum komutu sonunu gizlemek yerine alt satıra iniyor, sürüm filtreleri ikinci satıra geçiyor ve bileşen seçici iOS\'ta sayfayı yakınlaştırmıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t('With reduced motion, arrows no longer slide and chevrons flip without turning.', 'Hareketi azalt açıkken oklar kaymıyor; açılır oklar dönmeden yön değiştiriyor.'),
+      },
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: '2026-11-18',
+    title: t('The tabs lens takes the corners of your options.', 'Sekme merceği seçeneklerinin köşelerini alıyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'tabs',
+        text: t(
+          'GlassLens takes its corners from the highlight: rectangular options (`rounded-lg`) get a rounded-rectangle lens instead of a pill, its corners grow as it swells, and between options of different sizes they travel with the size. GlassTabs keeps its pill.',
+          'GlassLens köşelerini vurgudan alıyor: dikdörtgen seçeneklere (`rounded-lg`) hap yerine köşeleri yuvarlatılmış dikdörtgen bir mercek geliyor; köşeler mercek şiştikçe büyüyor, farklı boyuttaki seçenekler arasında boyutla birlikte geçiyor. GlassTabs hap olarak kalıyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026-11-18',
+    title: t('GlassCard is back, a 64 px glass button, and a quieter site.', 'GlassCard geri döndü, 64 px cam buton ve daha sade bir site.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'card',
+        text: t(
+          'GlassCard: a card of frosted glass that holds your content. As on the 0.x card, its face blurs (`blur`, 5 px) and tints (`tint`, 60%) what is behind, its rim bends it, and it stays still under the pointer. Rebuilt on the shared engine, so it works in every browser with WebGL2.',
+          'GlassCard: içeriğini tutan buzlu cam kart. 0.x kartındaki gibi yüzü arkasında kalanı bulanıklaştırır (`blur`, 5 px) ve tonlar (`tint`, %60), kenarı onu büker; imlecin altında büyümez. Ortak motorun üstüne yeniden kuruldu; WebGL2 olan her tarayıcıda çalışır.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'GlassLayer: `blur` frosts what clear glass shows, and `swell={false}` keeps the glass still under the pointer. GlassCard uses both; every other glass looks as before.',
+          'GlassLayer: `blur` berrak camın gösterdiğini buzlar, `swell={false}` camı imlecin altında sabit tutar. GlassCard ikisini de kullanır; diğer camların görünümü değişmedi.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t('`size="xl"`: a 64 px glass button for the one action a page is about.', '`size="xl"`: sayfanın asıl eylemi için 64 px cam buton.'),
+      },
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'The clear-glass example is a larger button on a quiet grid and nothing else: the lines bending at its rim are what you see first.',
+          'Berrak cam örneği artık sade bir ızgaranın ortasında büyük bir buton, başka bir şey yok: ilk gördüğün, kenarında bükülen çizgiler.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'The square-corners example sits on fine diagonal lines instead of a blue grid, so the Press demo keeps the site’s only grid.',
+          'Köşeli örnek artık mavi ızgara yerine ince çapraz çizgilerin üstünde; sitenin tek ızgarası Press demosunda kalıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'The home page is quiet again: neutral stages, no light effects, and colour only inside the demos, where the glass bends it.',
+          'Ana sayfa yeniden sade: nötr sahneler, ışık efekti yok; renk yalnız camın büktüğü demoların içinde.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'The language switch moved to the footer, so the header keeps only what gets you around.',
+          'Dil seçimi alt bilgiye taşındı; üst bar yalnız gezinmeye yarayanları tutuyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Release notes: filters show how many changes each kind has, and a pill in the sidebar now means something (New for this minor line, Updated for the latest release).',
+          'Sürüm notları: filtreler her türde kaç değişiklik olduğunu gösteriyor; kenar çubuğundaki etiket artık bir şey anlatıyor (bu sürüm hattı için Yeni, son sürüm için Güncel).',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'On phones the menu opened as a thin strip under the bar; it fills the screen again. The "What\'s new" row on component pages fits phones, and at tablet widths the version badge no longer sits under the menu.',
+          'Telefonda menü, barın altında ince bir şerit olarak açılıyordu; artık yine tüm ekranı kaplıyor. Bileşen sayfalarındaki yenilikler satırı telefona sığıyor; tablet genişliğinde sürüm etiketi artık menünün altında kalmıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t('Versions and dates in the release notes are easier to read.', 'Sürüm notlarındaki sürüm numaraları ve tarihler daha kolay okunuyor.'),
+      },
+    ],
+  },
+  {
+    version: '1.0.1',
+    date: '2026-11-18',
+    title: t('A centred arrow in the action droplet.', 'Eylem damlasında ortalanmış ok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t('The arrow sits optically centred in the droplet.', 'Ok, damlanın tam ortasında (optik olarak ortalı) duruyor.'),
+      },
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '2026-11-18',
+    title: t(
+      'Five components, one verb each, drawn by one zero-dependency WebGL2 engine.',
+      'Her biri tek fiilli beş bileşen; hepsini bağımlılıksız tek bir WebGL2 motoru çiziyor.',
+    ),
+    changes: [
+      { kind: 'new', page: 'button', text: t('A clear or tinted glass button that swells under the pointer.', 'İmlecin altında şişen, şeffaf ya da renkli cam buton.') },
+      { kind: 'new', page: 'action-button', text: t('An async action whose arrow droplet melts into the body when pressed.', 'Basınca ok damlası gövdeye eriyen asenkron eylem butonu.') },
+      { kind: 'new', page: 'tabs', text: t('The selection travels between options as a lens (GlassLens included).', 'Seçim, seçenekler arasında bir mercek olarak kayar (GlassLens dahil).') },
+      { kind: 'new', page: 'badge', text: t('A badge whose text flows through the glass.', 'Yazısı camın içinden akan rozet.') },
+      { kind: 'new', page: 'slide-to-confirm', text: t('Drag a glass thumb to the end to run one deliberate action.', 'Tek bir bilinçli eylem için cam tutamağı sona kadar sürükle.') },
+      { kind: 'new', page: 'installation', text: t('A shadcn registry: one command copies the exact files into components/liquid-glass/.', 'shadcn kaydı: tek komut birebir dosyaları components/liquid-glass/ içine kopyalar.') },
+      { kind: 'new', page: 'ai', text: t('llms.txt, Markdown for every page and an agent skill, generated from the same docs.', 'Aynı dokümandan üretilen llms.txt, her sayfanın Markdown hâli ve bir ajan skill\'i.') },
+      { kind: 'new', text: t('Bilingual documentation (English and Turkish) with release notes.', 'Sürüm notlarıyla birlikte iki dilli (İngilizce ve Türkçe) doküman.') },
+      { kind: 'improved', text: t('The engine is shared: one WebGL2 context draws every glass surface and sleeps when nothing moves.', 'Motor ortak: tek WebGL2 bağlamı tüm cam yüzeyleri çizer, hiçbir şey kıpırdamıyorsa uyur.') },
+      { kind: 'removed', text: t('GlassCard, the slider and the form controls of the 0.x previews. The kit is now five components.', '0.x önizlemelerindeki GlassCard, kaydırıcı ve form kontrolleri. Kit artık beş bileşen.') },
+    ],
+  },
+  {
+    version: '0.3.0',
+    date: '2026-11-01',
+    title: t('Browser support notes and a lighter GlassCard on phones.', 'Tarayıcı desteği notları ve telefonda daha hafif bir GlassCard.'),
+    changes: [
+      { kind: 'improved', text: t('GlassCard renders fewer frames on mobile and documents which browsers get the glass.', 'GlassCard mobilde daha az kare çizer ve hangi tarayıcıların camı gördüğünü belgeler.') },
+    ],
+  },
+  {
+    version: '0.2.3',
+    date: '2026-10-30',
+    title: t('Live weather and calendar cards.', 'Canlı hava durumu ve takvim kartları.'),
+    changes: [
+      { kind: 'new', text: t('Weather and GitHub calendar examples behind the glass card.', 'Cam kartın arkasında hava durumu ve GitHub takvimi örnekleri.') },
+      { kind: 'improved', text: t('Card shadow and a fixed tint per theme.', 'Kart gölgesi ve temaya göre sabit renk tonu.') },
+    ],
+  },
+  {
+    version: '0.2.2',
+    date: '2026-10-30',
+    title: t('Glass cards rest by default.', 'Cam kartlar varsayılan olarak durağan.'),
+    changes: [
+      { kind: 'improved', text: t('Cards are static until hovered; only the colour pills behind them loop.', 'Kartlar üzerine gelinene dek durağan; yalnız arkadaki renk hapları döner.') },
+    ],
+  },
+  {
+    version: '0.2.1',
+    date: '2026-10-30',
+    title: t('Rim light follows the cursor.', 'Kenar ışığı imleci izler.'),
+    changes: [
+      { kind: 'improved', text: t('The card rim lights up toward the pointer.', 'Kart kenarı imlecin yönüne doğru aydınlanır.') },
+      { kind: 'fixed', text: t('Removed the blue bounce from the rim light.', 'Kenar ışığındaki mavi sekme kaldırıldı.') },
+    ],
+  },
+  {
+    version: '0.2.0',
+    date: '2026-10-30',
+    title: t('Glass that refracts the live page.', 'Canlı sayfayı kıran cam.'),
+    changes: [
+      { kind: 'new', text: t('GlassCard with live DOM refraction: the page behind is painted into the lens.', 'Canlı DOM kırılmalı GlassCard: arkadaki sayfa merceğe boyanır.') },
+    ],
+  },
+  {
+    version: '0.1.0',
+    date: '2026-10-30',
+    title: t('First preview.', 'İlk önizleme.'),
+    changes: [
+      { kind: 'new', text: t('A liquid glass slider and a set of glass form controls.', 'Sıvı cam kaydırıcı ve bir dizi cam form kontrolü.') },
+      { kind: 'new', text: t('Hosting on Cloudflare Pages.', 'Cloudflare Pages üzerinde yayın.') },
+    ],
+  },
+]
+
+export const LATEST = RELEASES[0]
+
+/** "1.3.2" → "1.3": the version people see. The third number is a patch release of it. */
+export const minorOf = (version: string) => version.split('.').slice(0, 2).join('.')
+
+/** The version the site shows (header, footer): the current line, without the patch. */
+export const VERSION = minorOf(LATEST.version)
+
+const isComponent = (slug?: string) => CATALOG.some((p) => p.slug === slug)
+
+/**
+ * The news. Only a release that adds a component is announced to visitors ("What's new",
+ * the New pills); everything shipped after it is a patch release and lives in the changelog.
+ */
+export const FEATURED = RELEASES.find((r) => r.changes.some((c) => c.kind === 'new' && isComponent(c.page))) ?? LATEST
+
+/** Changes about one docs page, newest first, each with its release. */
+export const newsOf = (slug: string) =>
+  RELEASES.flatMap((r) => r.changes.filter((c) => c.page === slug).map((c) => ({ ...c, version: r.version, date: r.date })))
+
+/** The sidebar pill: "new" on the components the announced release added, until the next one. */
+export const badgeOf = (slug: string): 'new' | null => (FEATURED.changes.some((c) => c.kind === 'new' && c.page === slug) ? 'new' : null)

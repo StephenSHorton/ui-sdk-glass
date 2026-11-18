@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://liquid-glass-interface.pages.dev/sitemap.xml

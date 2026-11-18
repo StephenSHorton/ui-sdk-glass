@@ -1,8 +1,8 @@
-import {
-  HeadContent,
-  Scripts,
-  createRootRoute,
-} from '@tanstack/react-router'
+import { HeadContent, ScriptOnce, Scripts, createRootRoute, useParams } from '@tanstack/react-router'
+
+import { headScript } from '#/site/head-script'
+import { localeFromParam } from '#/site/i18n'
+import { NotFound } from '#/site/not-found'
 
 import appCss from '../styles.css?url'
 
@@ -13,15 +13,24 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Liquid Glass UI' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cal+Sans&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap' },
+      { rel: 'stylesheet', href: appCss },
+    ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: () => <NotFound locale="en" />,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const { locale } = useParams({ strict: false })
   return (
-    <html lang="en">
+    // data-theme and color-scheme are set before paint by the head script.
+    <html lang={localeFromParam(locale) ?? 'en'} suppressHydrationWarning>
       <head>
+        <ScriptOnce>{headScript()}</ScriptOnce>
         <HeadContent />
       </head>
       <body>

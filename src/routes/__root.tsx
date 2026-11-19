@@ -32,6 +32,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <ScriptOnce>{headScript()}</ScriptOnce>
         <HeadContent />
+        {/* Cookieless page metrics (no cookies, no personal data). */}
+        <script defer src="https://v.akalan.dev/_v/s.js" />
       </head>
       <body>
         {children}

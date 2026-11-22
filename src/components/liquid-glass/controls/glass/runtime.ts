@@ -86,6 +86,8 @@ type View = {
   /** Last lens centre in design units, for aiming the cursor light. */
   lensX: number
   lensY: number
+  /** Where the cursor light last pointed, in half degrees (9999 = nowhere yet). */
+  aim: number
   renders: number
   renderMs: number
 }
@@ -311,6 +313,23 @@ async function createRuntime() {
   const views = new Set<View>()
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
+  // The loop runs only while a control moves, a view is dirty or the cursor light changes;
+  // at rest it stops completely, and whatever can change a control wakes it.
+  let raf = 0
+  // three keeps a frame loop of its own for as long as the renderer lives. It rests when ours
+  // does and starts again with ours, so a still page asks the browser for no frames at all.
+  // (`_animation` is three's own field: where it is missing, its loop simply keeps running.)
+  const heart = (renderer as unknown as { _animation?: { start?: () => void; stop?: () => void } })._animation
+  const canRest = typeof heart?.start === 'function' && typeof heart?.stop === 'function'
+  let beating = true
+  const wake = () => {
+    if (canRest && !beating) {
+      beating = true
+      heart!.start!()
+    }
+    if (!raf) raf = requestAnimationFrame(tick)
+  }
+
   const io = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       for (const v of views) {
@@ -320,9 +339,13 @@ async function createRuntime() {
         }
       }
     }
+    wake()
   })
   // Theme switches anywhere re-render every view.
-  const themeChanged = () => views.forEach((v) => (v.dirty = true))
+  const themeChanged = () => {
+    views.forEach((v) => (v.dirty = true))
+    wake()
+  }
   new MutationObserver(themeChanged).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
@@ -360,23 +383,47 @@ async function createRuntime() {
       pointer.y = e.clientY
       pointer.active = true
       pointer.moved = true
+      wake()
     },
     { passive: true },
   )
   // Scrolling moves the controls under a still cursor.
-  window.addEventListener('scroll', () => (pointer.moved = true), { passive: true, capture: true })
+  window.addEventListener(
+    'scroll',
+    () => {
+      pointer.moved = true
+      wake()
+    },
+    { passive: true, capture: true },
+  )
   document.documentElement.addEventListener('pointerleave', () => {
     pointer.active = false
     pointer.moved = true
+    wake()
   })
+  // A control answers a press by writing to the refs its `step` reads, and tells no one:
+  // any press or release on the page starts the loop, which stops again if nothing moved.
+  for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'pointerout'] as const) {
+    window.addEventListener(type, wake, { passive: true, capture: true })
+  }
 
+  /** Aims the cursor light. False when it lands where it already was: nothing to draw again. */
   function aimLight(v: View, spec: GlassViewSpec) {
     const rect = v.canvas.getBoundingClientRect()
     const dx = pointer.x - (rect.left + v.lensX * spec.unit)
     const dy = pointer.y - (rect.top + v.lensY * spec.unit)
     const d = Math.hypot(dx, dy)
-    if (d > 0.5) v.u.lightDir.value.set(dx / d, dy / d)
-    v.u.lightMix.value = spec.cursorLight ? pointer.mix : 0
+    // The light turns in half-degree steps (one step is less than a level of rim light on an
+    // 8-bit screen): a cursor moving far from a control leaves it as it is.
+    const aim = d > 0.5 ? Math.round(Math.atan2(dy, dx) * (360 / Math.PI)) : v.aim
+    const mix = spec.cursorLight ? pointer.mix : 0
+    const same = mix === v.u.lightMix.value && (mix === 0 || aim === v.aim)
+    if (aim !== v.aim) {
+      v.aim = aim
+      v.u.lightDir.value.set(Math.cos((aim * Math.PI) / 360), Math.sin((aim * Math.PI) / 360))
+    }
+    v.u.lightMix.value = mix
+    return !same
   }
 
   function present(v: View) {
@@ -458,9 +505,10 @@ async function createRuntime() {
     }
   }
 
-  let last = performance.now()
-  const tick = (now: number) => {
-    const dt = Math.min((now - last) / 1000, 1 / 30)
+  let last = 0
+  function tick(now: number) {
+    raf = 0
+    const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60
     last = now
     const mixTarget = pointer.active ? 1 : 0
     const mixBefore = pointer.mix
@@ -468,26 +516,40 @@ async function createRuntime() {
     if (Math.abs(pointer.mix - mixTarget) < 0.002) pointer.mix = mixTarget
     const relight = pointer.moved || pointer.mix !== mixBefore
     pointer.moved = false
+    let running = pointer.mix !== mixTarget
     for (const v of views) {
-      if (!v.ready) continue
+      // A view still compiling keeps both loops going until it is ready.
+      if (!v.ready) {
+        running = true
+        continue
+      }
       const spec = v.spec()
       const moving = spec.step?.(dt, reducedMotion.matches) ?? false
+      if (moving) running = true
       if (!v.visible) continue
       if (moving || v.dirty || spec.alwaysRender) {
         const refresh = v.dirty
         v.dirty = false
         render(v, refresh)
+        // A first frame that came out empty asks for another; a naive view asks for one always.
+        if (v.dirty || spec.alwaysRender) running = true
       } else if (relight && v.devW > 0) {
         // Only the light moved: re-shade with the existing layers, no redraw or upload.
         const spec = v.spec()
         if (!spec.cursorLight) continue
-        aimLight(v, spec)
-        present(v)
+        if (aimLight(v, spec)) present(v)
       }
     }
-    requestAnimationFrame(tick)
+    if (running) raf = requestAnimationFrame(tick)
+    else {
+      last = 0
+      if (canRest && beating) {
+        beating = false
+        heart!.stop!()
+      }
+    }
   }
-  requestAnimationFrame(tick)
+  wake()
 
   return {
     async createView(canvas: HTMLCanvasElement, spec: () => GlassViewSpec): Promise<GlassViewHandle> {
@@ -522,17 +584,21 @@ async function createRuntime() {
         surface: '',
         lensX: 0,
         lensY: 0,
+        aim: 9999,
         renders: 0,
         renderMs: 0,
       }
       views.add(view)
+      wake()
       io.observe(canvas)
       resizeLayers(view, spec())
       await renderer.compileAsync(scene, camera)
       view.ready = true
+      wake()
       return {
         invalidate: () => {
           view.dirty = true
+          wake()
         },
         stats: () => ({ renders: view.renders, ms: view.renderMs }),
         dispose: () => {

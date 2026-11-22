@@ -31,7 +31,7 @@ export const UI = {
       resources: 'Resources',
     },
     hero: {
-      eyebrow: 'Open source · MIT · Zero dependencies',
+      eyebrow: 'Open source · MIT · Copy and paste',
       title: 'Glass that bends the page.',
       lines: ['Glass that bends', 'the page.'],
       release: 'Glass components, one engine',
@@ -47,7 +47,7 @@ export const UI = {
     facts: {
       title: 'Built to stay out of your way',
       items: [
-        { fig: 'Fig 0.1', stat: '0', title: 'dependencies', body: 'Plain TypeScript files in your repo. No three.js, no runtime package, nothing to keep in sync.' },
+        { fig: 'Fig 0.1', stat: 'UI SDK', title: 'for behaviour', body: 'Keyboard, focus, forms and ARIA come from UI SDK. The glass is plain TypeScript files in your repo.' },
         { fig: 'Fig 0.2', stat: '1', title: 'WebGL2 context', body: 'One renderer draws every glass surface on the page, and it stops completely when nothing moves.' },
         { fig: 'Fig 0.3', stat: 'CSS', title: 'when it can\'t', body: 'Without WebGL2, or with reduced motion, every component keeps a plain CSS look. Never a blank box.' },
       ],
@@ -76,7 +76,7 @@ export const UI = {
       markdown: 'Markdown',
     },
     footer: 'MIT licensed. Built by',
-    stack: 'React · WebGL2 · 0 deps',
+    stack: 'React · WebGL2 · UI SDK',
     notFound: { title: 'Page not found', body: 'The page you are looking for does not exist.', home: 'Back to home' },
   },
   tr: {
@@ -110,7 +110,7 @@ export const UI = {
       resources: 'Kaynaklar',
     },
     hero: {
-      eyebrow: 'Açık kaynak · MIT · Bağımlılık yok',
+      eyebrow: 'Açık kaynak · MIT · Kopyala, yapıştır',
       title: 'Sayfayı büken cam.',
       lines: ['Sayfayı büken', 'cam.'],
       release: 'Cam bileşenler, tek motor',
@@ -126,7 +126,7 @@ export const UI = {
     facts: {
       title: 'Yolundan çekilmek için tasarlandı',
       items: [
-        { fig: 'Şekil 0.1', stat: '0', title: 'bağımlılık', body: 'Deponda düz TypeScript dosyaları. three.js yok, çalışma zamanı paketi yok, eşitlenecek bir şey yok.' },
+        { fig: 'Şekil 0.1', stat: 'UI SDK', title: 'davranış için', body: 'Klavye, odak, formlar ve ARIA UI SDK\'dan gelir. Cam, deponda duran düz TypeScript dosyalarıdır.' },
         { fig: 'Şekil 0.2', stat: '1', title: 'WebGL2 bağlamı', body: 'Sayfadaki her cam yüzeyi tek bir çizici çizer; hiçbir şey kıpırdamıyorsa tamamen durur.' },
         { fig: 'Şekil 0.3', stat: 'CSS', title: 'olmadığında', body: 'WebGL2 yoksa ya da hareketi azalt açıksa her bileşen sade bir CSS görünümünde kalır. Asla boş bir kutu değil.' },
       ],
@@ -155,7 +155,7 @@ export const UI = {
       markdown: 'Markdown',
     },
     footer: 'MIT lisanslı. Yapan:',
-    stack: 'React · WebGL2 · 0 bağımlılık',
+    stack: 'React · WebGL2 · UI SDK',
     notFound: { title: 'Sayfa bulunamadı', body: 'Aradığın sayfa yok.', home: 'Ana sayfaya dön' },
   },
 } as const

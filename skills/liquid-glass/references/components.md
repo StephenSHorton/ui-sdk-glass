@@ -55,6 +55,8 @@ export default function Demo() {
 npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/button.json
 ```
 
+> The button underneath is UI SDK's, so Button needs `@ui-sdk/core` and `@ui-sdk/react`. Return a Promise from `onClick` and the button stays pending until it settles: it ignores further presses and says so to screen readers. The install command adds both packages at the exact version this was built on: UI SDK is in beta and its API may still change.
+
 ## Usage
 
 ```tsx
@@ -220,7 +222,7 @@ The glass takes the corners of the element it sits on. Add a `rounded-*` class a
 | `iconPosition` | `'start' \| 'end'` | `'end'` | Which side the icon sits on. |
 | `tint` | `number` | `0.6` | Clear glass only: how much tint covers the backdrop (0–1). |
 | `asChild` | `boolean` | `false` | Put the glass on the single child element instead of a `<button>`. |
-| `…rest` | `button attributes` | — | Passed to the element (`onClick`, `disabled`, `type`…). |
+| `…rest` | `button attributes` | — | Passed to the button: `onClick`, `disabled`, `type`, and UI SDK's `pendingAnnouncement` and `focusableWhenDisabled`. |
 
 ## Accessibility
 
@@ -435,6 +437,8 @@ export default function Demo() {
 npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/tabs.json
 ```
 
+> The behaviour (one tab stop, arrow keys, a hidden radio per option for forms) comes from UI SDK's segmented control, so Tabs needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
 ## Usage
 
 ```tsx
@@ -566,6 +570,7 @@ export default function Demo() {
 | `value` | `string \| null` | — | Selected value (controlled). |
 | `onValueChange` | `(value) => void` | — | Called with the new value. |
 | `aria-label` | `string` | — | Required: names the group for screen readers. |
+| `name` | `string` | — | Submits the selected value under this name with the form around it. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Segment height 28, 32 or 40 px. |
 | `highlightClassName` | `string` | `'bg-white dark:bg-neutral-700'` | Classes of the resting pill; its background is the lens colour. |
 | `GlassLens value` | `string \| number \| null` | — | Your own markup: the selected value; any change moves the lens. |
@@ -1339,7 +1344,7 @@ export default function Demo() {
 npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/slider.json
 ```
 
-> Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`. The install command adds it; the rest of the kit stays dependency-free.
+> Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`, and take their behaviour (keyboard, the label, the input a form reads) from UI SDK: `@ui-sdk/core` and `@ui-sdk/react`. The install command adds all three; UI SDK is in beta, so it is added at the exact version this was built on.
 
 ## Usage
 
@@ -1383,6 +1388,7 @@ export default function Demo() {
 | `onChange` | `(value: number) => void` | — | Called with the new value. |
 | `min / max / step` | `number` | `0 / 100 / 1` | The range and its step. |
 | `label` | `string` | `'Volume'` | Label above the track; an empty string hides it. |
+| `name` | `string` | — | Submits the value under this name with the form around it. |
 | `showValue` | `boolean` | `true` | Shows the value next to the label. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Track height 8, 12, 18 or 26 px; the glass scales with it. |
 | `startIcon / endIcon` | `IconName \| 'none'` | `'none'` | Icons at either end of the track. |
@@ -1440,7 +1446,7 @@ const [on, setOn] = useState(false)
 <Switch label="Notifications" description="Banners and sounds" checked={on} onChange={setOn} />
 ```
 
-Tap to flip, or hold the knob and drag it across. Needs `three`, like Slider.
+Tap to flip, or hold the knob and drag it across. Needs `three` and UI SDK, like Slider.
 
 ## Examples
 
@@ -1472,6 +1478,7 @@ export default function Demo() {
 | `onChange` | `(checked: boolean) => void` | — | Called with the new state. |
 | `label` | `string` | `'Notifications'` | Text beside the switch; an empty string leaves the switch alone. |
 | `description` | `string` | — | A second, quieter line under the label. |
+| `name` | `string` | — | Submits with the form around it under this name. |
 | `labelSide` | `'left' \| 'right'` | `'right'` | Which side the label sits on. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Track height 22, 28 or 36 px. |
 | `color` | `string` | `'#3291FF'` | The track while on: a hex, `rgb()` or named colour, not a CSS variable. |
@@ -1532,7 +1539,7 @@ const [remember, setRemember] = useState(true)
 <Checkbox label="Remember this device" checked={remember} onChange={setRemember} />
 ```
 
-The glass cap is there at rest, not only while pressed. Needs `three`, like Slider.
+The glass cap is there at rest, not only while pressed. Needs `three` and UI SDK, like Slider.
 
 ## Examples
 
@@ -1564,6 +1571,7 @@ export default function Demo() {
 | `onChange` | `(checked: boolean) => void` | — | Called with the new state. |
 | `label` | `string` | `'Remember this device'` | Text beside the box; an empty string leaves the box alone. |
 | `description` | `string` | — | A second, quieter line under the label. |
+| `name` | `string` | — | Submits with the form around it under this name. |
 | `shape` | `'rounded' \| 'circle'` | `'rounded'` | A rounded square or a circle. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Box size 18, 22 or 28 px. |
 | `color` | `string` | `'#3291FF'` | The box while checked: a hex, `rgb()` or named colour, not a CSS variable. |
@@ -1642,7 +1650,7 @@ export default function Demo() {
 npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/select.json
 ```
 
-> The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change. The rest of the kit stays dependency-free.
+> The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
 
 ## Usage
 

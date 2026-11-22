@@ -1,6 +1,12 @@
 'use client'
 
-import { useId, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+// Behaviour (keyboard steps, the label, screen-reader gestures, the hidden input a form
+// reads) comes from UI SDK's slider; the drag is the glass's own. Needs @ui-sdk/core and
+// @ui-sdk/react, and `three` for the glass.
+
+import { Field, FieldLabel } from '@ui-sdk/react/field'
+import { Slider, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
+import { useRef, type PointerEvent } from 'react'
 
 import { drawTrack } from './glass/draw'
 import { PRESS, pressedLens, sliderOptics, stepSpring, saturate, type Spring } from './glass/physics'
@@ -15,6 +21,8 @@ export type RangeSliderProps = {
   max?: number
   step?: number
   label?: string
+  /** Submits the value with the form around it under this name. */
+  name?: string
   theme?: Theme
   /** Colour of the filled part of the track: a hex, rgb() or named colour, not a CSS variable. Defaults to the kit's blue. */
   color?: string
@@ -49,6 +57,7 @@ export function RangeSlider({
   max = 100,
   step = 1,
   label = 'Volume',
+  name,
   theme,
   color,
   size = 'md',
@@ -65,7 +74,6 @@ export function RangeSlider({
   pressSpeed = PRESS.omega,
   pressBounce = 1 - PRESS.zeta,
 }: RangeSliderProps) {
-  const id = useId()
   const [current, setCurrent] = useSyncedState(value, onChange)
   const [areaRef, { width: areaW }] = useElementSize<HTMLDivElement>()
 
@@ -164,26 +172,27 @@ export function RangeSlider({
     drag.current = null
     sim.current.pressed = false
   }
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'PageUp' || e.key === 'PageDown') {
-      e.preventDefault()
-      setFraction(fraction + (e.key === 'PageUp' ? 0.1 : -0.1))
-    }
-  }
 
   return (
-    <div data-theme={theme} className="flex w-full max-w-md flex-col gap-2">
+    <Field data-theme={theme} className="flex w-full max-w-md flex-col gap-2">
       {(label || showValue) && (
         <div className="flex items-center justify-between px-1 text-[13px] font-medium">
-          <label htmlFor={id} className="text-neutral-900 dark:text-white">
-            {label}
-          </label>
+          <FieldLabel className="text-neutral-900 dark:text-white">{label}</FieldLabel>
           {showValue && <span className="text-neutral-500 tabular-nums">{Math.round(current)}</span>}
         </div>
       )}
-      <div className="flex items-center gap-4 text-neutral-500">
+      <Slider
+        value={current}
+        onValueChange={(next) => setCurrent(next as number)}
+        min={min}
+        max={max}
+        step={step}
+        largeStep={(max - min) / 10}
+        name={name}
+        className="flex items-center gap-4 text-neutral-500"
+      >
         {startIcon !== 'none' && <Icon name={startIcon} size={Math.max(14, trackHeights[size] + 4)} className="relative z-10" />}
-        <div
+        <SliderTrack
           ref={areaRef}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -203,21 +212,12 @@ export function RangeSlider({
               height: (MARGIN.top + MARGIN.bottom) * unit,
             }}
           />
-          <input
-            id={id}
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={current}
-            onChange={(e) => setCurrent(Number(e.currentTarget.value))}
-            onKeyDown={onKeyDown}
-            className="sr-only"
-          />
-        </div>
+          {/* The thumb carries the input that takes focus; the canvas draws the glass. */}
+          <SliderThumb className="pointer-events-none size-px" />
+        </SliderTrack>
         {endIcon !== 'none' && <Icon name={endIcon} size={Math.max(14, trackHeights[size] + 4)} className="relative z-10" />}
-      </div>
-    </div>
+      </Slider>
+    </Field>
   )
 }
 

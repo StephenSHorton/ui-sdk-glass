@@ -8,9 +8,14 @@
 //
 // Clear glass bends the page behind it. Tinted glass takes its colour from the button's
 // own CSS background, so you colour it with a normal class. With `asChild` the glass goes
-// on your own element (a router link, an <a>) instead of a <button>. COPY VERBATIM. MIT.
+// on your own element (a router link, an <a>) instead of a <button>.
+//
+// The button itself is UI SDK's: return a Promise from `onClick` and it stays pending
+// (no second press, announced to screen readers) until it settles. Needs @ui-sdk/core
+// and @ui-sdk/react. COPY VERBATIM. MIT.
 
-import { Children, cloneElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { Button } from '@ui-sdk/react/button'
+import { Children, cloneElement, type ComponentProps, type ReactElement, type ReactNode } from 'react'
 
 import { GlassLayer, type GlassMaterial } from './glass-layer'
 
@@ -29,7 +34,7 @@ export type GlassButtonProps = {
   /** Render the glass on the single child element (e.g. a router `<Link>`) instead of a `<button>`. */
   asChild?: boolean
   className?: string
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className'>
+} & Omit<ComponentProps<typeof Button>, 'children' | 'className' | 'render'>
 
 const sizes: Record<GlassButtonSize, string> = {
   sm: 'h-8 gap-1.5 px-4 text-[13px] [&_svg]:size-3.5',
@@ -81,9 +86,9 @@ export function GlassButton({
     )
   }
   return (
-    <button data-glass-host="" type={type} className={`${classes} ${className}`} {...rest}>
+    <Button data-glass-host="" type={type} className={`${classes} ${className}`} {...rest}>
       {content(children)}
-    </button>
+    </Button>
   )
 }
 

@@ -592,6 +592,12 @@ export type DomSnapshotOptions = {
   onStale?: () => void
   /** Any string that changes when icon colours may have changed, such as the theme name. */
   cacheKey?: string
+  /**
+   * Filled in by the walk, for a caller that wants to know whether its picture survives a scroll:
+   * `pinned` gets every fixed or sticky element met, `touched` says one of them reaches the region,
+   * and `loose` that something painted may move by itself (an animation, an inline transform, a fixed background).
+   */
+  found?: { pinned: Element[]; touched: boolean; loose: boolean }
 }
 
 /**
@@ -625,7 +631,7 @@ function clipShape(value: string, box: Box): Path2D | null {
 }
 
 export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: DomSnapshotOptions) {
-  const { origin, region, skip, onStale, cacheKey = document.documentElement.className } = options
+  const { origin, region, skip, onStale, cacheKey = document.documentElement.className, found } = options
   const originX = origin.left
   const originY = origin.top
   const deferred: { element: Element; opacity: number }[] = []
@@ -645,6 +651,7 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
     if (opacity < 0.01) return
     if (!isDeferred && element !== root && (style.position === 'fixed' || style.position === 'sticky')) {
       deferred.push({ element, opacity: parentOpacity })
+      found?.pinned.push(element)
       return
     }
     const drawChildren = () => {
@@ -672,6 +679,17 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
     // Screen-reader-only text (a 1 px square) and empty boxes are not painted, a hairline is;
     // nothing outside the region is visited.
     if (rect.width <= 0 || rect.height <= 0 || (rect.width <= 1 && rect.height <= 1) || !intersects(rect)) return
+    if (found) {
+      if (isDeferred) found.touched = true
+      else if (!found.loose) {
+        // A transform from a stylesheet stays put (a centred box); one written inline is a script's, and may follow the scroll.
+        const inline = (element as HTMLElement).style as CSSStyleDeclaration | undefined
+        found.loose =
+          style.animationName !== 'none' ||
+          (style.backgroundImage !== 'none' && style.backgroundAttachment.includes('fixed')) ||
+          (!!inline && !!(inline.transform || inline.translate || inline.rotate || inline.scale))
+      }
+    }
     const box: Box = { x: rect.left - originX, y: rect.top - originY, w: rect.width, h: rect.height }
     // A `clip-path` (inset or path) cuts the box and everything inside it, as on screen.
     const shape = clipShape(style.clipPath, box)

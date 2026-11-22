@@ -137,7 +137,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <div className="flex flex-col items-start gap-4">
           <Link to="/{-$locale}" params={p} activeOptions={exactActive} className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
             <span>
-              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass
+              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
             </span>
           </Link>
           <p className="max-w-[30ch] text-ui leading-relaxed text-muted-foreground">{t.hero.subtitle}</p>

@@ -270,6 +270,75 @@ function BlockView({ block, locale }: { block: Block; locale: Locale }) {
   }
 }
 
+// ── Examples: coming soon ──
+
+/**
+ * The Examples sections are held back for now: the site shows the heading and a
+ * "Coming soon" stage instead. The blocks stay in content.ts (and in the Markdown and
+ * llms files); set this to false to bring them back.
+ */
+const EXAMPLES_SOON = true
+
+const SOON = Symbol('soon')
+
+/** Each Examples section, up to the next heading, becomes one SOON marker. */
+function withoutExamples(blocks: Block[]): (Block | typeof SOON)[] {
+  if (!EXAMPLES_SOON) return blocks
+  const out: (Block | typeof SOON)[] = []
+  let skipping = false
+  for (const b of blocks) {
+    if (b.type === 'h' || b.type === 'install') skipping = false
+    if (skipping) continue
+    out.push(b)
+    if (b.type === 'h' && b.text.en === 'Examples') {
+      out.push(SOON)
+      skipping = true
+    }
+  }
+  return out
+}
+
+const GRID_COLS = 13
+const GRID_ROWS = 7
+const CELL = 40
+
+/** The fine grid behind the Play button on the Button page, drawn as SVG: 1 near the middle, 0 at the edge. */
+function SoonGrid() {
+  const cells = Array.from({ length: GRID_COLS * GRID_ROWS }, (_, i) => {
+    const col = i % GRID_COLS
+    const row = Math.floor(i / GRID_COLS)
+    const distance = Math.hypot((col - (GRID_COLS - 1) / 2) / (GRID_COLS / 2), (row - (GRID_ROWS - 1) / 2) / (GRID_ROWS / 2))
+    const opacity = Math.min(1, Math.max(0, (1 - distance) / 0.45))
+    return { x: col * CELL, y: row * CELL, opacity }
+  })
+  return (
+    <svg
+      aria-hidden
+      viewBox={`0 0 ${GRID_COLS * CELL} ${GRID_ROWS * CELL}`}
+      width={GRID_COLS * CELL}
+      height={GRID_ROWS * CELL}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1}
+      shapeRendering="crispEdges"
+      className="absolute top-1/2 left-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 text-black/10 dark:text-white/10"
+    >
+      {cells.map((c) => c.opacity > 0 && <path key={`${c.x}-${c.y}`} d={`M${c.x + 0.5} ${c.y + CELL}V${c.y + 0.5}H${c.x + CELL}`} opacity={c.opacity} />)}
+    </svg>
+  )
+}
+
+function Soon({ locale }: { locale: Locale }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border">
+      <Stage className="h-72 overflow-hidden">
+        <SoonGrid />
+        <p className="relative font-display text-[28px] leading-none tracking-[-0.01em] text-muted-foreground">{UI[locale].docs.soon}</p>
+      </Stage>
+    </div>
+  )
+}
+
 // ── Table of contents ──
 
 function tocOf(page: DocPage, locale: Locale) {
@@ -435,9 +504,7 @@ export function DocArticle({ page, locale }: { page: DocPage; locale: Locale }) 
         </header>
         {page.group === 'components' && <ComponentNews slug={page.slug} locale={locale} />}
         {page.hero && <Preview id={page.hero} locale={locale} />}
-        {page.blocks.map((b, k) => (
-          <BlockView key={k} block={b} locale={locale} />
-        ))}
+        {withoutExamples(page.blocks).map((b, k) => (b === SOON ? <Soon key={k} locale={locale} /> : <BlockView key={k} block={b} locale={locale} />))}
         <nav aria-label={t.pagination} className="mt-12 grid grid-cols-2 gap-3 text-ui">
           {prev ? (
             <DocLink page={prev} locale={locale} className="flex flex-col gap-1 rounded-xl border border-border p-4 transition-colors hover:bg-muted">

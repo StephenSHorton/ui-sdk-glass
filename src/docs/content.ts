@@ -1516,6 +1516,13 @@ export const RELEASES: Release[] = [
           'Button Group: ilişkili eylemler tek bir cam gövdeyi paylaşır; yan yana ya da üst üste, ayraç ve metinle; bazılarını ayırmak için grupları iç içe koy. Button\'ın camını taşır; sen boyamadıkça beyaz renkli camdır, üç boyutta.',
         ),
       },
+      {
+        kind: 'fixed',
+        text: t(
+          'Less work per frame. Moving the mouse no longer re-uploads every visible glass\'s textures on each frame: only the light is shaded again. A `live` Card reads the page behind it about 60 times a second instead of on every frame of a 120 Hz display, and skips the upload when the picture is the same. The look is unchanged.',
+          'Kare başına daha az iş. Fareyi oynatmak artık görünen her camın dokularını her karede yeniden yüklemiyor: yalnızca ışık yeniden hesaplanıyor. `live` bir Card arkasındaki sayfayı 120 Hz bir ekranın her karesinde değil, saniyede yaklaşık 60 kez okuyor ve görüntü aynıysa yüklemeyi atlıyor. Görünüm değişmedi.',
+        ),
+      },
     ],
   },
   {

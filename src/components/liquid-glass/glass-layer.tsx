@@ -408,7 +408,9 @@ export function GlassLayer({
                   const now = performance.now()
                   if (!page.ctx) page.ctx = page.canvas.getContext('2d')
                   // The page is re-painted when the glass moves, on scroll, and at most every 120 ms otherwise.
-                  if (page.ctx && (live || page.stale || key !== page.key || now - page.at > 120)) {
+                  // `live` reads it again every frame at 60 Hz, and every second or third frame on a faster display.
+                  const again = !!page.ctx && (page.stale || key !== page.key || now - page.at > (live ? 12 : 120))
+                  if (page.ctx && again) {
                     page.stale = false
                     page.key = key
                     page.at = now
@@ -435,6 +437,8 @@ export function GlassLayer({
                   back.setTransform(1, 0, 0, 1, 0, 0)
                   back.drawImage(page.canvas, 0, 0)
                   back.restore()
+                  // The same picture of the page as last time: the engine keeps its texture.
+                  return again
                 },
                 refract: lerp(44, 37, pc) * Math.max(0, o?.refraction ?? 1),
                 magnify: Math.max(0, o?.magnify ?? 0),

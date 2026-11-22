@@ -76,7 +76,8 @@ export type GlassLens = {
   borderWidth?: number
   /** Textured lens: paints what lies beneath and bends it. */
   refraction?: {
-    paint: (back: CanvasRenderingContext2D, front: CanvasRenderingContext2D) => void
+    /** Return `false` when both layers came out exactly as the last time: they are not uploaded again. */
+    paint: (back: CanvasRenderingContext2D, front: CanvasRenderingContext2D) => void | boolean
     refract: number
     magnify: number
     dispersion: number
@@ -543,24 +544,32 @@ function createEngine(): GlassEngine | null {
   gl.enableVertexAttribArray(attr)
   gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0)
 
-  // Two shared layers for textured lenses: what lies beneath, and what rides on top.
+  // Two shared canvases for textured lenses: what lies beneath, and what rides on top.
+  // Each view keeps its own pair of textures, so a frame that only moves the light re-uses them.
   const layer = () => {
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    return { canvas, ctx: canvas.getContext('2d') }
+  }
+  const texture = (mipmapped: boolean) => {
     const tex = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, tex)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    return { canvas, ctx, tex }
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, mipmapped ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR)
+    if (mipmapped) gl.generateMipmap(gl.TEXTURE_2D)
+    return tex
   }
   const back = layer()
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-  gl.generateMipmap(gl.TEXTURE_2D)
   const front = layer()
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   if (!back.ctx || !front.ctx) return null
+  type Painted = { back: WebGLTexture | null; front: WebGLTexture | null; w: number; h: number; at: number }
+  const painted = new Map<GlassView, Painted>()
+  // What a lens without layers samples (and ignores): a texture unit is never left empty.
+  const blank = { back: texture(true), front: texture(false) }
+  /** The page behind a still lens is read again this often while only the light moves (ms). */
+  const REPAINT_EVERY = 120
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
   gl.uniform1i(gl.getUniformLocation(program, 'uBack'), 0)
@@ -597,7 +606,7 @@ function createEngine(): GlassEngine | null {
   // Cursor light: shared, fades in on the first mouse move, out when the pointer leaves.
   const pointer = { x: 0, y: 0, active: false, moved: false, mix: 0 }
 
-  const draw = (v: GlassView, refresh: boolean) => {
+  const draw = (v: GlassView, refresh: boolean, repaint: boolean) => {
     const m = v.lens(refresh)
     if (!m || m.width < 2 || m.height < 2) {
       v.ctx.clearRect(0, 0, v.canvas.width, v.canvas.height)
@@ -625,23 +634,43 @@ function createEngine(): GlassEngine | null {
     const unit = m.unit
     const r = m.refraction
     if (r) {
-      for (const l of [back, front]) {
-        if (l.canvas.width !== devW || l.canvas.height !== devH) {
-          l.canvas.width = devW
-          l.canvas.height = devH
-        }
-        l.ctx!.setTransform(1, 0, 0, 1, 0, 0)
-        l.ctx!.clearRect(0, 0, devW, devH)
-        l.ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
-      }
-      r.paint(back.ctx!, front.ctx!)
+      let p = painted.get(v)
+      if (!p) painted.set(v, (p = { back: texture(true), front: texture(false), w: 0, h: 0, at: 0 }))
+      const now = performance.now()
+      const sized = p.w === devW && p.h === devH
+      let fresh = !repaint && sized && now - p.at < REPAINT_EVERY
       gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture(gl.TEXTURE_2D, back.tex)
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, back.canvas)
-      gl.generateMipmap(gl.TEXTURE_2D)
+      gl.bindTexture(gl.TEXTURE_2D, p.back)
+      if (!fresh) {
+        for (const l of [back, front]) {
+          if (l.canvas.width !== devW || l.canvas.height !== devH) {
+            l.canvas.width = devW
+            l.canvas.height = devH
+          }
+          l.ctx!.setTransform(1, 0, 0, 1, 0, 0)
+          l.ctx!.clearRect(0, 0, devW, devH)
+          l.ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
+        }
+        // A painter that says nothing changed keeps the textures it already has.
+        fresh = r.paint(back.ctx!, front.ctx!) === false && sized && !refresh
+      }
+      if (!fresh) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, back.canvas)
+        gl.generateMipmap(gl.TEXTURE_2D)
+      }
       gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture(gl.TEXTURE_2D, front.tex)
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, front.canvas)
+      gl.bindTexture(gl.TEXTURE_2D, p.front)
+      if (!fresh) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, front.canvas)
+        p.w = devW
+        p.h = devH
+        p.at = now
+      }
+    } else {
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, blank.back)
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_2D, blank.front)
     }
     gl.uniform1f(u('uTextured'), r ? 1 : 0)
     gl.uniform1f(u('uRefract'), r?.refract ?? 0)
@@ -730,7 +759,8 @@ function createEngine(): GlassEngine | null {
       if (moving || v.dirty || relight) {
         const refresh = v.dirty
         v.dirty = false
-        draw(v, refresh)
+        // Only the light moved: the layers are as they were, so they are not painted again.
+        draw(v, refresh, moving || refresh)
       }
     }
     if (running) raf = requestAnimationFrame(frame)
@@ -784,7 +814,14 @@ function createEngine(): GlassEngine | null {
       views.add(v)
       wake()
     },
-    remove: (v) => views.delete(v),
+    remove: (v) => {
+      views.delete(v)
+      const p = painted.get(v)
+      if (!p) return
+      painted.delete(v)
+      gl.deleteTexture(p.back)
+      gl.deleteTexture(p.front)
+    },
     wake,
     resolveColor,
   }

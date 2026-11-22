@@ -1108,6 +1108,34 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.3.12',
+    date: '2026-11-22',
+    title: t('Examples are coming soon.', 'Örnekler yakında.'),
+    changes: [
+      {
+        kind: 'removed',
+        text: t(
+          'The Examples sections on the component pages are held back for now; a "Coming soon" stage with a fine grid stands in their place.',
+          'Bileşen sayfalarındaki Örnekler bölümleri şimdilik kaldırıldı; yerlerinde ince bir ızgaranın üstünde "Yakında" yazan bir alan duruyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.3.11',
+    date: '2026-11-22',
+    title: t('The wordmark reads LiquidGlass Interfaces.', 'Logo artık LiquidGlass Interfaces yazıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The header and footer wordmark gains "Interfaces", set light like "Liquid".',
+          'Üst ve alt bilgideki logoya "Liquid" gibi ince yazılmış "Interfaces" eklendi.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.3.10',
     date: '2026-11-19',
     title: t('Dark text on a light badge.', 'Açık renkli rozette koyu yazı.'),

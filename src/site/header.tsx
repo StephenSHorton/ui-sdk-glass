@@ -341,7 +341,7 @@ function MobileMenu({ locale }: { locale: Locale }) {
             {close(
               <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
                 <span className="whitespace-nowrap">
-                  <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass
+                  <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
                 </span>
               </Link>,
             )}
@@ -439,7 +439,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         <div className="flex shrink-0 items-center gap-3">
           <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
             <span className="whitespace-nowrap">
-              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass
+              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
             </span>
           </Link>
           {/* The version, one click from what changed in it. Hidden while the centred dock

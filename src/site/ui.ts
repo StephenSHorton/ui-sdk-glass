@@ -8,6 +8,7 @@ export const UI = {
     docs: {
       pagination: 'Previous and next page',
       onThisPage: 'On this page',
+      soon: 'Coming soon',
       install: 'Installation',
       manualLink: 'Or copy the files by hand',
       noDeps: 'No dependencies',
@@ -86,6 +87,7 @@ export const UI = {
     docs: {
       pagination: 'Önceki ve sonraki sayfa',
       onThisPage: 'Bu sayfada',
+      soon: 'Yakında',
       install: 'Kurulum',
       manualLink: 'Ya da dosyaları elle kopyala',
       noDeps: 'Bağımlılık yok',

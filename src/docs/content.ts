@@ -673,7 +673,7 @@ const [view, setView] = useState('week')
     ),
     verb: t('Drag', 'Sürükle'),
     signature: t('Drag the glass thumb to the end to confirm.', 'Cam topuzu sona kadar sürükle, onaylansın.'),
-    hero: 'glass-slide-to-confirm-basic',
+    hero: 'glass-slide-to-confirm-compact',
     blocks: [
       {
         type: 'when',
@@ -716,6 +716,7 @@ const [view, setView] = useState('week')
         ],
       },
       h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-slide-to-confirm-basic', title: t('A full-width payment', 'Tam genişlikte bir ödeme') },
       { type: 'demo', id: 'glass-slide-to-confirm-error', title: t('A coloured fill, and a failing action', 'Renkli dolgu ve başarısız bir eylem') },
       {
         type: 'p',
@@ -738,7 +739,7 @@ const [view, setView] = useState('week')
           { name: 'resetAfter', type: 'number', default: '0', description: t('Milliseconds after a success before the track opens again. `0` stays confirmed.', 'Başarıdan sonra rayın yeniden açılmasından önceki milisaniye. `0` onaylı kalır.') },
           { name: 'hint', type: 'boolean', default: 'true', description: t('Nudges the thumb every few seconds until it has been touched. Off with reduced motion.', 'Dokunulana dek topuzu birkaç saniyede bir hafifçe iter. Hareketi azalt açıksa kapalıdır.') },
           { name: 'icon', type: 'ReactNode', default: 'chevron', description: t('The thumb\'s idle icon.', 'Topuzun boştaki ikonu.') },
-          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Track height 40, 48 or 56 px.', 'Ray yüksekliği 40, 48 ya da 56 px.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg' | 'xl'", default: "'md'", description: t('Track height 40, 48, 56 or 96 px.', 'Ray yüksekliği 40, 48, 56 ya da 96 px.') },
           { name: 'fillClassName', type: 'string', default: "'bg-[#3291FF] text-white'", description: t('Classes of the fill: its colour and the colour of the text on it.', 'Dolgunun sınıfları: rengi ve üstündeki yazının rengi.') },
           { name: 'disabled', type: 'boolean', default: 'false', description: t('Dims the control and ignores pointer and keyboard.', 'Bileşeni soluklaştırır; imleç ve klavyeyi yok sayar.') },
           { name: 'className', type: 'string', description: t('Width and position of the track.', 'Rayın genişliği ve konumu.') },
@@ -1238,6 +1239,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.4.2',
+    date: '2026-11-22',
+    title: t('Slide to Confirm gets a short, chunky size.', 'Slide to Confirm\'e kısa ve şişko bir boyut geldi.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'New `xl` size: a 96 px track with an 88 px thumb, made for narrow widths.',
+          'Yeni `xl` boyutu: dar genişlikler için 96 px ray ve 88 px topuz.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.4.1',
     date: '2026-11-22',

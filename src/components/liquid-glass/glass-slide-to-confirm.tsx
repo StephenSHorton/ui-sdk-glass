@@ -35,7 +35,7 @@ import { GlassStyles } from './glass-layer'
 import { SPRINGS, clamp, getGlassEngine, lerp, mixRgb, smooth, stepSpring, surfaceColorOf, type GlassView, type Rgb, type Spring } from './engine'
 
 export type GlassSlideState = 'idle' | 'pending' | 'success'
-export type GlassSlideSize = 'sm' | 'md' | 'lg'
+export type GlassSlideSize = 'sm' | 'md' | 'lg' | 'xl'
 
 export type GlassSlideToConfirmProps = {
   /** The instruction, written in the track and used as the slider's name: "Slide to send $240". */
@@ -135,6 +135,7 @@ const sizes: Record<GlassSlideSize, { host: string; thumb: string; fill: string;
   sm: { host: 'h-10 text-[13px] [&_svg]:size-4', thumb: 'size-8', fill: 'h-12 w-8', label: 'left-10', copy: 'left-9 h-10' },
   md: { host: 'h-12 text-sm [&_svg]:size-[18px]', thumb: 'size-10', fill: 'h-14 w-10', label: 'left-12', copy: 'left-11 h-12' },
   lg: { host: 'h-14 text-[15px] [&_svg]:size-5', thumb: 'size-12', fill: 'h-16 w-12', label: 'left-14', copy: 'left-[52px] h-14' },
+  xl: { host: 'h-24 text-[20px] [&_svg]:size-8', thumb: 'size-[88px]', fill: 'h-[104px] w-[88px]', label: 'left-24', copy: 'left-[92px] h-24' },
 }
 
 const svg = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' } as const

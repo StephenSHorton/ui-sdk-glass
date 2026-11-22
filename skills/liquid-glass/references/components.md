@@ -873,18 +873,12 @@ import { GlassSlideToConfirm } from '@/components/liquid-glass'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// Drag the thumb to the end: it turns to clear glass, pulls the fill behind it and bends
-// the label it passes. Let go early and it springs back.
+// Short and chunky: the `xl` track in a narrow width, with a one-word label.
 export default function Demo() {
   return (
-    <div className="flex w-full max-w-sm flex-col items-center">
-      <span className="flex size-12 items-center justify-center rounded-full bg-neutral-900 text-[15px] font-semibold text-white dark:bg-white dark:text-neutral-900">BG</span>
-      <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Sending to Bilal Gürşen</p>
-      <p className="mt-1 text-6xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$240</p>
-      <GlassSlideToConfirm className="mt-9" size="lg" pendingLabel="Sending" successLabel="Sent to Bilal" resetAfter={2600} onConfirm={() => wait(1400)}>
-        Slide to send
-      </GlassSlideToConfirm>
-    </div>
+    <GlassSlideToConfirm className="max-w-64" size="xl" pendingLabel="Sending" successLabel="Sent" resetAfter={2600} onConfirm={() => wait(1400)}>
+      Send
+    </GlassSlideToConfirm>
   )
 }
 ```
@@ -929,6 +923,29 @@ import { GlassSlideToConfirm } from '@/components/liquid-glass'
 - **Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.
 
 ## Examples
+
+### A full-width payment
+
+```tsx
+import { GlassSlideToConfirm } from '@/components/liquid-glass'
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Drag the thumb to the end: it turns to clear glass, pulls the fill behind it and bends
+// the label it passes. Let go early and it springs back.
+export default function Demo() {
+  return (
+    <div className="flex w-full max-w-sm flex-col items-center">
+      <span className="flex size-12 items-center justify-center rounded-full bg-neutral-900 text-[15px] font-semibold text-white dark:bg-white dark:text-neutral-900">BG</span>
+      <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Sending to Bilal Gürşen</p>
+      <p className="mt-1 text-6xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$240</p>
+      <GlassSlideToConfirm className="mt-9" size="lg" pendingLabel="Sending" successLabel="Sent to Bilal" resetAfter={2600} onConfirm={() => wait(1400)}>
+        Slide to send
+      </GlassSlideToConfirm>
+    </div>
+  )
+}
+```
 
 ### A coloured fill, and a failing action
 
@@ -978,7 +995,7 @@ Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is th
 | `resetAfter` | `number` | `0` | Milliseconds after a success before the track opens again. `0` stays confirmed. |
 | `hint` | `boolean` | `true` | Nudges the thumb every few seconds until it has been touched. Off with reduced motion. |
 | `icon` | `ReactNode` | `chevron` | The thumb's idle icon. |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Track height 40, 48 or 56 px. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Track height 40, 48, 56 or 96 px. |
 | `fillClassName` | `string` | `'bg-[#3291FF] text-white'` | Classes of the fill: its colour and the colour of the text on it. |
 | `disabled` | `boolean` | `false` | Dims the control and ignores pointer and keyboard. |
 | `className` | `string` | — | Width and position of the track. |

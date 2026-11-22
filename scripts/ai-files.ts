@@ -59,7 +59,8 @@ function registryItem(item: RegistryItem) {
     type: 'registry:block',
     title: item.title,
     description: item.description,
-    dependencies: packages.map((p) => `${p}@${VERSIONS[p] ?? 'latest'}`),
+    // What the files import, plus packages an item names itself (a peer the imports never mention).
+    dependencies: [...new Set([...packages, ...(item.dependencies ?? [])])].sort().map((p) => `${p}@${VERSIONS[p] ?? 'latest'}`),
     ...(item.cssVars ? { cssVars: item.cssVars } : {}),
     ...(item.css ? { css: item.css } : {}),
     docs: `Docs: ${SITE_ORIGIN}/docs/${item.docs ?? item.name}.md — copy verbatim; customise through props and classes only.`,
@@ -125,14 +126,14 @@ const RULES = `## Rules for AI agents
 
 1. Install with the shadcn CLI command shown on each page, or copy the files from ${REPO_URL}/tree/main/src/components/liquid-glass verbatim. Never re-implement, port or "simplify" the engine or shader: the look depends on its exact constants.
 2. Customise only through the documented props and class names (\`className\`, \`bg-*\`, \`text-*\`, \`--glass-tint\`).
-3. The components, one verb each: GlassButton (press), GlassActionButton (merge), GlassTabs (travel), GlassBadge (flow), GlassSlideToConfirm (drag), GlassCard (hold), RangeSlider (slide), Switch (flip), Checkbox (tick). Pick by the verb; they never overlap. Zero npm dependencies, except RangeSlider, Switch and Checkbox (imported from \`controls/\`), which need \`three\`; they wrap your own DOM. The gooey droplet exists only in GlassActionButton: its arrow floats apart and melts into the body when pressed. For your own tabs markup (Radix Tabs), GlassLens ships with GlassTabs; for a router link, use \`<GlassButton asChild>\`.
+3. The components, one verb each: GlassButton (press), GlassActionButton (merge), GlassTabs (travel), GlassBadge (flow), GlassSlideToConfirm (drag), GlassCard (hold), RangeSlider (slide), Switch (flip), Checkbox (tick), GlassSelect (stretch). Pick by the verb; they never overlap. Zero npm dependencies, except RangeSlider, Switch and Checkbox (imported from \`controls/\`), which need \`three\`, and GlassSelect (imported from \`glass-select\`), which needs \`@ui-sdk/core\` and \`@ui-sdk/react\`; they wrap your own DOM. GlassActionButton's arrow is a gooey droplet that floats apart and melts into the body when pressed; GlassSelect's list stretches out of its button on a gooey neck, and GlassPopup (ships with it) puts that on your own menu or popover. For your own tabs markup (Radix Tabs), GlassLens ships with GlassTabs; for a router link, use \`<GlassButton asChild>\`.
 4. Requirements: React 19, Tailwind CSS v4, an \`@/\` alias to the source folder.`
 
 function llmsIndex(): string {
   const lines = [
     '# Liquid Glass UI',
     '',
-    '> Glass React components drawn by one zero-dependency WebGL2 shader, one verb each: press (GlassButton), merge (GlassActionButton), travel (GlassTabs), flow (GlassBadge), drag (GlassSlideToConfirm), hold (GlassCard), slide (RangeSlider), flip (Switch), tick (Checkbox; these three need `three`). Copy-paste components (shadcn registry), MIT.',
+    '> Glass React components drawn by one zero-dependency WebGL2 shader, one verb each: press (GlassButton), merge (GlassActionButton), travel (GlassTabs), flow (GlassBadge), drag (GlassSlideToConfirm), hold (GlassCard), slide (RangeSlider), flip (Switch), tick (Checkbox; these three need `three`), stretch (GlassSelect; needs `@ui-sdk/core` and `@ui-sdk/react`). Copy-paste components (shadcn registry), MIT.',
     '',
     RULES,
     '',

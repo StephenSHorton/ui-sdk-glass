@@ -35,6 +35,21 @@ export type GlassLens = {
   bodyX: number
   /** Separated droplet: centre x relative to the lens centre, radius, gooey bridge softness. */
   droplet?: { x: number; r: number; k: number }
+  /**
+   * A second rounded box melted into the body, in any direction: centre relative to the body's
+   * centre, half size, corner radius and gooey bridge softness (all CSS px). Omit it and the
+   * shape is exactly the body (and droplet) alone.
+   */
+  blob?: {
+    x: number
+    y: number
+    hx: number
+    hy: number
+    r: number
+    k: number
+    /** Gathers the bridge around one point: the softness falls off from `x` (relative to the body's centre) over `w` px, so a thinning bridge narrows into a neck there. */
+    neck?: { x: number; w: number }
+  }
   /** Bevel width (design units). */
   bevel: number
   /**
@@ -170,6 +185,40 @@ export const SPRINGS = {
   drag: { omega: 40, zeta: 0.999 },
 } as const
 
+/**
+ * The gooey popup: a surface (a list, a menu, a popover) that swells out of its anchor as one
+ * body of glass, holds on by a neck that thins and snaps, and plays the same motion backwards to
+ * close. Used by GlassPopup (`glass-popup.tsx`). These values are the look: do not tune them casually.
+ */
+export const GOOEY = {
+  /** How heavy the two halves are. Heavier glass is thrown less by a jolt and swings back slower. */
+  weight: 6,
+  /** The panel opening: speed, and damping (below 1 it overshoots as it lands). */
+  openSpeed: 11,
+  openDamping: 1,
+  /** Closing replays the opening backwards, at closeSpeed / openSpeed × its pace (equal = the same pace). */
+  closeSpeed: 17.5,
+  /** The panel lets go of the trigger once it is this far open (0–1). */
+  detachAt: 0.1,
+  /** How fast the neck thins once it lets go (lower = a slower snap). */
+  snapSpeed: 8,
+  /** Bridge softness in px at full strength, and how far the panel leans back towards the trigger. */
+  neckSoftness: 90,
+  neckPull: 11,
+  /** The jolt when the neck snaps: its strength, how fast it swings, how soon it dies out (higher = sooner). */
+  kick: 6,
+  recoilSpeed: 4,
+  recoilDamping: 1,
+  /** How far each half is thrown by a jolt, and how far the trigger sags while attached (px). */
+  triggerJolt: 12,
+  panelJolt: 16,
+  triggerSag: 6,
+  /** The list: how far open the panel is when the first option appears (0–1), the delay between options and each one's fade (seconds). */
+  itemsAt: 0.85,
+  itemsGap: 0.06,
+  itemsFade: 0.22,
+}
+
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 export const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 export const smooth = (a: number, b: number, v: number) => {
@@ -203,6 +252,8 @@ precision highp float;
 uniform vec2 uSize, uCenter, uHalf, uLightDir;
 uniform float uUnit, uDevicePx, uRadius, uBevel, uBodyX, uBand, uFieldRadius;
 uniform vec3 uDrop;
+uniform vec4 uBlob;
+uniform vec2 uBlobShape, uBlobNeck;
 uniform float uRim, uCaustic, uInner, uTopRefl, uTopBase, uRimWidth, uFresnel;
 uniform float uShadow, uShadowSoft, uShadowOffset;
 uniform float uLightMix, uEdgeClear;
@@ -252,8 +303,12 @@ float roundRect(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
+float melt(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (a - b) / k, 0.0, 1.0);
+  return mix(a, b, h) - k * h * (1.0 - h);
+}
 // The glass shape: a pill body, smoothly unioned with a separating droplet.
-float shape(vec2 p) {
+float bodyShape(vec2 p) {
   float body = roundRect(p - vec2(uBodyX, 0.0), uHalf, uRadius);
   if (uDrop.y <= 0.0) return body;
   float d = length(p - vec2(uDrop.x, 0.0)) - uDrop.y;
@@ -261,8 +316,27 @@ float shape(vec2 p) {
   float h = clamp(0.5 + 0.5 * (d - body) / k, 0.0, 1.0);
   return mix(d, body, h) - k * h * (1.0 - h);
 }
+// ...and with the optional second box (uBlobShape.y = its bridge softness, 0 = none).
+float blobSoft(vec2 p) {
+  float k = uBlobShape.y;
+  if (uBlobNeck.y > 0.0) {
+    float n = (p.x - uBlobNeck.x) / uBlobNeck.y;
+    // A peaked falloff: as the softness drops, the bridge thins into a thread before it breaks.
+    k *= exp(0.2 - sqrt(n * n + 0.04));
+  }
+  return max(k, 1e-3);
+}
+float shape(vec2 p) {
+  float s = bodyShape(p);
+  if (uBlobShape.y <= 0.0) return s;
+  return melt(roundRect(p - uBlob.xy, uBlob.zw, uBlobShape.x), s, blobSoft(p));
+}
 // The body with corners at least as round as the bend is deep (see uBand in main).
-float field(vec2 p) { return roundRect(p - vec2(uBodyX, 0.0), uHalf, uFieldRadius); }
+float field(vec2 p) {
+  float f = roundRect(p - vec2(uBodyX, 0.0), uHalf, uFieldRadius);
+  if (uBlobShape.y <= 0.0) return f;
+  return melt(roundRect(p - uBlob.xy, uBlob.zw, uBlobShape.x), f, blobSoft(p));
+}
 // The reference darkens linear colour; on sRGB values the same factor is k^(1/2.2).
 float dim(float k) { return pow(clamp(k, 0.0, 1.0), 1.0 / 2.2); }
 vec3 dim(vec3 k) { return pow(clamp(k, 0.0, 1.0), vec3(1.0 / 2.2)); }
@@ -576,6 +650,10 @@ function createEngine(): GlassEngine | null {
     gl.uniform1f(u('uFieldRadius'), Math.min(Math.max(radius, band), Math.max(0, (Math.min(m.hx, m.hy) - 0.5) / unit)))
     gl.uniform1f(u('uBodyX'), m.bodyX / unit)
     gl.uniform3f(u('uDrop'), (m.droplet?.x ?? 0) / unit, (m.droplet?.r ?? 0) / unit, (m.droplet?.k ?? 0) / unit)
+    const blob = m.blob
+    gl.uniform4f(u('uBlob'), (blob?.x ?? 0) / unit, (blob?.y ?? 0) / unit, (blob?.hx ?? 0) / unit, (blob?.hy ?? 0) / unit)
+    gl.uniform2f(u('uBlobShape'), (blob?.r ?? 0) / unit, (blob?.k ?? 0) / unit)
+    gl.uniform2f(u('uBlobNeck'), (blob?.neck?.x ?? 0) / unit, (blob?.neck?.w ?? 0) / unit)
     gl.uniform1f(u('uBevel'), Math.max(m.bevel, 2))
     const k = m.tune ?? {}
     gl.uniform1f(u('uRim'), 0.55 * m.strength * (k.rim ?? 1))

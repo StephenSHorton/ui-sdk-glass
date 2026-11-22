@@ -7,7 +7,8 @@
 //
 // Cost model: the loop runs only while a spring moves, a surface is dirty or the
 // cursor light changes; at rest it stops completely. Off-screen surfaces are not
-// drawn. `prefers-reduced-motion` freezes every spring at its target.
+// drawn, and neither is a frame that would come out exactly as the one on the canvas.
+// `prefers-reduced-motion` freezes every spring at its target.
 // If WebGL2 is missing or the context is lost, every surface falls back to plain CSS.
 //
 // COPY THIS FILE VERBATIM. Do not rewrite or "simplify" the shader: the look comes
@@ -51,6 +52,12 @@ export type GlassLens = {
     neck?: { x: number; w: number }
     /** Fades the softness out towards the body's far edge: `amount` 0–1 (0 = none), recovering over `reach` × the body's height from that edge. */
     fade?: { amount: number; reach: number }
+    /**
+     * The blob's own glass, when it is not the body's: tint cover (0–1), frost in CSS px, the
+     * bend's falloff and depth (as `tune.bendCurve` / `tune.bendDepth`) and a white rim line
+     * (opacity, width in CSS px). It casts no shadow then, and the two glasses melt at the neck.
+     */
+    material?: { frost: number; blur: number; bendCurve: number; bendDepth: number; borderAlpha: number; borderWidth: number }
   }
   /** Bevel width (design units). */
   bevel: number
@@ -76,7 +83,11 @@ export type GlassLens = {
   borderWidth?: number
   /** Textured lens: paints what lies beneath and bends it. */
   refraction?: {
-    /** Return `false` when both layers came out exactly as the last time: they are not uploaded again. */
+    /**
+     * Return `false` when both layers came out exactly as the last time, colours included: they
+     * are not uploaded again, not even on a frame that re-read sizes and colours.
+     * A painter that declares only `back` has no front layer (none is cleared or uploaded).
+     */
     paint: (back: CanvasRenderingContext2D, front: CanvasRenderingContext2D) => void | boolean
     refract: number
     magnify: number
@@ -115,6 +126,13 @@ export type GlassLens = {
   }
   /** Rim light leans towards the cursor. */
   cursorLight: boolean
+  /**
+   * Light let into the glass at one point (a press): centre relative to the body's centre and
+   * reach, in CSS px, and how strong (0 = none; see GLOW). It brightens all the glass near it alike, a melted blob
+   * included. `halo` lets it spill past one edge, the body's or the blob's (0–1, how much): there
+   * it brightens the page's colour the same way. Without it nothing shows outside the glass.
+   */
+  glow?: { x: number; y: number; r: number; amount: number; halo?: { around: 'body' | 'blob'; amount: number } }
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -124,6 +142,11 @@ export type GlassView = {
   canvas: HTMLCanvasElement
   ctx: CanvasRenderingContext2D
   dirty: boolean
+  /**
+   * Set it (and wake the engine) when what lies behind the glass may have changed and the glass
+   * itself has not, as on scroll: the layers are painted again, sizes and colours are not re-read.
+   */
+  repaint?: boolean
   visible: boolean
   /** Advance springs; return true while anything still moves. */
   step: (dt: number, reducedMotion: boolean) => boolean
@@ -173,6 +196,44 @@ export function stepSpring(s: Spring, target: number, { omega, zeta }: { omega: 
   return !settled
 }
 
+/**
+ * A press lets light into the glass where it lands. The light paints nothing: it brightens what
+ * is already there, keeping its colour (luminance L becomes L^(1 / (1 + amount)) at the centre,
+ * so black stays black and white stays white). Used by GlassPopup (`glass-popup.tsx`). These are
+ * the values for wider controls; GLOW_SMALL, below, holds the same set for small ones.
+ */
+export const GLOW = {
+  /** One press, at the centre of the light. Presses that land before the last has faded add up, to `stack` presses at most. */
+  amount: 3.55,
+  stack: 3,
+  /** A choice made inside an open surface: this much of a press. */
+  select: 0.55,
+  /** The light's reach at first, and how much further it spreads as it fades (both × the control's height). */
+  reach: 1.65,
+  spread: 3,
+  /** It stays for at least this long (seconds), comes up at `riseSpeed`, fades at `fadeSpeed` and spreads at `spreadSpeed` (springs: higher = faster). */
+  hold: 0.2,
+  riseSpeed: 60,
+  fadeSpeed: 5.5,
+  spreadSpeed: 5,
+  /**
+   * The press that opens a surface: its light grows with the surface until it covers it whole
+   * (its reach ends at `cover` × the surface's diagonal). It lets go once the surface is this
+   * far open (0–1) and fades at `coverFadeSpeed`: a flash, not a wash.
+   */
+  cover: 0.9,
+  coverUntil: 0.1,
+  coverFadeSpeed: 10,
+  /** How much of the light spills past an open surface's edge (0 = none). */
+  halo: 1,
+}
+/**
+ * The same light on a small control: a single icon, or a label of about five letters (up to
+ * roughly twice as wide as it is tall, as in GOOEY). In between the two sets are blended. The
+ * light stays close to the press there, comes up slower and holds until the surface is half open.
+ */
+export const GLOW_SMALL: typeof GLOW = { ...GLOW, reach: 0.7, spread: 0.7, riseSpeed: 24, coverUntil: 0.5 }
+
 /** Every spring the kit uses. Hover width/height bounce out of phase: the glass wobbles like a drop. */
 export const SPRINGS = {
   press: { omega: 16, zeta: 0.6 },
@@ -200,13 +261,13 @@ export const GOOEY = {
   openSpeed: 11,
   openDamping: 1,
   /** Closing replays the opening backwards, at closeSpeed / openSpeed × its pace (equal = the same pace). */
-  closeSpeed: 17.5,
+  closeSpeed: 26,
   /** The panel lets go of the trigger once it is this far open (0–1). */
   detachAt: 0.1,
   /** How fast the neck thins once it lets go (lower = a slower snap). */
   snapSpeed: 5.6,
   /** Bridge softness in px at full strength, and how far the panel leans back towards the trigger. */
-  neckSoftness: 90,
+  neckSoftness: 50,
   neckPull: 11,
   /** The jolt when the neck snaps: its strength, how fast it swings, how soon it dies out (higher = sooner). */
   kick: 6,
@@ -278,6 +339,10 @@ uniform sampler2D uBack, uFront;
 uniform float uTextured, uRefract, uMag, uDisp, uBlurCenter, uBlurEdge, uBlurShift, uFrost, uFrostBlur, uFrostMix;
 uniform float uFrostEdge, uSaturation, uBendCurve, uEdgeBand;
 uniform vec2 uRadial;
+uniform vec4 uGlow;
+uniform vec2 uGlowHalo;
+uniform vec4 uBlobMat;
+uniform vec3 uBlobLine;
 uniform float uCssPx;
 out vec4 outColor;
 
@@ -352,6 +417,10 @@ float shape(vec2 p) {
   if (uBlobShape.y <= 0.0) return s;
   return melt(roundRect(p - uBlob.xy, uBlob.zw, uBlobShape.x), s, blobSoft(p));
 }
+// What casts the drop shadow: the body alone once a blob has a glass of its own.
+float caster(vec2 p) {
+  return uBlobShape.y > 0.0 && uBlobLine.z > 0.5 ? bodyShape(p) : shape(p);
+}
 // The body with corners at least as round as the bend is deep (see uBand in main).
 float field(vec2 p) {
   float f = roundRect(p - vec2(uBodyX, 0.0), uHalf, uFieldRadius);
@@ -370,15 +439,15 @@ float height(vec2 p) {
 float radialRatio(float d) {
   return clamp(1.0 - abs(d) / (min(uHalf.x, uHalf.y) * uEdgeBand / 0.35), 0.0, 1.0);
 }
-vec2 radialBend(vec2 q) {
-  float d = shape(q);
+// d = shape(q): the caller has it already.
+vec2 radialBend(vec2 q, float d) {
   vec2 c = q - vec2(uBodyX, 0.0);
   float k = pow(radialRatio(d), uBendCurve) * smoothstep(1.5 * uCssPx, -0.5 * uCssPx, d);
   return -c / max(length(c), 1e-4) * k * uRadial;
 }
 // Frost after the bend: every tap is bent on its own, and taps outside the glass are left
 // out (the SVG filter saw nothing beyond the card), so the rim keeps its colour.
-vec3 frostedRadial(vec2 q, float sigma) {
+vec3 frostedRadial(vec2 q, float dq, float sigma) {
   float lod = max(log2(sigma * 0.8 * uUnit) - 0.5, 0.0);
   vec3 sum = vec3(0.0);
   float total = 0.0;
@@ -387,11 +456,13 @@ vec3 frostedRadial(vec2 q, float sigma) {
     float r = sqrt(f / 32.0) * 2.5 * sigma;
     float a = f * 2.39996323;
     vec2 t = q + r * vec2(cos(a), sin(a));
-    float w = exp(-0.5 * r * r / (sigma * sigma)) * step(shape(t), 0.0);
-    sum += backdrop(toUv(uCenter + t + radialBend(t)), lod) * w;
+    // One shape per tap: it masks the tap and bends it.
+    float dt = shape(t);
+    float w = exp(-0.5 * r * r / (sigma * sigma)) * step(dt, 0.0);
+    sum += backdrop(toUv(uCenter + t + radialBend(t, dt)), lod) * w;
     total += w;
   }
-  return total > 1e-4 ? sum / total : backdrop(toUv(uCenter + q + radialBend(q)), lod);
+  return total > 1e-4 ? sum / total : backdrop(toUv(uCenter + q + radialBend(q, dq)), lod);
 }
 
 void main() {
@@ -402,11 +473,49 @@ void main() {
   // Drop shadow: tight + ambient, kept near the glass, faded before the canvas edge.
   float vFade = smoothstep(-0.1, 0.9, local.y / uHalf.y) * 0.92 + 0.08;
   float outside = smoothstep(-4.0, 14.0, dist);
-  float near = 1.0 - smoothstep(-6.0, uShadowSoft, shape(local - vec2(0.0, uShadowOffset)));
-  float far = 1.0 - smoothstep(-10.0, uShadowSoft * 1.5, shape(local - vec2(0.0, uShadowOffset * 1.6)));
+  float near = 1.0 - smoothstep(-6.0, uShadowSoft, caster(local - vec2(0.0, uShadowOffset)));
+  float far = 1.0 - smoothstep(-10.0, uShadowSoft * 1.5, caster(local - vec2(0.0, uShadowOffset * 1.6)));
   float border = min(min(px.x, px.y), min(uSize.x - px.x, uSize.y - px.y));
   float sh = clamp((near + far) * uShadow * vFade * outside, 0.0, 0.85) * smoothstep(0.0, 14.0, border);
   vec4 outsideCol = vec4(0.0, 0.0, 0.0, 1.0 - dim(1.0 - sh));
+
+  // Glow (see below): its strength here. It stays inside the glass unless a halo is asked for
+  // (uGlowHalo: 1 = around the body, 2 = around the blob; and how much).
+  float glowAt = 0.0;
+  if (uGlow.w > 0.0) {
+    vec2 gd = (local - uGlow.xy) / max(uGlow.z, 1.0);
+    glowAt = uGlow.w * exp(-dot(gd, gd));
+    if (uGlowHalo.x > 0.5) {
+      // Past that edge it brightens the page the same way: the page's own colour at its
+      // brightest, laid over just thick enough to lift the surface colour to L^(1 / (1 + halo)).
+      float edgeDist = uGlowHalo.x > 1.5 ? roundRect(local - uBlob.xy, uBlob.zw, uBlobShape.x) : roundRect(local - vec2(uBodyX, 0.0), uHalf, uRadius);
+      float halo = glowAt * uGlowHalo.y * exp(-max(edgeDist, 0.0) / 28.0) * smoothstep(0.0, 14.0, border);
+      float pageL = max(dot(uSurface, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+      float pageMax = max(max(uSurface.r, uSurface.g), uSurface.b);
+      float cover = clamp((pow(pageL, 1.0 / (1.0 + halo)) / pageL - 1.0) * pageMax / max(1.0 - pageMax, 1e-3), 0.0, 1.0);
+      outsideCol = vec4(uSurface / max(pageMax, 1e-3) * cover, cover + outsideCol.a * (1.0 - cover));
+    }
+  }
+
+  // Outside the glass the shadow (and the halo) is the whole pixel: about half of every canvas
+  // stops here, before the bevel, the bend and the light are worked out.
+  float aa = max(fwidth(dist), 1e-4);
+  float mask = 1.0 - smoothstep(-aa, aa, dist);
+  if (mask <= 0.0) {
+    outColor = outsideCol;
+    return;
+  }
+
+  // The lighting belongs to the body. A melted blob takes none of it (no reflection, inner
+  // shading, rim light or caustic): its face stays flat, and the light fades out where it begins.
+  float lit = 1.0;
+  if (uBlobShape.y > 0.0) lit = 1.0 - smoothstep(-2.0, 8.0, roundRect(local - vec2(uBodyX, 0.0), uHalf, uRadius));
+  // A blob with a glass of its own: its tint, frost and bend take over where the light leaves.
+  float own = (1.0 - lit) * uBlobLine.z;
+  float frostCover = mix(uFrost, uBlobMat.x, own);
+  float frostBlur = mix(uFrostBlur, uBlobMat.y, own);
+  float bendCurve = mix(uBendCurve, uBlobMat.z, own);
+  float edgeBand = mix(uEdgeBand, uBlobMat.w, own);
 
   // Surface normal from the bevel height field.
   float e = 1.25;
@@ -414,7 +523,7 @@ void main() {
   vec2 grad = vec2(height(local + vec2(e, 0.0)) - h, height(local + vec2(0.0, e)) - h) / e;
   vec3 normal = normalize(vec3(-grad * 42.0, 1.0));
   float depth = clamp(1.0 - h, 0.0, 1.0);
-  float edge = 1.0 - smoothstep(0.0, uBevel * uEdgeBand, -dist);
+  float edge = 1.0 - smoothstep(0.0, uBevel * edgeBand, -dist);
   vec2 dir = normalize(vec2(shape(local + vec2(e, 0.0)) - dist, shape(local + vec2(0.0, e)) - dist) + 1e-6);
 
   vec3 glass;
@@ -423,10 +532,10 @@ void main() {
     float ratio = radialRatio(dist);
     float sharpLod = max(uBlurShift, 0.0);
     if (uFrostBlur > 0.0 && dist < 1.0) {
-      vec3 frost = frostedRadial(local, uFrostBlur * mix(1.0, uFrostEdge, pow(ratio, 1.3)));
-      glass = uFrostMix < 1.0 ? mix(bent(uCenter + local, radialBend(local), uDisp * 0.35, sharpLod), frost, uFrostMix) : frost;
+      vec3 frost = frostedRadial(local, dist, uFrostBlur * mix(1.0, uFrostEdge, pow(ratio, 1.3)));
+      glass = uFrostMix < 1.0 ? mix(bent(uCenter + local, radialBend(local, dist), uDisp * 0.35, sharpLod), frost, uFrostMix) : frost;
     } else {
-      glass = bent(uCenter + local, radialBend(local), uDisp * 0.35, sharpLod);
+      glass = bent(uCenter + local, radialBend(local, dist), uDisp * 0.35, sharpLod);
     }
     if (uSaturation != 1.0) glass = max(mix(vec3(dot(glass, vec3(0.2126, 0.7152, 0.0722))), glass, uSaturation), 0.0);
   } else if (uTextured > 0.5) {
@@ -442,14 +551,14 @@ void main() {
       bendEdge = 1.0 - smoothstep(0.0, uBand, -fd);
     }
     vec2 magnified = local / (uMag * h + 1.0);
-    vec2 bend = -bendDir * uRefract * pow(bendEdge, uBendCurve);
-    float split = uDisp * 0.35;
+    vec2 bend = -bendDir * uRefract * pow(bendEdge, bendCurve);
+    float split = uDisp * 0.35 * (1.0 - own);
     float lod = max(mix(uBlurCenter, uBlurEdge, pow(bendEdge, 1.3)) + uBlurShift, 0.0);
     vec2 at = uCenter + magnified;
-    if (uFrostBlur > 0.0 && dist < 1.0) {
+    if (frostBlur > 0.0 && dist < 1.0) {
       // Frosted (inside the glass only: outside, nothing of it shows). The frost hides the
       // colour split, so one bent point is enough; uFrostMix lets the sharp bend show through.
-      vec3 frost = frosted(at + bend, uFrostBlur * mix(1.0, uFrostEdge, pow(bendEdge, 1.3)));
+      vec3 frost = frosted(at + bend, frostBlur * mix(1.0, uFrostEdge, pow(bendEdge, 1.3)));
       glass = uFrostMix < 1.0 ? mix(bent(at, bend, split, lod), frost, uFrostMix) : frost;
     } else {
       glass = bent(at, bend, split, lod);
@@ -464,24 +573,25 @@ void main() {
   // Top reflection.
   float ny = local.y / uHalf.y;
   float nx = (local.x - uBodyX) / uHalf.x;
-  float top = (1.0 - smoothstep(-0.05, 0.75, ny)) * (1.0 - nx * 0.12) * uTopRefl * 0.6 + uTopBase;
+  float top = ((1.0 - smoothstep(-0.05, 0.75, ny)) * (1.0 - nx * 0.12) * uTopRefl * 0.6 + uTopBase) * lit;
   glass *= dim(1.0 - vec3(1.0, 1.0, 0.72) * top);
 
   // Frosted resting state: a still lens is the flat highlight colour.
-  glass = mix(glass, uColor, uFrost * step(0.5, uTextured));
+  glass = mix(glass, uColor, frostCover * step(0.5, uTextured));
 
   // Inner shading: just inside the rim, a wide band on the left, a deep ring.
   float up = clamp(-dir.y, 0.0, 1.0);
   float right = clamp(dir.x, 0.0, 1.0);
   float left = clamp(-dir.x, 0.0, 1.0);
   float down = clamp(dir.y, 0.0, 1.0);
+  float inner = uInner * lit;
   float innerBand = smoothstep(uBevel * -0.19, uBevel * -0.024, dist);
-  glass *= dim(1.0 - innerBand * (up + left * 0.6 + right * 0.3 + down * 0.15) * uInner * 2.2);
+  glass *= dim(1.0 - innerBand * (up + left * 0.6 + right * 0.3 + down * 0.15) * inner * 2.2);
   float deepBand = smoothstep(uBevel * -0.73, uBevel * -0.13, dist);
-  glass *= dim(1.0 - deepBand * left * uInner * 2.0);
+  glass *= dim(1.0 - deepBand * left * inner * 2.0);
   float hx = (dist + uBevel * 0.45) / (uBevel * 0.26);
   float ring = exp(-hx * hx);
-  glass *= dim(1.0 - ring * (right * 0.9 + up * 0.5 + left * 0.4 + down * 0.3) * uInner * 1.5);
+  glass *= dim(1.0 - ring * (right * 0.9 + up * 0.5 + left * 0.4 + down * 0.3) * inner * 1.5);
 
   // Rim light + fresnel; leans a little towards the cursor when there is one.
   float fresnel = pow(clamp(1.0 - normal.z, 0.0, 1.0), 6.0);
@@ -492,23 +602,28 @@ void main() {
   float lightCos = dot(dir, uLightDir);
   float facing = clamp(lightCos, 0.0, 1.0);
   float away = clamp(-lightCos, 0.0, 1.0);
-  float lit = facing * facing * 0.9 + away * away * 0.55;
+  float aimed = facing * facing * 0.9 + away * away * 0.55;
   float lean = uLightMix * 0.4;
-  float rimDir = mix(studio, lit, lean);
+  float rimDir = mix(studio, aimed, lean);
   float front = mix(right, facing, lean);
   float back = mix(left, away, lean);
   vec3 warmCool = mix(vec3(0.82, 0.9, 1.08), vec3(1.2, 0.95, 0.78), 1.0 - smoothstep(-0.5, 0.1, nx));
   vec3 rimCol = mix(vec3(1.0), warmCool, down * 0.6);
   rimCol = mix(rimCol, vec3(0.12, 0.6, 1.2), back * 0.85);
-  glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * uFresnel * step(0.001, uRim));
+  glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * uFresnel * step(0.001, uRim)) * lit;
+
+  // Glow: light let in at one point, fading smoothly with distance. It brightens whatever glass
+  // is near, evenly from the middle to the rim, a melted blob included (the halo is above).
+  float glassL = max(dot(glass, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+  glass *= pow(glassL, 1.0 / (1.0 + glowAt)) / glassL;
 
   // Caustic: warm light gathering inside the bottom edge.
-  glass += vec3(1.0, 0.92, 0.86) * smoothstep(0.72, 0.98, depth) * down * uCaustic;
+  glass += vec3(1.0, 0.92, 0.86) * smoothstep(0.72, 0.98, depth) * down * uCaustic * lit;
 
-  float aa = max(fwidth(dist), 1e-4);
-  float mask = 1.0 - smoothstep(-aa, aa, dist);
   // Bordered body (outline buttons): a flat line just inside the edge.
   glass = mix(glass, uBorder, smoothstep(-uBorderWidth - aa, -uBorderWidth + aa, dist) * step(1e-4, uBorderWidth) * uBorderAlpha);
+  // ...and the white line of a blob with its own glass.
+  glass = mix(glass, vec3(1.0), smoothstep(-uBlobLine.x - aa, -uBlobLine.x + aa, dist) * uBlobLine.y * own);
   vec4 col = mix(outsideCol, vec4(clamp(glass, 0.0, 1.0), 1.0), mask);
   // Front layer (selected labels) sits on the frosted pill and fades as the lens clears.
   vec4 fg = texture(uFront, gl_FragCoord.xy / uSize) * mask * uFrost * step(0.5, uTextured);
@@ -579,6 +694,19 @@ function createEngine(): GlassEngine | null {
     if (!locations.has(name)) locations.set(name, gl.getUniformLocation(program, name))
     return locations.get(name) ?? null
   }
+  // Every uniform of a frame goes through `set`, which keeps the values: a view whose frame
+  // would come out exactly as the one already on its canvas is not drawn again.
+  const sent: number[] = []
+  const set = (name: string, a: number, b?: number, c?: number, d?: number) => {
+    const at = u(name)
+    if (b === undefined) gl.uniform1f(at, a)
+    else if (c === undefined) gl.uniform2f(at, a, b)
+    else if (d === undefined) gl.uniform3f(at, a, b, c)
+    else gl.uniform4f(at, a, b, c, d)
+    sent.push(a, b ?? 0, c ?? 0, d ?? 0)
+  }
+  /** What a view's canvas shows now: its uniforms (empty = nothing usable) and its CSS box. */
+  const shown = new WeakMap<GlassView, { sent: number[]; box: string }>()
 
   const views = new Set<GlassView>()
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -588,8 +716,15 @@ function createEngine(): GlassEngine | null {
   const probeCanvas = document.createElement('canvas')
   probeCanvas.width = probeCanvas.height = 1
   const probe = probeCanvas.getContext('2d', { willReadFrequently: true })
+  // A colour that means the same on every page and in every theme is resolved once: a scroll
+  // or a hover asks for the same few again and again, and asking touches the DOM.
+  const ABSOLUTE = /^(?:#[0-9a-f]{3,8}|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)|black|white|transparent)$/i
+  const resolved = new Map<string, Rgba>()
   const resolveColor = (css: string): Rgba => {
     if (!probe) return [1, 1, 1, 1]
+    const fixed = ABSOLUTE.test(css) && !/currentcolor/i.test(css)
+    const known = fixed ? resolved.get(css) : undefined
+    if (known) return [known[0], known[1], known[2], known[3]]
     const span = document.createElement('span')
     span.style.color = css
     // Measured on <body>, never inside a host whose children are observed.
@@ -600,6 +735,10 @@ function createEngine(): GlassEngine | null {
     probe.fillStyle = computed
     probe.fillRect(0, 0, 1, 1)
     const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data
+    if (fixed) {
+      if (resolved.size > 400) resolved.clear()
+      resolved.set(css, [r / 255, g / 255, b / 255, a / 255])
+    }
     return [r / 255, g / 255, b / 255, a / 255]
   }
 
@@ -608,21 +747,30 @@ function createEngine(): GlassEngine | null {
 
   const draw = (v: GlassView, refresh: boolean, repaint: boolean) => {
     const m = v.lens(refresh)
+    let on = shown.get(v)
+    if (!on) shown.set(v, (on = { sent: [], box: '' }))
     if (!m || m.width < 2 || m.height < 2) {
       v.ctx.clearRect(0, 0, v.canvas.width, v.canvas.height)
+      on.sent.length = 0
       return
     }
-    const st = v.canvas.style
-    st.left = `${m.left}px`
-    st.top = `${m.top}px`
-    st.width = `${m.width}px`
-    st.height = `${m.height}px`
+    // The canvas's box is written only when it changes.
+    const box = `${m.left}|${m.top}|${m.width}|${m.height}`
+    if (box !== on.box) {
+      on.box = box
+      const st = v.canvas.style
+      st.left = `${m.left}px`
+      st.top = `${m.top}px`
+      st.width = `${m.width}px`
+      st.height = `${m.height}px`
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     const devW = Math.max(2, Math.round(m.width * dpr))
     const devH = Math.max(2, Math.round(m.height * dpr))
     if (v.canvas.width !== devW || v.canvas.height !== devH) {
       v.canvas.width = devW
       v.canvas.height = devH
+      on.sent.length = 0
     }
     // The shared GL canvas only grows; each view is drawn into its bottom-left corner.
     if (glCanvas.width < devW || glCanvas.height < devH) {
@@ -633,16 +781,20 @@ function createEngine(): GlassEngine | null {
 
     const unit = m.unit
     const r = m.refraction
+    /** The layers are the ones this view was last drawn with. */
+    let fresh = true
     if (r) {
       let p = painted.get(v)
       if (!p) painted.set(v, (p = { back: texture(true), front: texture(false), w: 0, h: 0, at: 0 }))
       const now = performance.now()
       const sized = p.w === devW && p.h === devH
-      let fresh = !repaint && sized && now - p.at < REPAINT_EVERY
+      // A painter that takes only `back` has no front layer: none is cleared or uploaded.
+      const fronted = r.paint.length > 1
+      fresh = !repaint && sized && now - p.at < REPAINT_EVERY
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, p.back)
       if (!fresh) {
-        for (const l of [back, front]) {
+        for (const l of fronted ? [back, front] : [back]) {
           if (l.canvas.width !== devW || l.canvas.height !== devH) {
             l.canvas.width = devW
             l.canvas.height = devH
@@ -652,16 +804,16 @@ function createEngine(): GlassEngine | null {
           l.ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
         }
         // A painter that says nothing changed keeps the textures it already has.
-        fresh = r.paint(back.ctx!, front.ctx!) === false && sized && !refresh
+        fresh = r.paint(back.ctx!, front.ctx!) === false && sized
       }
       if (!fresh) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, back.canvas)
         gl.generateMipmap(gl.TEXTURE_2D)
       }
       gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture(gl.TEXTURE_2D, p.front)
+      gl.bindTexture(gl.TEXTURE_2D, fronted ? p.front : blank.front)
       if (!fresh) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, front.canvas)
+        if (fronted) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, front.canvas)
         p.w = devW
         p.h = devH
         p.at = now
@@ -672,65 +824,80 @@ function createEngine(): GlassEngine | null {
       gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture(gl.TEXTURE_2D, blank.front)
     }
-    gl.uniform1f(u('uTextured'), r ? 1 : 0)
-    gl.uniform1f(u('uRefract'), r?.refract ?? 0)
-    gl.uniform1f(u('uMag'), r?.magnify ?? 0)
-    gl.uniform1f(u('uDisp'), r?.dispersion ?? 0)
-    gl.uniform1f(u('uBlurCenter'), r?.blurCenter ?? 0)
-    gl.uniform1f(u('uBlurEdge'), r?.blurEdge ?? 0)
+    sent.length = 0
+    set('uTextured', r ? 1 : 0)
+    set('uRefract', r?.refract ?? 0)
+    set('uMag', r?.magnify ?? 0)
+    set('uDisp', r?.dispersion ?? 0)
+    set('uBlurCenter', r?.blurCenter ?? 0)
+    set('uBlurEdge', r?.blurEdge ?? 0)
     // Blur level follows screen density (reference: 2.27 device px per design unit).
-    gl.uniform1f(u('uBlurShift'), Math.log2(Math.max((unit * dpr) / 2.27, 1e-3)))
-    gl.uniform1f(u('uFrost'), r?.frost ?? 0)
-    gl.uniform1f(u('uFrostBlur'), Math.max(0, r?.blur ?? 0) / unit)
-    gl.uniform1f(u('uFrostMix'), clamp(r?.blurMix ?? 1))
+    set('uBlurShift', Math.log2(Math.max((unit * dpr) / 2.27, 1e-3)))
+    set('uFrost', r?.frost ?? 0)
+    set('uFrostBlur', Math.max(0, r?.blur ?? 0) / unit)
+    set('uFrostMix', clamp(r?.blurMix ?? 1))
     // Radial bend: a share of the viewport per axis, as the SVG card's map was.
     const radial = Math.max(0, r?.radial ?? 0)
-    gl.uniform2f(u('uRadial'), (radial * window.innerWidth) / unit, (radial * window.innerHeight) / unit)
-    gl.uniform1f(u('uCssPx'), 1 / unit)
-    gl.uniform2f(u('uSize'), devW, devH)
-    gl.uniform1f(u('uUnit'), unit * dpr)
-    gl.uniform1f(u('uDevicePx'), 1 / (unit * dpr))
-    gl.uniform2f(u('uCenter'), m.cx / unit, m.cy / unit)
-    gl.uniform2f(u('uHalf'), Math.max(m.hx / unit, 0.5), Math.max(m.hy / unit, 0.5))
+    set('uRadial', (radial * window.innerWidth) / unit, (radial * window.innerHeight) / unit)
+    set('uCssPx', 1 / unit)
+    set('uSize', devW, devH)
+    set('uUnit', unit * dpr)
+    set('uDevicePx', 1 / (unit * dpr))
+    set('uCenter', m.cx / unit, m.cy / unit)
+    set('uHalf', Math.max(m.hx / unit, 0.5), Math.max(m.hy / unit, 0.5))
     const radius = Math.max(0, Math.min(m.radius, m.hx - 0.5, m.hy - 0.5) / unit)
-    gl.uniform1f(u('uRadius'), radius)
+    set('uRadius', radius)
     const band = r ? (m.band ?? 0) : 0
-    gl.uniform1f(u('uBand'), band)
-    gl.uniform1f(u('uFieldRadius'), Math.min(Math.max(radius, band), Math.max(0, (Math.min(m.hx, m.hy) - 0.5) / unit)))
-    gl.uniform1f(u('uBodyX'), m.bodyX / unit)
-    gl.uniform3f(u('uDrop'), (m.droplet?.x ?? 0) / unit, (m.droplet?.r ?? 0) / unit, (m.droplet?.k ?? 0) / unit)
+    set('uBand', band)
+    set('uFieldRadius', Math.min(Math.max(radius, band), Math.max(0, (Math.min(m.hx, m.hy) - 0.5) / unit)))
+    set('uBodyX', m.bodyX / unit)
+    set('uDrop', (m.droplet?.x ?? 0) / unit, (m.droplet?.r ?? 0) / unit, (m.droplet?.k ?? 0) / unit)
     const blob = m.blob
-    gl.uniform4f(u('uBlob'), (blob?.x ?? 0) / unit, (blob?.y ?? 0) / unit, (blob?.hx ?? 0) / unit, (blob?.hy ?? 0) / unit)
-    gl.uniform2f(u('uBlobShape'), (blob?.r ?? 0) / unit, (blob?.k ?? 0) / unit)
-    gl.uniform2f(u('uBlobNeck'), (blob?.neck?.x ?? 0) / unit, (blob?.neck?.w ?? 0) / unit)
-    gl.uniform2f(u('uBlobFade'), blob?.fade?.amount ?? 0, blob?.fade?.reach ?? 0.5)
-    gl.uniform1f(u('uBevel'), Math.max(m.bevel, 2))
+    set('uBlob', (blob?.x ?? 0) / unit, (blob?.y ?? 0) / unit, (blob?.hx ?? 0) / unit, (blob?.hy ?? 0) / unit)
+    set('uBlobShape', (blob?.r ?? 0) / unit, (blob?.k ?? 0) / unit)
+    set('uBlobNeck', (blob?.neck?.x ?? 0) / unit, (blob?.neck?.w ?? 0) / unit)
+    set('uBlobFade', blob?.fade?.amount ?? 0, blob?.fade?.reach ?? 0.5)
+    const mat = blob?.material
+    set('uBlobMat', clamp(mat?.frost ?? 0), Math.max(0, mat?.blur ?? 0) / unit, Math.max(0.05, mat?.bendCurve ?? 1.6), 0.35 * Math.max(0.05, mat?.bendDepth ?? 1))
+    set('uBlobLine', Math.max(0, mat?.borderWidth ?? 0) / unit, clamp(mat?.borderAlpha ?? 0), mat ? 1 : 0)
+    set('uBevel', Math.max(m.bevel, 2))
     const k = m.tune ?? {}
-    gl.uniform1f(u('uRim'), 0.55 * m.strength * (k.rim ?? 1))
-    gl.uniform1f(u('uCaustic'), 0.08 * m.strength * (k.caustic ?? 1))
-    gl.uniform1f(u('uInner'), 0.1 * m.strength * (k.inner ?? 1))
-    gl.uniform1f(u('uTopRefl'), 0.3 * m.strength * (k.reflection ?? 1))
-    gl.uniform1f(u('uTopBase'), 0.02 * m.strength * (k.reflection ?? 1))
-    gl.uniform1f(u('uRimWidth'), Math.max(0.05, k.rimWidth ?? 1))
-    gl.uniform1f(u('uFresnel'), 0.02 * (k.fresnel ?? 1))
-    gl.uniform1f(u('uBendCurve'), Math.max(0.05, k.bendCurve ?? 1.6))
-    gl.uniform1f(u('uEdgeBand'), 0.35 * Math.max(0.05, k.bendDepth ?? 1))
-    gl.uniform1f(u('uSaturation'), Math.max(0, k.saturation ?? 1))
-    gl.uniform1f(u('uFrostEdge'), Math.max(0.05, k.frostEdge ?? 1))
-    gl.uniform1f(u('uShadow'), m.shadow * m.strength)
-    gl.uniform1f(u('uShadowSoft'), m.shadowSoftness)
-    gl.uniform1f(u('uShadowOffset'), m.shadowOffset)
-    gl.uniform3f(u('uSurface'), ...m.surface)
-    gl.uniform3f(u('uColor'), ...m.color)
-    gl.uniform1f(u('uEdgeClear'), m.edgeClear)
-    gl.uniform3f(u('uBorder'), ...(m.border ?? m.color))
-    gl.uniform1f(u('uBorderWidth'), m.border ? Math.max(0, m.borderWidth ?? 1) / unit : 0)
-    gl.uniform1f(u('uBorderAlpha'), clamp(m.borderAlpha ?? 1))
+    set('uRim', 0.55 * m.strength * (k.rim ?? 1))
+    set('uCaustic', 0.08 * m.strength * (k.caustic ?? 1))
+    set('uInner', 0.1 * m.strength * (k.inner ?? 1))
+    set('uTopRefl', 0.3 * m.strength * (k.reflection ?? 1))
+    set('uTopBase', 0.02 * m.strength * (k.reflection ?? 1))
+    set('uRimWidth', Math.max(0.05, k.rimWidth ?? 1))
+    set('uFresnel', 0.02 * (k.fresnel ?? 1))
+    set('uBendCurve', Math.max(0.05, k.bendCurve ?? 1.6))
+    set('uEdgeBand', 0.35 * Math.max(0.05, k.bendDepth ?? 1))
+    set('uSaturation', Math.max(0, k.saturation ?? 1))
+    set('uFrostEdge', Math.max(0.05, k.frostEdge ?? 1))
+    set('uShadow', m.shadow * m.strength)
+    set('uShadowSoft', m.shadowSoftness)
+    set('uShadowOffset', m.shadowOffset)
+    set('uSurface', ...m.surface)
+    set('uColor', ...m.color)
+    set('uEdgeClear', m.edgeClear)
+    set('uBorder', ...(m.border ?? m.color))
+    set('uBorderWidth', m.border ? Math.max(0, m.borderWidth ?? 1) / unit : 0)
+    set('uBorderAlpha', clamp(m.borderAlpha ?? 1))
     const dx = pointer.x - m.screenX
     const dy = pointer.y - m.screenY
     const d = Math.hypot(dx, dy)
-    gl.uniform2f(u('uLightDir'), d > 0.5 ? dx / d : 0, d > 0.5 ? dy / d : -1)
-    gl.uniform1f(u('uLightMix'), m.cursorLight ? pointer.mix : 0)
+    // The light turns in half-degree steps (one step is less than a level of rim light on an
+    // 8-bit screen), and stays put while it is off: a cursor moving far away, or over glass
+    // without cursor light, leaves the frame as it is.
+    const lightMix = m.cursorLight ? pointer.mix : 0
+    const aim = lightMix > 0 && d > 0.5 ? (Math.round(Math.atan2(dy, dx) * (360 / Math.PI)) * Math.PI) / 360 : -Math.PI / 2
+    set('uLightDir', Math.cos(aim), Math.sin(aim))
+    set('uLightMix', lightMix)
+    const glow = m.glow
+    set('uGlow', (glow?.x ?? 0) / unit, (glow?.y ?? 0) / unit, (glow?.r ?? 0) / unit, Math.max(0, glow?.amount ?? 0))
+    set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0))
+    // The same layers and the same uniforms as the frame on the canvas: nothing to draw.
+    if (fresh && on.sent.length === sent.length && sent.every((value, i) => value === on.sent[i])) return
+    on.sent = sent.slice()
     gl.drawArrays(gl.TRIANGLES, 0, 3)
     v.ctx.clearRect(0, 0, devW, devH)
     v.ctx.drawImage(glCanvas, 0, glCanvas.height - devH, devW, devH, 0, 0, devW, devH)
@@ -756,11 +923,13 @@ function createEngine(): GlassEngine | null {
       const moving = v.step(dt, still)
       if (moving) running = true
       if (!v.visible) continue
-      if (moving || v.dirty || relight) {
+      const again = v.repaint === true
+      if (moving || v.dirty || again || relight) {
         const refresh = v.dirty
         v.dirty = false
+        v.repaint = false
         // Only the light moved: the layers are as they were, so they are not painted again.
-        draw(v, refresh, moving || refresh)
+        draw(v, refresh, moving || refresh || again)
       }
     }
     if (running) raf = requestAnimationFrame(frame)

@@ -1,4 +1,5 @@
-// Liquid Glass — dependency-free glass components (React 19 + Tailwind CSS v4).
+// Liquid Glass — glass components (React 19 + Tailwind CSS v4), drawn by one dependency-free engine.
+// GlassButton and GlassTabs take their behaviour from UI SDK (@ui-sdk/core, @ui-sdk/react).
 // Copy the whole `liquid-glass/` folder, or install with the shadcn CLI (see README).
 //
 //   GlassButton        press   — swells under the pointer, bends the page behind it

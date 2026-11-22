@@ -72,18 +72,19 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup with the zero-dependency WebGL2 engine.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('index.ts')],
+    dependencies: ['@ui-sdk/core'],
     docs: 'introduction',
   },
-  { name: 'button', title: 'GlassButton', description: 'Press: a clear or tinted glass button that swells under the pointer.', entries: [liquid('glass-button.tsx')] },
+  { name: 'button', title: 'GlassButton', description: 'Press: a clear or tinted glass button that swells under the pointer. Needs @ui-sdk/core and @ui-sdk/react.', entries: [liquid('glass-button.tsx')], dependencies: ['@ui-sdk/core'] },
   {
     name: 'action-button',
     title: 'GlassActionButton',
     description: 'Merge: an async action button whose arrow droplet melts into the body when pressed, and stays.',
     entries: [liquid('glass-action-button.tsx')],
   },
-  { name: 'tabs', title: 'GlassTabs', description: 'Travel: a segmented control whose selection travels as a lens (GlassLens included).', entries: [liquid('glass-tabs.tsx')] },
+  { name: 'tabs', title: 'GlassTabs', description: 'Travel: a segmented control whose selection travels as a lens (GlassLens included). Needs @ui-sdk/core and @ui-sdk/react.', entries: [liquid('glass-tabs.tsx')], dependencies: ['@ui-sdk/core'] },
   { name: 'badge', title: 'GlassBadge', description: 'Flow: a glass badge with its text flowing through the lens.', entries: [liquid('glass-badge.tsx')] },
   {
     name: 'slide-to-confirm',
@@ -103,10 +104,10 @@ export const REGISTRY: RegistryItem[] = [
     description: 'Share: related actions in one body of glass, side by side or stacked, with separators and text.',
     entries: [liquid('glass-button-group.tsx')],
   },
-  // The controls below are drawn by their own renderer (controls/glass), which needs `three`.
-  { name: 'slider', title: 'RangeSlider', description: 'Slide: a range slider whose glass thumb opens into a wide lens while held. Needs three.', entries: [liquid('controls/RangeSlider.tsx')] },
-  { name: 'switch', title: 'Switch', description: 'Flip: an on/off switch whose knob swells into a clear lens as it crosses the track. Needs three.', entries: [liquid('controls/Switch.tsx')] },
-  { name: 'checkbox', title: 'Checkbox', description: 'Tick: a checkbox under a cap of clear glass. Needs three.', entries: [liquid('controls/Checkbox.tsx')] },  // Behaviour (keyboard, focus, the top layer, ARIA) comes from UI SDK; the glass is the kit's own engine.
+  // The controls below are drawn by their own renderer (controls/glass), which needs `three`; their behaviour is UI SDK's.
+  { name: 'slider', title: 'RangeSlider', description: 'Slide: a range slider whose glass thumb opens into a wide lens while held. Needs three, @ui-sdk/core and @ui-sdk/react.', entries: [liquid('controls/RangeSlider.tsx')], dependencies: ['@ui-sdk/core'] },
+  { name: 'switch', title: 'Switch', description: 'Flip: an on/off switch whose knob swells into a clear lens as it crosses the track. Needs three, @ui-sdk/core and @ui-sdk/react.', entries: [liquid('controls/Switch.tsx')], dependencies: ['@ui-sdk/core'] },
+  { name: 'checkbox', title: 'Checkbox', description: 'Tick: a checkbox under a cap of clear glass. Needs three, @ui-sdk/core and @ui-sdk/react.', entries: [liquid('controls/Checkbox.tsx')], dependencies: ['@ui-sdk/core'] },  // Behaviour (keyboard, focus, the top layer, ARIA) comes from UI SDK; the glass is the kit's own engine.
   {
     name: 'select',
     title: 'GlassSelect',
@@ -151,7 +152,7 @@ export const PAGES: DocPage[] = [
       {
         type: 'list',
         items: [
-          t('**Zero dependencies.** One WebGL2 context for the whole page, plain TypeScript files, no three.js.', '**Bağımlılık yok.** Tüm sayfa için tek WebGL2 bağlamı, düz TypeScript dosyaları, three.js yok.'),
+          t('**One engine.** One WebGL2 context for the whole page, in plain TypeScript files. Where a component needs behaviour (keyboard, focus, forms, ARIA), it comes from UI SDK.', '**Tek motor.** Tüm sayfa için tek WebGL2 bağlamı, düz TypeScript dosyalarında. Bir bileşenin davranışa (klavye, odak, formlar, ARIA) ihtiyacı varsa, o UI SDK\'dan gelir.'),
           t('**Your DOM.** The glass is a canvas behind your own elements, so any router, any styling and your own markup keep working.', '**Senin DOM\'un.** Cam, senin öğelerinin arkasındaki bir tuvaldir; her router, her stil ve kendi işaretlemen çalışmaya devam eder.'),
           t('**Free at rest.** The render loop runs only while a spring moves and stops completely when nothing does.', '**Dururken bedava.** Çizim döngüsü yalnız bir yay hareket ederken çalışır, hiçbir şey kıpırdamıyorsa tamamen durur.'),
         ],
@@ -306,6 +307,13 @@ and do not modify the files in components/liquid-glass/.`,
         ],
       },
       { type: 'install', item: 'button' },
+      {
+        type: 'note',
+        text: t(
+          'The button underneath is UI SDK\'s, so Button needs `@ui-sdk/core` and `@ui-sdk/react`. Return a Promise from `onClick` and the button stays pending until it settles: it ignores further presses and says so to screen readers. The install command adds both packages at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Alttaki buton UI SDK\'nın butonudur; bu yüzden Button `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. `onClick`\'ten bir Promise döndürürsen buton, o sonuçlanana kadar beklemede kalır: yeni basışları yok sayar ve bunu ekran okuyuculara bildirir. Kurulum komutu iki paketi, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
       h('Usage', 'Kullanım'),
       {
         type: 'code',
@@ -368,7 +376,7 @@ and do not modify the files in components/liquid-glass/.`,
           { name: 'iconPosition', type: "'start' | 'end'", default: "'end'", description: t('Which side the icon sits on.', 'İkonun hangi tarafta durduğu.') },
           { name: 'tint', type: 'number', default: '0.6', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: renk tonunun arkayı ne kadar örttüğü (0–1).') },
           { name: 'asChild', type: 'boolean', default: 'false', description: t('Put the glass on the single child element instead of a `<button>`.', 'Camı `<button>` yerine tek çocuk öğeye koy.') },
-          { name: '…rest', type: 'button attributes', description: t('Passed to the element (`onClick`, `disabled`, `type`…).', 'Öğeye aktarılır (`onClick`, `disabled`, `type`…).') },
+          { name: '…rest', type: 'button attributes', description: t('Passed to the button: `onClick`, `disabled`, `type`, and UI SDK\'s `pendingAnnouncement` and `focusableWhenDisabled`.', 'Butona aktarılır: `onClick`, `disabled`, `type` ve UI SDK\'nın `pendingAnnouncement` ile `focusableWhenDisabled` prop\'ları.') },
         ],
       },
       h('Accessibility', 'Erişilebilirlik'),
@@ -494,6 +502,13 @@ and do not modify the files in components/liquid-glass/.`,
         ],
       },
       { type: 'install', item: 'tabs' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (one tab stop, arrow keys, a hidden radio per option for forms) comes from UI SDK\'s segmented control, so Tabs needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (tek sekme durağı, ok tuşları, formlar için her seçeneğe gizli bir radio) UI SDK\'nın segmented control\'ünden gelir; bu yüzden Tabs `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
       h('Usage', 'Kullanım'),
       {
         type: 'code',
@@ -550,6 +565,7 @@ const [view, setView] = useState('week')
           { name: 'value', type: 'string | null', description: t('Selected value (controlled).', 'Seçili değer (kontrollü).') },
           { name: 'onValueChange', type: '(value) => void', description: t('Called with the new value.', 'Yeni değerle çağrılır.') },
           { name: 'aria-label', type: 'string', description: t('Required: names the group for screen readers.', 'Zorunlu: grubu ekran okuyuculara adlandırır.') },
+          { name: 'name', type: 'string', description: t('Submits the selected value under this name with the form around it.', 'Seçili değeri, çevresindeki formla bu adla gönderir.') },
           { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Segment height 28, 32 or 40 px.', 'Bölüm yüksekliği 28, 32 ya da 40 px.') },
           { name: 'highlightClassName', type: 'string', default: "'bg-white dark:bg-neutral-700'", description: t('Classes of the resting pill; its background is the lens colour.', 'Duran hapın sınıfları; arka planı merceğin rengidir.') },
           { name: 'GlassLens value', type: 'string | number | null', description: t('Your own markup: the selected value; any change moves the lens.', 'Kendi işaretlemen: seçili değer; her değişiklik merceği taşır.') },
@@ -881,8 +897,8 @@ const [view, setView] = useState('week')
       {
         type: 'note',
         text: t(
-          'Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`. The install command adds it; the rest of the kit stays dependency-free.',
-          'Slider, Switch ve Checkbox kendi çizicileriyle çizilir ve `three` paketine ihtiyaç duyar. Kurulum komutu onu ekler; kitin geri kalanı bağımlılıksız kalır.',
+          'Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`, and take their behaviour (keyboard, the label, the input a form reads) from UI SDK: `@ui-sdk/core` and `@ui-sdk/react`. The install command adds all three; UI SDK is in beta, so it is added at the exact version this was built on.',
+          'Slider, Switch ve Checkbox kendi çizicileriyle çizilir ve `three` paketine ihtiyaç duyar; davranışlarını (klavye, etiket, formun okuduğu girdi) UI SDK\'dan alır: `@ui-sdk/core` ve `@ui-sdk/react`. Kurulum komutu üçünü de ekler; UI SDK beta aşamasında olduğu için bileşenin yazıldığı tam sürümle eklenir.',
         ),
       },
       h('Usage', 'Kullanım'),
@@ -919,6 +935,7 @@ const [volume, setVolume] = useState(60)
           { name: 'onChange', type: '(value: number) => void', description: t('Called with the new value.', 'Yeni değerle çağrılır.') },
           { name: 'min / max / step', type: 'number', default: '0 / 100 / 1', description: t('The range and its step.', 'Aralık ve adımı.') },
           { name: 'label', type: 'string', default: "'Volume'", description: t('Label above the track; an empty string hides it.', 'Rayın üstündeki etiket; boş dize gizler.') },
+          { name: 'name', type: 'string', description: t('Submits the value under this name with the form around it.', 'Değeri, çevresindeki formla bu adla gönderir.') },
           { name: 'showValue', type: 'boolean', default: 'true', description: t('Shows the value next to the label.', 'Değeri etiketin yanında gösterir.') },
           { name: 'size', type: "'sm' | 'md' | 'lg' | 'xl'", default: "'md'", description: t('Track height 8, 12, 18 or 26 px; the glass scales with it.', 'Ray yüksekliği 8, 12, 18 ya da 26 px; cam onunla ölçeklenir.') },
           { name: 'startIcon / endIcon', type: "IconName | 'none'", default: "'none'", description: t('Icons at either end of the track.', 'Rayın iki ucundaki ikonlar.') },
@@ -977,8 +994,8 @@ const [on, setOn] = useState(false)
       {
         type: 'p',
         text: t(
-          'Tap to flip, or hold the knob and drag it across. Needs `three`, like Slider.',
-          'Dokununca çevrilir; ya da topuzu tutup karşıya sürükle. Slider gibi `three` gerektirir.',
+          'Tap to flip, or hold the knob and drag it across. Needs `three` and UI SDK, like Slider.',
+          'Dokununca çevrilir; ya da topuzu tutup karşıya sürükle. Slider gibi `three` ve UI SDK gerektirir.',
         ),
       },
       h('Examples', 'Örnekler'),
@@ -998,6 +1015,7 @@ const [on, setOn] = useState(false)
           { name: 'onChange', type: '(checked: boolean) => void', description: t('Called with the new state.', 'Yeni durumla çağrılır.') },
           { name: 'label', type: 'string', default: "'Notifications'", description: t('Text beside the switch; an empty string leaves the switch alone.', 'Anahtarın yanındaki metin; boş dize yalnız anahtarı bırakır.') },
           { name: 'description', type: 'string', description: t('A second, quieter line under the label.', 'Etiketin altında ikinci, daha sessiz bir satır.') },
+          { name: 'name', type: 'string', description: t('Submits with the form around it under this name.', 'Çevresindeki formla bu adla gönderilir.') },
           { name: 'labelSide', type: "'left' | 'right'", default: "'right'", description: t('Which side the label sits on.', 'Etiketin hangi yanda durduğu.') },
           { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Track height 22, 28 or 36 px.', 'Ray yüksekliği 22, 28 ya da 36 px.') },
           { name: 'color', type: 'string', default: "'#3291FF'", description: t('The track while on: a hex, `rgb()` or named colour, not a CSS variable.', 'Açıkken rayın rengi: hex, `rgb()` ya da adlandırılmış bir renk; CSS değişkeni olmaz.') },
@@ -1056,8 +1074,8 @@ const [remember, setRemember] = useState(true)
       {
         type: 'p',
         text: t(
-          'The glass cap is there at rest, not only while pressed. Needs `three`, like Slider.',
-          'Cam kapak yalnız basılıyken değil, dururken de oradadır. Slider gibi `three` gerektirir.',
+          'The glass cap is there at rest, not only while pressed. Needs `three` and UI SDK, like Slider.',
+          'Cam kapak yalnız basılıyken değil, dururken de oradadır. Slider gibi `three` ve UI SDK gerektirir.',
         ),
       },
       h('Examples', 'Örnekler'),
@@ -1077,6 +1095,7 @@ const [remember, setRemember] = useState(true)
           { name: 'onChange', type: '(checked: boolean) => void', description: t('Called with the new state.', 'Yeni durumla çağrılır.') },
           { name: 'label', type: 'string', default: "'Remember this device'", description: t('Text beside the box; an empty string leaves the box alone.', 'Kutunun yanındaki metin; boş dize yalnız kutuyu bırakır.') },
           { name: 'description', type: 'string', description: t('A second, quieter line under the label.', 'Etiketin altında ikinci, daha sessiz bir satır.') },
+          { name: 'name', type: 'string', description: t('Submits with the form around it under this name.', 'Çevresindeki formla bu adla gönderilir.') },
           { name: 'shape', type: "'rounded' | 'circle'", default: "'rounded'", description: t('A rounded square or a circle.', 'Köşeleri yuvarlak kare ya da daire.') },
           { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Box size 18, 22 or 28 px.', 'Kutu boyutu 18, 22 ya da 28 px.') },
           { name: 'color', type: 'string', default: "'#3291FF'", description: t('The box while checked: a hex, `rgb()` or named colour, not a CSS variable.', 'İşaretliyken kutunun rengi: hex, `rgb()` ya da adlandırılmış bir renk; CSS değişkeni olmaz.') },
@@ -1125,8 +1144,8 @@ const [remember, setRemember] = useState(true)
       {
         type: 'note',
         text: t(
-          'The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change. The rest of the kit stays dependency-free.',
-          'Davranış (klavye, harfle arama, odak, konumlandırma, ARIA) UI SDK\'dan gelir; bu yüzden Select `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir. Kitin geri kalanı bağımlılıksız kalır.',
+          'The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (klavye, harfle arama, odak, konumlandırma, ARIA) UI SDK\'dan gelir; bu yüzden Select `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
         ),
       },
       h('Usage', 'Kullanım'),
@@ -1487,6 +1506,94 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.3',
+    date: '2026-11-23',
+    title: t('A press lets light into the glass.', 'Basış, cama ışık salıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'Pressing the button lets light into the glass where the press lands. The light paints nothing: it brightens the glass\'s own colour; it lights the glass around that spot evenly, the near end of the list included, stays inside the button but spills a little past the edge of the open list, spreads and fades. Opened from the keyboard, it starts at the button\'s centre. The press that opens the list carries its light into it: the light grows with the list until it covers it whole, then fades. Presses that land before the last light has faded add up, so it grows brighter the more you press. Choosing an option lights the list where it lands, more softly. Dropdown Menu does the same. The list is now one surface from start to finish: it leaves the button already wearing the card\'s glass and the card\'s shadow, instead of the button\'s glass turning into a card once the neck lets go.',
+          'Butona basmak, basılan noktadan camın içine ışık salıyor. Işık üstüne bir şey boyamıyor: camın kendi rengini parlatıyor; ışık o noktanın çevresindeki camı, listenin yakın ucu dahil, eşit aydınlatıyor, butonun dışına taşmıyor ama açık listenin kenarından biraz dışarı yansıyor, yayılıp sönüyor. Klavyeyle açılınca butonun ortasından başlıyor. Listeyi açan basışın ışığı listeyle birlikte büyüyor: bütün listeyi kaplayıp sönüyor. Önceki ışık sönmeden gelen basışlar üst üste biniyor; bastıkça daha çok parlıyor. Bir seçenek seçmek, listeyi basılan yerde daha sönük aydınlatıyor. Dropdown Menu da aynısını yapıyor. Liste artık baştan sona tek bir yüzey: butondan, kartın camını ve kartın gölgesini taşıyarak çıkıyor; eskiden butonun camı, boyun koptuktan sonra karta dönüşüyordu.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'The list closes faster, and the bridge between the button and the list is thinner. Dropdown Menu gets the same.',
+          'Liste daha hızlı kapanıyor; butonla liste arasındaki köprü daha ince. Dropdown Menu da aynısını alıyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.5.2',
+    date: '2026-11-22',
+    title: t('Lighter on every frame.', 'Her karede daha hafif.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'select',
+        text: t(
+          'Opening no longer stutters. The page behind the glass is uploaded once per opening instead of on every frame, the popup measures the page once per frame instead of after each of its own style writes, and it no longer reads its colours and sizes again while the list comes in. The drawing loop also stops once the motion has died out, where it used to run for seconds after. Closing is lighter too: it uploaded the page some twenty times as the button settled, and now does so once, when the motion ends. Dropdown Menu gets the same.',
+          'Açılış artık takılmıyor. Camın arkasındaki sayfa her karede değil, açılış başına bir kez yükleniyor; açılır yüzey sayfayı kendi her stil yazısından sonra değil, kare başına bir kez ölçüyor; liste gelirken renklerini ve ölçülerini baştan okumuyor. Çizim döngüsü de hareket bitince duruyor; eskiden saniyelerce sürüyordu. Kapanış da hafifledi: buton yerine otururken sayfayı yirmi kadar kez yüklüyordu, artık hareket bitince bir kez yüklüyor. Dropdown Menu da aynısını alıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Scrolling costs far less. A clear glass that scrolls with the page keeps its picture of what lies behind it instead of reading the page again on every frame; it reads it again when a sticky or fixed element reaches it. If a script moves what lies behind as the page scrolls (parallax), `live` on Card or GlassLayer keeps the glass in step.',
+          'Kaydırma artık çok daha ucuz. Sayfayla birlikte kayan şeffaf cam, arkasındakinin resmini her karede baştan okumak yerine saklıyor; yapışkan ya da sabit bir öğe ona ulaşınca yeniden okuyor. Sayfa kayarken arkadakini bir betik oynatıyorsa (paralaks), Card ya da GlassLayer üzerindeki `live` camı onunla aynı adımda tutuyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Less work per frame for every component, with the same picture: a frame that would come out exactly as the one on screen is not drawn, a cursor moving far from a glass no longer redraws it, pixels outside the glass leave the shader early, an empty front layer is no longer uploaded, a hover or a state change no longer uploads a picture that came out the same, and colours are resolved once.',
+          'Her bileşen için kare başına daha az iş, görüntü aynı: ekrandakiyle birebir aynı çıkacak kare çizilmiyor, camdan uzakta gezen imleç onu yeniden çizdirmiyor, camın dışındaki pikseller gölgelendiriciden erken çıkıyor, boş ön katman artık yüklenmiyor, üstüne gelme ya da durum değişimi aynı çıkan resmi yeniden yüklemiyor, renkler bir kez çözülüyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Slider, Switch and Checkbox now rest. Their drawing loop used to run on every frame for as long as the page was open, and three.js\'s own frame loop with it; both now stop when nothing moves and start again on a press, a key, a theme change or a cursor that changes their light. A cursor moving far from a control no longer redraws it.',
+          'Slider, Switch ve Checkbox artık dinleniyor. Çizim döngüleri sayfa açık kaldıkça her karede çalışıyordu, three.js\'in kendi kare döngüsü de onunla birlikte; ikisi de artık hiçbir şey kıpırdamadığında duruyor, bir basışta, bir tuşta, tema değişiminde ya da ışıklarını değiştiren bir imleçte yeniden başlıyor. Kontrolden uzakta gezen imleç onu yeniden çizdirmiyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.5.1',
+    date: '2026-11-22',
+    title: t('Behaviour from UI SDK.', 'Davranış UI SDK\'dan.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Button, Tabs, Slider, Switch and Checkbox now take their behaviour (keyboard, focus, forms, ARIA) from UI SDK, as Select and Dropdown Menu do. They look and move as before, but now need `@ui-sdk/core` and `@ui-sdk/react`; the install command adds them.',
+          'Button, Tabs, Slider, Switch ve Checkbox artık davranışını (klavye, odak, formlar, ARIA) Select ve Dropdown Menu gibi UI SDK\'dan alıyor. Görünüm ve hareket aynı; ama artık `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyuyorlar, kurulum komutu onları ekliyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'Return a Promise from `onClick` and the button stays pending until it settles: no second press, and screen readers are told.',
+          '`onClick`\'ten bir Promise döndürürsen buton, o sonuçlanana kadar beklemede kalıyor: ikinci basış yok, ekran okuyuculara da bildiriliyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Tabs, Slider, Switch and Checkbox take a `name` and submit with the form around them.',
+          'Tabs, Slider, Switch ve Checkbox bir `name` alıyor ve çevrelerindeki formla birlikte gönderiliyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.0',
     date: '2026-11-22',

@@ -1,5 +1,9 @@
 'use client'
 
+// Behaviour (role, keyboard, the hidden input a form reads) comes from UI SDK's switch.
+// Needs @ui-sdk/core and @ui-sdk/react, and `three` for the glass.
+
+import { Switch as SwitchControl } from '@ui-sdk/react/switch'
 import { useId, useRef, type PointerEvent } from 'react'
 
 import { drawTrack, scaleOptics } from './glass/draw'
@@ -18,6 +22,8 @@ export type SwitchProps = {
   size?: 'sm' | 'md' | 'lg'
   labelSide?: 'left' | 'right'
   disabled?: boolean
+  /** Submits with the form around it under this name while on. */
+  name?: string
   /** Pressed lens size relative to the resting knob. */
   lensScale?: number
   refraction?: number
@@ -41,6 +47,7 @@ export function Switch({
   size = 'md',
   labelSide = 'right',
   disabled = false,
+  name,
   lensScale = 1.55,
   refraction = 26,
   knobBounce = 0.3,
@@ -135,20 +142,19 @@ export function Switch({
     pointerToggled.current = true
     setOn(next)
   }
-  // Pointer presses toggle on pointerup; keyboard and label clicks only arrive here.
-  const onClick = () => {
-    if (pointerToggled.current) pointerToggled.current = false
-    else setOn(!on)
-  }
 
   const control = (
-    <button
+    <SwitchControl
       id={id}
-      type="button"
-      role="switch"
-      aria-checked={on}
+      checked={on}
+      // Pointer presses toggle on pointerup; keyboard and label clicks only arrive here.
+      onCheckedChange={(next, details) => {
+        if (!pointerToggled.current) return setOn(next)
+        pointerToggled.current = false
+        details.cancel()
+      }}
       disabled={disabled}
-      onClick={onClick}
+      name={name}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -167,7 +173,7 @@ export function Switch({
           height: (TRACK.h + MARGIN.top + MARGIN.bottom) * unit,
         }}
       />
-    </button>
+    </SwitchControl>
   )
 
   if (!label) return <span data-theme={theme} className="inline-flex">{control}</span>

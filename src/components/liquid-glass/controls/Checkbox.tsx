@@ -1,5 +1,9 @@
 'use client'
 
+// Behaviour (role, keyboard, the hidden input a form reads) comes from UI SDK's checkbox.
+// Needs @ui-sdk/core and @ui-sdk/react, and `three` for the glass.
+
+import { Checkbox as CheckboxControl } from '@ui-sdk/react/checkbox'
 import { useId, useRef, type ReactNode } from 'react'
 
 import { roundRect, scaleOptics } from './glass/draw'
@@ -19,6 +23,8 @@ export type CheckboxProps = {
   shape?: 'rounded' | 'circle'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
+  /** Submits with the form around it under this name while checked. */
+  name?: string
   /** Lens swell while pressed. */
   swell?: number
 }
@@ -116,6 +122,7 @@ export function Checkbox({
   shape = 'rounded',
   size = 'md',
   disabled = false,
+  name,
   swell = 1.18,
 }: CheckboxProps) {
   const id = useId()
@@ -156,13 +163,12 @@ export function Checkbox({
 
   return (
     <div data-theme={theme} className="inline-flex items-start gap-3">
-      <button
+      <CheckboxControl
         id={id}
-        type="button"
-        role="checkbox"
-        aria-checked={on}
+        checked={on}
+        onCheckedChange={(next) => setOn(next === true)}
         disabled={disabled}
-        onClick={() => setOn(!on)}
+        name={name}
         onPointerDown={() => (pressedRef.current = true)}
         onPointerUp={() => (pressedRef.current = false)}
         onPointerLeave={() => (pressedRef.current = false)}
@@ -171,7 +177,7 @@ export function Checkbox({
         style={{ width: box, height: box, borderRadius: shape === 'circle' ? box / 2 : box * 0.3 }}
       >
         {canvas}
-      </button>
+      </CheckboxControl>
       {label && (
         <label htmlFor={id} className="relative flex cursor-pointer flex-col justify-center select-none" style={{ minHeight: box }}>
           <span className="text-[13px] leading-5 font-medium text-neutral-900 dark:text-white">{label}</span>

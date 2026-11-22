@@ -32,6 +32,8 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Flow | `GlassBadge` | One-word badge with its text flowing through the glass. |
 | Drag | `GlassSlideToConfirm` | Slide-to-confirm track: drag the glass thumb to the end to run one deliberate action (Sending… → Sent ✓); let go early and it springs back. |
 | Hold | `GlassCard` | A frosted glass card that holds your content while its rim bends what slides behind. `live` for moving backdrops. |
+| Share | `GlassButtonGroup` | Related actions in one body of glass, side by side or stacked, with separators and text. The whole body swells under the pointer. |
+| Open | `GlassDropdownMenu` | Menu of actions that swells out of its button, or out of a whole `GlassButtonGroup`, as one body of glass. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 | Slide | `RangeSlider` | Range slider whose glass pill opens into a wide lens that bends the track while it is held. Needs `three`. |
 | Flip | `Switch` | On/off switch whose knob swells into clear glass as it crosses the track. Needs `three`. |
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`. |

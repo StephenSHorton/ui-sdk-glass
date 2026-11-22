@@ -28,10 +28,10 @@
 // Without WebGL2 the surface is a plain frosted panel and the anchor keeps its CSS look.
 // COPY VERBATIM. MIT — https://github.com/bilalgursen/liquid-glass
 
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useEffect, useRef, useState } from 'react'
 
 import { drawDom } from './dom-snapshot'
-import { GOOEY, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
+import { GOOEY, SPRINGS, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
 import { GlassStyles } from './glass-layer'
 
 const DESIGN_HEIGHT = 120
@@ -39,6 +39,8 @@ const DESIGN_HEIGHT = 120
 const TINT = 0.6
 /** Once the neck has let go the surface is GlassCard's glass: frosted, with its tighter bend. */
 const CARD = { tint: 0.7, blur: 5, bendCurve: 9.75, bendDepth: 1.35 }
+/** Under a control painted in its own colour, the surface's tint covers this much. */
+const FILLED = 0.92
 /** The surface has no light of its own: this thin white line draws its edge, a soft CSS shadow lifts it. */
 const LINE = { alpha: 0.6, darkAlpha: 0.25, width: 1.3 }
 /** Room around the trigger's own canvas, and around the popup's. */
@@ -52,6 +54,11 @@ const ATTACH = { omega: 28, zeta: 1 }
 const LET_GO = { omega: 16, zeta: 1 }
 /** How far through the opening the near edge has crossed the gap, and the list shows. */
 const NEAR_EDGE = 0.3
+/** Closed, the control answers the pointer as GlassButton does (GlassLayer's own values). */
+const PRESS_SCALE = 1.08
+const HOVER_SCALE = 1.04
+const HOVER_GROW = 0.08
+const MAX_GROW_PX = 6
 
 const CSS = `
 [data-glass-popup]{isolation:isolate;overflow:visible!important;background:transparent}
@@ -92,6 +99,13 @@ function createMorph(matchWidth: boolean) {
   const open: Spring = { x: 0, v: 0 }
   const bridge: Spring = { x: 0, v: 0 }
   const recoil: Spring = { x: 0, v: 0 }
+  // The control's own swell under the pointer, while the popup is shut.
+  const swPress: Spring = { x: 0, v: 0 }
+  const swX: Spring = { x: 0, v: 0 }
+  const swY: Spring = { x: 0, v: 0 }
+  const swScale: Spring = { x: 1, v: 0 }
+  let hovered = false
+  let pressed = false
   let moving = false
   let joined = false
   let wasJoined = false
@@ -106,6 +120,10 @@ function createMorph(matchWidth: boolean) {
   let dir = 1
   let surface: Rgb = [1, 1, 1]
   let tint: Rgb = [1, 1, 1]
+  /** How much of the tint covers the control: Button's, or all of it on a control painted in its own colour. */
+  let cover = TINT
+  /** And how much covers the surface: the card's, or nearly all of it under a painted control, so the list keeps its colour. */
+  let cardCover = CARD.tint
   let panelRadius = 24
 
   const isOpen = () => !!content && content.hasAttribute('data-open') && !content.hasAttribute('data-ending-style')
@@ -155,11 +173,38 @@ function createMorph(matchWidth: boolean) {
     engine?.wake()
   }
 
+  const maxScale = () => 1 + (2 * MAX_GROW_PX) / Math.max(host?.offsetWidth ?? 1, 1)
+  /** Hover swells the control and press grows it, as GlassLayer does; an open popup holds it still. */
+  const stepSwell = (dt: number, still: boolean) => {
+    if (!host) return false
+    const shut = !isOpen() && open.x < 0.004
+    if (still) {
+      swPress.x = swX.x = swY.x = swPress.v = swX.v = swY.v = swScale.v = 0
+      swScale.x = 1
+      host.style.scale = ''
+      return false
+    }
+    const hov = hovered && shut ? 1 : 0
+    const down = pressed && shut
+    const target = down ? Math.min(PRESS_SCALE, maxScale()) : hov ? Math.min(HOVER_SCALE, maxScale()) : 1
+    const a = stepSpring(swPress, down ? 1 : 0, SPRINGS.press, dt)
+    const b = stepSpring(swX, hov, SPRINGS.hoverX, dt)
+    const c = stepSpring(swY, hov, SPRINGS.hoverY, dt)
+    const d = stepSpring(swScale, target, SPRINGS.press, dt)
+    host.style.scale = swScale.x === 1 ? '' : swScale.x.toFixed(4)
+    return a || b || c || d
+  }
+
   /** Everything both canvases need, in viewport px. */
   const shape = () => {
     if (!host) return null
-    const a = host.getBoundingClientRect()
+    // The control itself is scaled while it swells: measure it unscaled, as its canvas is.
+    const r = host.getBoundingClientRect()
+    const sc = Math.max(0.5, swScale.x)
+    const a = sc === 1 ? r : new DOMRect(r.left + (r.width - host.offsetWidth) / 2, r.top + (r.height - host.offsetHeight) / 2, host.offsetWidth, host.offsetHeight)
     if (a.width < 2 || a.height < 2) return null
+    const sk = lerp(1, Math.min(PRESS_SCALE, maxScale()), clamp(swPress.x, -0.12, 1.15)) / sc
+    const grow = (a.height * HOVER_GROW) / sc
     const c = panelRect()
     const b = clamp(bridge.x, 0, 1.1)
     const rc = recoil.x
@@ -171,8 +216,8 @@ function createMorph(matchWidth: boolean) {
     const body = {
       cx: a.left + a.width / 2,
       cy: a.top + a.height / 2 + dir * (TUNE.triggerSag * hold - TUNE.triggerJolt * rc),
-      hx: a.width / 2 - 1.5 * hold + 3.2 * rc,
-      hy: a.height / 2 + hold - 2 * rc,
+      hx: (a.width / 2) * sk + grow * swX.x - 1.5 * hold + 3.2 * rc,
+      hy: (a.height / 2) * sk + grow * swY.x + hold - 2 * rc,
     }
     let blob: GlassLens['blob']
     joined = false
@@ -282,7 +327,7 @@ function createMorph(matchWidth: boolean) {
         dispersion: lerp(0.12, 0, card),
         blurCenter: 0.35,
         blurEdge: 2.2,
-        frost: lerp(TINT, CARD.tint, card),
+        frost: lerp(cover, cardCover, card),
         blur: CARD.blur * card,
       },
       screenX: s.body.cx,
@@ -294,8 +339,25 @@ function createMorph(matchWidth: boolean) {
     if (!host || !engine) return
     const s = engine.resolveColor(surfaceColorOf(host.parentElement))
     surface = [s[0], s[1], s[2]]
-    const light = 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2] > 0.5
+    let light = 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2] > 0.5
     tint = light ? [1, 1, 1] : [0, 0, 0]
+    cover = TINT
+    cardCover = CARD.tint
+    if ('glassFill' in host.dataset) {
+      // A control painted in its own CSS background (`data-glass-fill`, as a tinted
+      // GlassButtonGroup is): the glass takes that colour whole, and the surface follows it.
+      // Read with the glass briefly lifted, as GlassLayer does.
+      const had = 'glassReady' in host.dataset
+      if (had) delete host.dataset.glassReady
+      const fill = engine.resolveColor(getComputedStyle(host).backgroundColor)
+      if (had) host.dataset.glassReady = ''
+      if (fill[3] > 0.02) {
+        tint = [fill[0], fill[1], fill[2]]
+        cover = 1
+        cardCover = FILLED
+        light = 0.2126 * tint[0] + 0.7152 * tint[1] + 0.0722 * tint[2] > 0.5
+      }
+    }
     const tone = light ? 'light' : 'dark'
     if (host.dataset.glassTone !== tone) host.dataset.glassTone = tone
     if (content) {
@@ -316,6 +378,94 @@ function createMorph(matchWidth: boolean) {
     host = el
     const page = newPage()
     const pages = [page]
+    const advance = (dt: number, still: boolean): boolean => {
+      const goal = isOpen() ? 1 : 0
+      const live = !!panelRect()
+      if (still) {
+        open.x = goal
+        open.v = bridge.x = bridge.v = recoil.x = recoil.v = 0
+        stepItems(goal, dt, true)
+        rec = []
+        rewind = null
+        if (!goal) release()
+        return (moving = false)
+      }
+      if (goal && open.x === 0) {
+        for (const p of [...pages, panelPage]) if (p) p.stale = true
+        rec = []
+        recT = 0
+      }
+      // Closing is the opening played backwards: the same frames, in reverse.
+      if (!goal && rewind === null && rec.length > 1 && open.x > 0.004) {
+        // Skip the settled tail, where nothing visible is left to undo.
+        const shown = (content?.querySelectorAll(ITEMS).length ?? 0) * TUNE.itemsGap + TUNE.itemsFade
+        let i = rec.length - 1
+        while (i > 0 && rec[i].open >= 0.995 && rec[i].bridge <= 0.02 && rec[i].reveal >= shown) i--
+        rewind = rec[Math.min(i + 1, rec.length - 1)].t
+      }
+      if (goal && rewind !== null) {
+        // Reopened on the way back: the opening carries on from this very frame.
+        const at = rewind
+        rec = rec.filter((f) => f.t <= at)
+        recT = at
+        rewind = null
+        open.v = bridge.v = recoil.v = 0
+        pushed = open.x > 0.02
+      }
+      if (rewind !== null) {
+        rewind -= (dt * TUNE.closeSpeed) / Math.max(TUNE.openSpeed, 0.1)
+        if (rewind <= 0) {
+          rewind = null
+          rec = []
+          open.x = open.v = bridge.x = bridge.v = recoil.x = recoil.v = 0
+          pushed = snapped = wasJoined = false
+          stepItems(0, dt, true)
+          release()
+          dirty()
+          return (moving = false)
+        }
+        let j = rec.length - 2
+        while (j > 0 && rec[j].t > rewind) j--
+        const f0 = rec[j]
+        const f1 = rec[j + 1]
+        const u = clamp((rewind - f0.t) / Math.max(f1.t - f0.t, 1e-4))
+        open.x = lerp(f0.open, f1.open, u)
+        bridge.x = lerp(f0.bridge, f1.bridge, u)
+        recoil.x = lerp(f0.rc, f1.rc, u)
+        open.v = bridge.v = recoil.v = 0
+        snapped = f0.snapped
+        wasJoined = joined
+        stepItems(0, dt, false, lerp(f0.reveal, f1.reveal, u))
+        return (moving = true)
+      }
+      const weight = Math.max(TUNE.weight, 0.1)
+      const kick = TUNE.kick / weight
+      const m1 = stepSpring(open, goal, goal ? { omega: TUNE.openSpeed, zeta: TUNE.openDamping } : { omega: TUNE.closeSpeed, zeta: 0.7 }, dt)
+      const attached = live && (goal ? open.x < TUNE.detachAt : true)
+      const m2 = stepSpring(bridge, attached ? 1 : 0, attached || !goal ? ATTACH : snapped ? LET_GO : { omega: TUNE.snapSpeed, zeta: 1 }, dt)
+      // Jolts: the panel pushing out, the neck snapping, the panel bumping back in.
+      if (goal && !pushed && open.x > 0.02) {
+        pushed = true
+        recoil.v += kick * 0.5
+      }
+      if (!goal) pushed = snapped = false
+      if (wasJoined && !joined && goal && !snapped) {
+        snapped = true
+        recoil.v += kick
+      }
+      if (!wasJoined && joined && !goal) recoil.v += kick * 0.5
+      wasJoined = joined
+      const m3 = stepSpring(recoil, 0, { omega: TUNE.recoilSpeed / Math.sqrt(weight), zeta: Math.min(TUNE.recoilDamping, 0.999) }, dt)
+      const m4 = stepItems(goal, dt, false)
+      // Only once nothing of the panel shows outside the trigger.
+      if (!goal && open.x < 0.004) release()
+      moving = m1 || m2 || m3 || m4
+      if (goal && moving && rec.length < 1500) {
+        recT += dt
+        rec.push({ t: recT, open: open.x, bridge: bridge.x, rc: recoil.x, reveal, snapped })
+      }
+      return moving
+    }
     const view: GlassView = {
       canvas,
       ctx,
@@ -323,92 +473,8 @@ function createMorph(matchWidth: boolean) {
       visible: false,
       // The one place the springs advance; the popup's view reports the same answer.
       step: (dt, still) => {
-        const goal = isOpen() ? 1 : 0
-        const live = !!panelRect()
-        if (still) {
-          open.x = goal
-          open.v = bridge.x = bridge.v = recoil.x = recoil.v = 0
-          stepItems(goal, dt, true)
-          rec = []
-          rewind = null
-          if (!goal) release()
-          return (moving = false)
-        }
-        if (goal && open.x === 0) {
-          for (const p of [...pages, panelPage]) if (p) p.stale = true
-          rec = []
-          recT = 0
-        }
-        // Closing is the opening played backwards: the same frames, in reverse.
-        if (!goal && rewind === null && rec.length > 1 && open.x > 0.004) {
-          // Skip the settled tail, where nothing visible is left to undo.
-          const shown = (content?.querySelectorAll(ITEMS).length ?? 0) * TUNE.itemsGap + TUNE.itemsFade
-          let i = rec.length - 1
-          while (i > 0 && rec[i].open >= 0.995 && rec[i].bridge <= 0.02 && rec[i].reveal >= shown) i--
-          rewind = rec[Math.min(i + 1, rec.length - 1)].t
-        }
-        if (goal && rewind !== null) {
-          // Reopened on the way back: the opening carries on from this very frame.
-          const at = rewind
-          rec = rec.filter((f) => f.t <= at)
-          recT = at
-          rewind = null
-          open.v = bridge.v = recoil.v = 0
-          pushed = open.x > 0.02
-        }
-        if (rewind !== null) {
-          rewind -= (dt * TUNE.closeSpeed) / Math.max(TUNE.openSpeed, 0.1)
-          if (rewind <= 0) {
-            rewind = null
-            rec = []
-            open.x = open.v = bridge.x = bridge.v = recoil.x = recoil.v = 0
-            pushed = snapped = wasJoined = false
-            stepItems(0, dt, true)
-            release()
-            dirty()
-            return (moving = false)
-          }
-          let j = rec.length - 2
-          while (j > 0 && rec[j].t > rewind) j--
-          const f0 = rec[j]
-          const f1 = rec[j + 1]
-          const u = clamp((rewind - f0.t) / Math.max(f1.t - f0.t, 1e-4))
-          open.x = lerp(f0.open, f1.open, u)
-          bridge.x = lerp(f0.bridge, f1.bridge, u)
-          recoil.x = lerp(f0.rc, f1.rc, u)
-          open.v = bridge.v = recoil.v = 0
-          snapped = f0.snapped
-          wasJoined = joined
-          stepItems(0, dt, false, lerp(f0.reveal, f1.reveal, u))
-          return (moving = true)
-        }
-        const weight = Math.max(TUNE.weight, 0.1)
-        const kick = TUNE.kick / weight
-        const m1 = stepSpring(open, goal, goal ? { omega: TUNE.openSpeed, zeta: TUNE.openDamping } : { omega: TUNE.closeSpeed, zeta: 0.7 }, dt)
-        const attached = live && (goal ? open.x < TUNE.detachAt : true)
-        const m2 = stepSpring(bridge, attached ? 1 : 0, attached || !goal ? ATTACH : snapped ? LET_GO : { omega: TUNE.snapSpeed, zeta: 1 }, dt)
-        // Jolts: the panel pushing out, the neck snapping, the panel bumping back in.
-        if (goal && !pushed && open.x > 0.02) {
-          pushed = true
-          recoil.v += kick * 0.5
-        }
-        if (!goal) pushed = snapped = false
-        if (wasJoined && !joined && goal && !snapped) {
-          snapped = true
-          recoil.v += kick
-        }
-        if (!wasJoined && joined && !goal) recoil.v += kick * 0.5
-        wasJoined = joined
-        const m3 = stepSpring(recoil, 0, { omega: TUNE.recoilSpeed / Math.sqrt(weight), zeta: Math.min(TUNE.recoilDamping, 0.999) }, dt)
-        const m4 = stepItems(goal, dt, false)
-        // Only once nothing of the panel shows outside the trigger.
-        if (!goal && open.x < 0.004) release()
-        moving = m1 || m2 || m3 || m4
-        if (goal && moving && rec.length < 1500) {
-          recT += dt
-          rec.push({ t: recT, open: open.x, bridge: bridge.x, rc: recoil.x, reveal, snapped })
-        }
-        return moving
+        const swelling = stepSwell(dt, still)
+        return advance(dt, still) || swelling
       },
       lens: (refresh) => {
         if (refresh) readColours()
@@ -441,11 +507,36 @@ function createMorph(matchWidth: boolean) {
       lost: () => {
         ready = false
         delete el.dataset.glassReady
+        el.style.scale = ''
         if (content) content.dataset.glassOff = ''
         release()
       },
     }
     triggerView = view
+    const off = () => el.matches(":disabled, [aria-disabled='true']")
+    const onDown = () => {
+      if (off()) return
+      pressed = true
+      dirty()
+    }
+    const onUp = () => {
+      pressed = false
+      dirty()
+    }
+    const onEnter = (ev: PointerEvent) => {
+      if (ev.pointerType !== 'mouse' || off()) return
+      hovered = true
+      dirty()
+    }
+    const onLeave = () => {
+      pressed = hovered = false
+      dirty()
+    }
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onUp)
+    el.addEventListener('pointerenter', onEnter)
+    el.addEventListener('pointerleave', onLeave)
     const io = new IntersectionObserver(([entry]) => {
       view.visible = entry.isIntersecting
       dirty()
@@ -456,6 +547,13 @@ function createMorph(matchWidth: boolean) {
     addEventListener('scroll', dirty, { passive: true, capture: true })
     e.add(view)
     return () => {
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onUp)
+      el.removeEventListener('pointerenter', onEnter)
+      el.removeEventListener('pointerleave', onLeave)
+      el.style.scale = ''
+      pressed = hovered = false
       e.remove(view)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       io.disconnect()
@@ -554,6 +652,12 @@ function createMorph(matchWidth: boolean) {
 }
 
 export type GlassPopup = ReturnType<typeof createMorph>
+
+/**
+ * The popup a control inside may anchor: GlassDropdownMenu provides it, and a GlassButtonGroup
+ * under it becomes the anchor, so the menu swells out of the whole group.
+ */
+export const GlassPopupContext = createContext<GlassPopup | null>(null)
 
 const canvasStyle = { position: 'absolute', zIndex: -1, maxWidth: 'none', pointerEvents: 'none', width: 0, height: 0 } as const
 

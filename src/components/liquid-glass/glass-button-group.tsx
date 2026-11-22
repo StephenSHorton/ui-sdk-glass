@@ -17,9 +17,6 @@
 //     <GlassButtonGroup>…Archive, Report…</GlassButtonGroup>
 //   </GlassButtonGroup>
 //
-// A group of groups arrives as one body and splits apart once it is on screen (it stays apart
-// under reduced motion).
-//
 // The glass is Button's. It is tinted white unless you colour it with a `bg-*` class of your
 // own (`className="bg-blue-600 text-white"`); `material="clear"` bends the page behind it
 // instead. The items are plain
@@ -31,16 +28,12 @@ import {
   createContext,
   isValidElement,
   useContext,
-  useEffect,
-  useRef,
   type ButtonHTMLAttributes,
-  type CSSProperties,
   type HTMLAttributes,
   type ReactElement,
   type ReactNode,
 } from 'react'
 
-import { SPRINGS, stepSpring, type Spring } from './engine'
 import { GlassLayer, type GlassMaterial } from './glass-layer'
 import { GlassPopupAnchor, GlassPopupContext } from './glass-popup'
 
@@ -70,17 +63,6 @@ export type GlassButtonGroupItemProps = {
 type Group = { size: GlassButtonGroupSize; vertical: boolean }
 
 const GroupContext = createContext<Group>({ size: 'md', vertical: false })
-
-// A group inside a group of groups: how many steps it starts away from its place, so that all
-// of them begin as one body around the middle. Null outside a group of groups.
-const PartContext = createContext<{ steps: number; vertical: boolean } | null>(null)
-
-// One step: the round end of a body (its height side by side, twice its corner stacked) plus the
-// gap between two bodies. A step closer and two ends lie exactly on top of each other.
-const caps: Record<GlassButtonGroupSize, number> = { sm: 32, md: 40, lg: 48 }
-const GAP = 8
-/** How long the bodies stay one before they split, in ms. */
-const HOLD = 260
 
 // The body: its padding, and its corners when stacked (an item's half height plus the padding,
 // so the items sit concentric in the corners). Side by side it is a pill.
@@ -123,67 +105,15 @@ export function GlassButtonGroup({
   const vertical = orientation === 'vertical'
   // Under a GlassDropdownMenu the group is the menu's anchor: the list swells out of its body.
   const popup = useContext(GlassPopupContext)
-  const part = useContext(PartContext)
-  const outer = useRef<HTMLDivElement>(null)
-  // A group of groups arrives as one body, then its groups split apart like the Action Button's
-  // droplet. `--glass-apart` goes from 0 (one body) to 1 (apart); the groups read it in GLASS_CSS.
-  useEffect(() => {
-    const el = outer.current
-    if (!el) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      el.style.setProperty('--glass-apart', '1')
-      return
-    }
-    const spring: Spring = { x: 0, v: 0 }
-    let frame = 0
-    let timer = 0
-    let last = 0
-    const tick = (now: number) => {
-      const moving = stepSpring(spring, 1, SPRINGS.dropletOut, Math.min((now - last) / 1000, 1 / 30))
-      last = now
-      el.style.setProperty('--glass-apart', spring.x.toFixed(4))
-      // Clear glass repaints the page behind it when it hears a scroll: the bodies are moving.
-      el.dispatchEvent(new Event('scroll'))
-      if (moving) frame = requestAnimationFrame(tick)
-    }
-    const io = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      io.disconnect()
-      timer = window.setTimeout(() => {
-        last = performance.now()
-        frame = requestAnimationFrame(tick)
-      }, HOLD)
-    })
-    io.observe(el)
-    return () => {
-      io.disconnect()
-      clearTimeout(timer)
-      cancelAnimationFrame(frame)
-    }
-  }, [])
   // A group of groups is only a row (or a stack) with space between them: each inner group
   // is its own body of glass, so some actions sit together and some apart.
-  const parts = Children.toArray(children)
-  if (parts.some((child) => isValidElement(child) && child.type === GlassButtonGroup)) {
-    const count = parts.filter(isValidElement).length
-    let at = 0
+  if (Children.toArray(children).some((child) => isValidElement(child) && child.type === GlassButtonGroup)) {
     return (
-      <div ref={outer} role="group" data-orientation={orientation} className={`inline-flex shrink-0 gap-2 ${vertical ? 'flex-col items-stretch' : 'items-center'} ${className}`} {...rest}>
-        {parts.map((child) =>
-          isValidElement(child) ? (
-            <PartContext.Provider key={child.key} value={{ steps: (count - 1) / 2 - at++, vertical }}>
-              {child}
-            </PartContext.Provider>
-          ) : (
-            child
-          ),
-        )}
+      <div role="group" data-orientation={orientation} className={`inline-flex shrink-0 gap-2 ${vertical ? 'flex-col items-stretch' : 'items-center'} ${className}`} {...rest}>
+        {children}
       </div>
     )
   }
-  // Inside a group of groups: where this body starts, on top of its neighbour's round end.
-  const shift = part ? `${part.steps * (caps[size] + GAP)}px` : undefined
-  const { style, ...attrs } = rest
   const white = material === 'tinted' && !/(^|\s)!?bg-/.test(className) ? WHITE : ''
   // Any `rounded-*` class of your own replaces the group's corners.
   const corners = /(^|\s)!?rounded-/.test(className) ? '' : vertical ? bodies[size].stacked : 'rounded-full'
@@ -193,16 +123,12 @@ export function GlassButtonGroup({
       data-glass-host=""
       data-orientation={orientation}
       data-glass-fill={popup && material === 'tinted' ? '' : undefined}
-      data-glass-part={part ? '' : undefined}
-      style={shift ? ({ [part?.vertical ? '--glass-part-y' : '--glass-part-x']: shift, ...style } as CSSProperties) : style}
       className={`inline-flex shrink-0 ${vertical ? 'flex-col items-stretch' : 'items-center'} ${corners} ${bodies[size].pad} font-semibold whitespace-nowrap select-none ${fallback[material]} ${white} ${className}`}
-      {...attrs}
+      {...rest}
     >
       {/* The glass layer must be the host's first child. */}
       {popup ? <GlassPopupAnchor popup={popup} /> : <GlassLayer material={material} tint={tint} optics={vertical ? STACKED : undefined} />}
-      <PartContext.Provider value={null}>
-        <GroupContext.Provider value={{ size, vertical }}>{children}</GroupContext.Provider>
-      </PartContext.Provider>
+      <GroupContext.Provider value={{ size, vertical }}>{children}</GroupContext.Provider>
     </div>
   )
 }

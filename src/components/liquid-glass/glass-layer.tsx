@@ -153,9 +153,7 @@ export const GLASS_CSS = `
 @keyframes glass-spin{to{transform:rotate(1turn)}}
 [data-glass-spin]{animation:glass-spin .8s linear infinite}
 [data-glass-ready] [data-glass-fallback]{visibility:hidden}
-/* The groups of a group of groups start as one body; GlassButtonGroup drives --glass-apart from 0 to 1. */
-[data-glass-part]{translate:calc(var(--glass-part-x,0px)*(1 - var(--glass-apart,0))) calc(var(--glass-part-y,0px)*(1 - var(--glass-apart,0)))}
-@media (prefers-reduced-motion:reduce){[data-glass-marquee],[data-glass-in],[data-glass-draw],[data-glass-spin]{animation:none}[data-glass-part]{translate:none}}
+@media (prefers-reduced-motion:reduce){[data-glass-marquee],[data-glass-in],[data-glass-draw],[data-glass-spin]{animation:none}}
 `
 
 /** Injects GLASS_CSS once (React 19 hoists and dedupes `<style href precedence>`). */

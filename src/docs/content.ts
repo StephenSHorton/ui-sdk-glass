@@ -1275,8 +1275,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart. They arrive as one body and split apart once they are on screen.',
-          'Bazı eylemleri tek gövdede, bazılarını ayrı tutmak için grupları iç içe koy. Dıştaki grup cam çizmez: içtekileri aralarında boşlukla dizer; tek öğeli bir grup da ayrı duran bir butondur. Tek gövde olarak gelir, ekrana girince ayrışırlar.',
+          'Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart.',
+          'Bazı eylemleri tek gövdede, bazılarını ayrı tutmak için grupları iç içe koy. Dıştaki grup cam çizmez: içtekileri aralarında boşlukla dizer; tek öğeli bir grup da ayrı duran bir butondur.',
         ),
       },
       {
@@ -1487,21 +1487,6 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
-  {
-    version: '1.5.1',
-    date: '2026-11-22',
-    title: t('Nested button groups arrive as one body.', 'İç içe buton grupları tek gövde olarak geliyor.'),
-    changes: [
-      {
-        kind: 'improved',
-        page: 'button-group',
-        text: t(
-          'A group of groups now arrives as one body of glass and splits apart once it is on screen, on the spring of the Action Button\'s droplet. Under reduced motion it is apart from the start.',
-          'İç içe gruplar artık tek bir cam gövde olarak geliyor ve ekrana girince Action Button damlasının yayıyla ayrışıyor. Azaltılmış harekette baştan ayrı duruyor.',
-        ),
-      },
-    ],
-  },
   {
     version: '1.5.0',
     date: '2026-11-22',

@@ -168,6 +168,15 @@ function Tuner({ locale }: { locale: 'en' | 'tr' }) {
   )
 }
 
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
 function SelectLab() {
   const { locale } = Route.useRouteContext()
   const t = COPY[locale]
@@ -176,10 +185,16 @@ function SelectLab() {
   const picked = options.find((o) => o.value === value)?.label ?? t.none
 
   return (
-    <main className="relative flex min-h-dvh items-start justify-center overflow-hidden bg-[#f4efe6] pt-40 dark:bg-[#141414]">
-      <div aria-hidden className="absolute top-52 left-1/2 size-72 -translate-x-[75%] rounded-full bg-[#ff5a36]" />
-      <div aria-hidden className="absolute top-80 left-1/2 h-44 w-96 -translate-x-[20%] rounded-3xl bg-[#2457ff]" />
-      <div aria-hidden className="absolute top-[30rem] left-1/2 h-16 w-[34rem] -translate-x-1/2 bg-[#ffc400]" />
+    <main className="relative isolate flex min-h-dvh items-start justify-center overflow-hidden bg-stage pt-40">
+      {/* The Press demo's fine grid, centred on the button (28px of label above it, 24px to its middle). */}
+      <div aria-hidden className="absolute top-[212px] left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
       <div className="relative flex flex-col gap-4">
         <GlassSelect label={t.label} placeholder={t.placeholder} options={options} value={value} onValueChange={setValue} name="roast" />
         <p className="text-sm text-neutral-700 dark:text-neutral-300" data-testid="picked">

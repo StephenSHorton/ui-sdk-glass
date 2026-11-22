@@ -1851,7 +1851,7 @@ The group is the glass, and the glass is Button's, with its light and shadow. It
 
 ## Together and apart
 
-Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart.
+Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart. They arrive as one body and split apart once they are on screen.
 
 ```tsx
 <GlassButtonGroup aria-label="Message">

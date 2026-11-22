@@ -201,7 +201,7 @@ export const GOOEY = {
   /** The panel lets go of the trigger once it is this far open (0–1). */
   detachAt: 0.1,
   /** How fast the neck thins once it lets go (lower = a slower snap). */
-  snapSpeed: 8,
+  snapSpeed: 5.6,
   /** Bridge softness in px at full strength, and how far the panel leans back towards the trigger. */
   neckSoftness: 90,
   neckPull: 11,
@@ -210,8 +210,8 @@ export const GOOEY = {
   recoilSpeed: 4,
   recoilDamping: 1,
   /** How far each half is thrown by a jolt, and how far the trigger sags while attached (px). */
-  triggerJolt: 12,
-  panelJolt: 16,
+  triggerJolt: 0,
+  panelJolt: 0,
   triggerSag: 6,
   /** The list: how far open the panel is when the first option appears (0–1), the delay between options and each one's fade (seconds). */
   itemsAt: 0.85,

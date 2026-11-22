@@ -1138,8 +1138,8 @@ const [speed, setSpeed] = useState<string | null>(null)
       {
         type: 'p',
         text: t(
-          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The glass is clear, so it needs something behind it to bend.',
-          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The button wears Button\'s glass, with its light and shadow. Once the neck lets go, the list settles into Card\'s frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.',
+          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Buton, ışığı ve gölgesiyle Button\'ın camını taşır. Boyun koptuğunda liste kendi ışığı olmayan, Card\'ın buzlu camına geçer: kenarını ince bir çizgi çizer, yumuşak bir gölge onu sayfadan ayırır. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
         ),
       },
       h('Your own popup', 'Kendi açılır yüzeyin'),
@@ -1238,6 +1238,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.4.1',
+    date: '2026-11-22',
+    title: t('Select wears Button and Card glass.', 'Select, Button ve Card camını giydi.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'The button now has Button\'s glass. The open list has Card\'s frost with no light of its own, a thin line at the edge and a soft shadow beneath. The stretch between them stays. GlassPopup gets the same look.',
+          'Buton artık Button\'ın camını taşıyor. Açık listede Card\'ın buzlu camı var; kendi ışığı yok, kenarda ince bir çizgi, altında yumuşak bir gölge var. Aralarındaki esneme korunuyor. GlassPopup da aynı görünümü aldı.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.4.0',
     date: '2026-11-22',

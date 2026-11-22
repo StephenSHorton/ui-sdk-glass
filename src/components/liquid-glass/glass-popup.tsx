@@ -35,8 +35,12 @@ import { GOOEY, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surface
 import { GlassStyles } from './glass-layer'
 
 const DESIGN_HEIGHT = 120
-const TINT = 0.72
-const BLUR = 14
+/** The control is GlassButton's glass: its tint, no frost, its light and shadow. */
+const TINT = 0.6
+/** Once the neck has let go the surface is GlassCard's glass: frosted, with its tighter bend. */
+const CARD = { tint: 0.7, blur: 5, bendCurve: 9.75, bendDepth: 1.35 }
+/** The surface has no light of its own: this thin white line draws its edge, a soft CSS shadow lifts it. */
+const LINE = { alpha: 0.6, darkAlpha: 0.25, width: 1.3 }
 /** Room around the trigger's own canvas, and around the popup's. */
 const TRIGGER_PAD = 16
 const PAD = 28
@@ -61,9 +65,13 @@ const CSS = `
 [data-glass-popup][data-glass-off] :is([role=listbox],[role=menu],[data-glass-list]){transition:opacity .16s ease}
 [data-glass-popup][data-glass-off]:is([data-starting-style],[data-ending-style]) :is([role=listbox],[role=menu],[data-glass-list]){opacity:0}
 [data-glass-hold]{position:absolute;width:0;height:0;opacity:1;pointer-events:none}
-[data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{opacity:0;transition:opacity 60s linear}
+[data-glass-card-shadow]{position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;opacity:0;box-shadow:0 20px 48px oklch(0 0 0 / .105),0 3px 10px oklch(0 0 0 / .045)}
+[data-glass-popup][data-glass-tone=dark]>[data-glass-card-shadow]{box-shadow:0 22px 55px oklch(0 0 0 / .34)}
+[data-glass-popup][data-glass-off]>[data-glass-card-shadow]{opacity:1!important}
+@keyframes glass-hold{to{opacity:0}}
+[data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{animation:glass-hold 60s linear forwards}
 @media (prefers-reduced-motion:reduce){
-[data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{transition:none}
+[data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{animation:none}
 }
 `
 
@@ -199,10 +207,15 @@ function createMorph(matchWidth: boolean) {
         neck: { x: 0, w: a.width * lerp(0.2, 0.6, clamp(b)) },
       }
     }
-    return { a, c, body, blob, t: clamp(open.x) }
+    const t = clamp(open.x)
+    // The surface turns into the card as the neck lets go, and back before it forms again.
+    const card = c ? (1 - smooth(0, 0.35, clamp(b))) * smooth(0.35, 0.8, t) : 0
+    // Parted: the control draws itself alone, with its own shadow, whatever the card does.
+    return { a, c, body, blob, t, card, parted: card > 0 && !joined }
   }
 
-  const lensFor = (box: Box, s: NonNullable<ReturnType<typeof shape>>, page: Page, repaint: () => void): Omit<GlassLens, 'left' | 'top'> => {
+  /** `card`: 0 draws the control's glass, 1 the surface's. While the neck holds they are one glass. */
+  const lensFor = (box: Box, s: NonNullable<ReturnType<typeof shape>>, page: Page, repaint: () => void, card = 0): Omit<GlassLens, 'left' | 'top'> => {
     const unit = s.a.height / DESIGN_HEIGHT
     return {
       width: box.W,
@@ -216,14 +229,19 @@ function createMorph(matchWidth: boolean) {
       bodyX: 0,
       blob: s.blob,
       bevel: DESIGN_HEIGHT * 0.42,
+      // The engine scales the shadow with `strength`, so both leave together as the card arrives.
       shadow: 0.12 * lerp(0.55, 1, s.t),
       shadowSoftness: 34 * lerp(0.6, 1, s.t),
       shadowOffset: 22 * lerp(0.5, 1, s.t),
-      strength: 1,
+      strength: 1 - card,
+      tune: { bendCurve: lerp(1.6, CARD.bendCurve, card), bendDepth: lerp(1, CARD.bendDepth, card), fresnel: 1 - card },
       color: tint,
+      border: card > 0 ? [1, 1, 1] : undefined,
+      borderAlpha: card > 0 ? card * (tint[0] > 0.5 ? LINE.alpha : LINE.darkAlpha) : undefined,
+      borderWidth: card > 0 ? LINE.width : undefined,
       surface,
       edgeClear: 0.2,
-      cursorLight: true,
+      cursorLight: card < 0.5,
       refraction: {
         paint: (back) => {
           back.fillStyle = rgbCss(surface)
@@ -261,11 +279,11 @@ function createMorph(matchWidth: boolean) {
         },
         refract: 44,
         magnify: 0,
-        dispersion: 0.12,
+        dispersion: lerp(0.12, 0, card),
         blurCenter: 0.35,
         blurEdge: 2.2,
-        frost: TINT,
-        blur: BLUR,
+        frost: lerp(TINT, CARD.tint, card),
+        blur: CARD.blur * card,
       },
       screenX: s.body.cx,
       screenY: s.body.cy,
@@ -405,10 +423,15 @@ function createMorph(matchWidth: boolean) {
         }
         // While the popup's canvas draws the rest, this one keeps to the trigger's own box.
         canvas.style.clipPath =
-          s.c && panelDrawn
+          s.c && panelDrawn && !s.parted
             ? `inset(${a.top - 1 - box.T}px ${box.L + box.W - a.right - 1}px ${box.T + box.H - a.bottom - 1}px ${a.left - 1 - box.L}px)`
             : ''
-        return { ...lensFor(box, s, page, dirty), left: box.L - a.left - el.clientLeft, top: box.T - a.top - el.clientTop }
+        return {
+          ...lensFor(box, s, page, dirty),
+          blob: s.parted ? undefined : s.blob,
+          left: box.L - a.left - el.clientLeft,
+          top: box.T - a.top - el.clientTop,
+        }
       },
       drawn: () => {
         if (ready) return
@@ -446,7 +469,7 @@ function createMorph(matchWidth: boolean) {
   }
 
   let panelPage: Page | null = null
-  const setPanel = (canvas: HTMLCanvasElement | null, hold: HTMLElement | null) => {
+  const setPanel = (canvas: HTMLCanvasElement | null, hold: HTMLElement | null, cardShadow: HTMLElement | null) => {
     const el = canvas?.parentElement
     const ctx = canvas?.getContext('2d')
     if (!canvas || !el || !ctx) return () => {}
@@ -479,8 +502,16 @@ function createMorph(matchWidth: boolean) {
         // Everything but the trigger's box, which its own canvas draws beneath the label.
         const x0 = a.left - L
         const y0 = a.top - T
-        canvas.style.clipPath = `path(evenodd,"M0 0H${box.W}V${box.H}H0Z M${x0} ${y0}H${x0 + a.width}V${y0 + a.height}H${x0}Z")`
-        return { ...lensFor(box, s, page, dirty), left: L - c.left - el.clientLeft, top: T - c.top - el.clientTop }
+        canvas.style.clipPath = s.parted ? '' : `path(evenodd,"M0 0H${box.W}V${box.H}H0Z M${x0} ${y0}H${x0 + a.width}V${y0 + a.height}H${x0}Z")`
+        // The card's own drop shadow is CSS: it arrives with the card, once the body has its final shape.
+        if (cardShadow) cardShadow.style.opacity = s.card.toFixed(3)
+        // Parted, this canvas (above the control) draws the card alone: a control thrown past its
+        // own box by the jolt must not show up here, on top of its glass.
+        const alone =
+          s.parted && s.blob
+            ? { cx: s.body.cx + s.blob.x - box.L, cy: s.body.cy + s.blob.y - box.T, hx: s.blob.hx, hy: s.blob.hy, radius: s.blob.r, blob: undefined }
+            : {}
+        return { ...lensFor(box, s, page, dirty, s.card), ...alone, left: L - c.left - el.clientLeft, top: T - c.top - el.clientTop }
       },
       drawn: () => {
         if (panelDrawn) return
@@ -530,11 +561,13 @@ const canvasStyle = { position: 'absolute', zIndex: -1, maxWidth: 'none', pointe
 export function GlassPopupSurface({ popup: morph }: { popup: GlassPopup }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const holdRef = useRef<HTMLSpanElement>(null)
-  useEffect(() => morph.setPanel(canvasRef.current, holdRef.current), [morph])
+  const shadowRef = useRef<HTMLSpanElement>(null)
+  useEffect(() => morph.setPanel(canvasRef.current, holdRef.current, shadowRef.current), [morph])
   return (
     <>
       <canvas ref={canvasRef} aria-hidden style={canvasStyle} />
       <span ref={holdRef} aria-hidden data-glass-hold="" />
+      <span ref={shadowRef} aria-hidden data-glass-card-shadow="" />
     </>
   )
 }

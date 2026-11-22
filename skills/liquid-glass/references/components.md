@@ -1716,3 +1716,515 @@ const popup = useGlassPopup()
 - Without WebGL2 it is a plain frosted list.
 
 Source: https://liquid-glass-interface.pages.dev/docs/select
+
+# GlassButtonGroup
+
+> Related actions in one body of glass. The buttons share a single lens: point at any of them and the whole body swells.
+
+```tsx
+import { Archive, ArrowLeft, BellOff, Clock, Ellipsis, Flag, MailOpen, Tag, Trash2 } from 'lucide-react'
+
+import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
+import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// The actions of a message. Some share a body of glass, some stand apart: nested groups, with
+// the outer one only spacing them. The glass is white unless a group brings its own colour,
+// as the back button does. The three dots stand apart and open a menu that stretches out of them.
+// Where the row would not fit (a phone), the labels step aside and the icons carry it.
+// Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
+// on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
+// and left line, fainter towards the edge.
+export default function Demo() {
+  return (
+    <div className="@container relative isolate flex h-72 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassButtonGroup aria-label="Message">
+        <GlassButtonGroup className="bg-neutral-900 text-white">
+          <GlassButtonGroupItem aria-label="Back" className="px-0">
+            <ArrowLeft />
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Archive />
+            <span className="@max-[440px]:sr-only">Archive</span>
+          </GlassButtonGroupItem>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Flag />
+            <span className="@max-[440px]:sr-only">Report</span>
+          </GlassButtonGroupItem>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Clock />
+            <span className="@max-[440px]:sr-only">Snooze</span>
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassDropdownMenu>
+          <GlassButtonGroup>
+            <GlassDropdownMenuTrigger asChild>
+              <GlassButtonGroupItem aria-label="More" className="px-0">
+                <Ellipsis />
+              </GlassButtonGroupItem>
+            </GlassDropdownMenuTrigger>
+          </GlassButtonGroup>
+          <GlassDropdownMenuContent>
+            <GlassDropdownMenuItem>
+              <MailOpen />
+              Mark as read
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuItem>
+              <Tag />
+              Add label
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuItem>
+              <BellOff />
+              Mute thread
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuSeparator />
+            <GlassDropdownMenuItem destructive>
+              <Trash2 />
+              Delete
+            </GlassDropdownMenuItem>
+          </GlassDropdownMenuContent>
+        </GlassDropdownMenu>
+      </GlassButtonGroup>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- Two to five actions on the same thing: a message toolbar, map controls, a split button.
+- A main action with its options next to it, divided by a separator.
+
+**Not for**
+
+- Choosing between options, where one stays selected: use Tabs.
+- A single action: use Button.
+- Unrelated actions: one body says they belong together.
+
+```bash
+npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/button-group.json
+```
+
+## Usage
+
+```tsx
+import {
+  GlassButtonGroup,
+  GlassButtonGroupItem,
+  GlassButtonGroupSeparator,
+  GlassButtonGroupText,
+} from '@/components/liquid-glass'
+
+<GlassButtonGroup aria-label="Message">
+  <GlassButtonGroupItem onClick={archive}>Archive</GlassButtonGroupItem>
+  <GlassButtonGroupItem onClick={report}>Report</GlassButtonGroupItem>
+  <GlassButtonGroupSeparator />
+  <GlassButtonGroupItem aria-label="More"><Ellipsis /></GlassButtonGroupItem>
+</GlassButtonGroup>
+```
+
+The group is the glass, and the glass is Button's, with its light and shadow. It is tinted white, on light and dark pages alike, unless you colour it. Its items are plain buttons lying in it, with no glass of their own. Do not put a Button inside: a lens within a lens bends nothing. The items get no background of their own under the pointer: the glass answers for the whole group.
+
+## Together and apart
+
+Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart.
+
+```tsx
+<GlassButtonGroup aria-label="Message">
+  <GlassButtonGroup>
+    <GlassButtonGroupItem aria-label="Back" className="px-0"><ArrowLeft /></GlassButtonGroupItem>
+  </GlassButtonGroup>
+  <GlassButtonGroup>
+    <GlassButtonGroupItem>Archive</GlassButtonGroupItem>
+    <GlassButtonGroupItem>Report</GlassButtonGroupItem>
+  </GlassButtonGroup>
+</GlassButtonGroup>
+```
+
+## With a menu
+
+For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: the list stretches out of the whole group, as Select's does out of its button. See Dropdown Menu.
+
+## Examples
+
+### Tinted, split, text and sizes
+
+```tsx
+import { ChevronDown, Copy, GitBranch } from 'lucide-react'
+
+import { GlassButtonGroup, GlassButtonGroupItem, GlassButtonGroupSeparator, GlassButtonGroupText } from '@/components/liquid-glass'
+
+// The glass takes the group's own background class. Top: a split button, the main action
+// and its options in one body. Bottom: text that is not a button, and the three sizes.
+export default function Demo() {
+  return (
+    <div className="flex flex-col items-center gap-10">
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        <GlassButtonGroup size="lg" className="bg-blue-600 text-white">
+          <GlassButtonGroupItem>Follow</GlassButtonGroupItem>
+          <GlassButtonGroupSeparator />
+          <GlassButtonGroupItem aria-label="Follow options">
+            <ChevronDown />
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup size="lg" className="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
+          <GlassButtonGroupText>
+            <GitBranch />
+            main
+          </GlassButtonGroupText>
+          <GlassButtonGroupSeparator />
+          <GlassButtonGroupItem>
+            <Copy />
+            Copy
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        {(['sm', 'md', 'lg'] as const).map((size) => (
+          <GlassButtonGroup key={size} size={size} className="bg-emerald-600 text-white">
+            <GlassButtonGroupItem>Cut</GlassButtonGroupItem>
+            <GlassButtonGroupItem>Copy</GlassButtonGroupItem>
+            <GlassButtonGroupItem>Paste</GlassButtonGroupItem>
+          </GlassButtonGroup>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+Colour the glass with a normal class on the group, such as `bg-blue-600 text-white`; `material="clear"` makes it clear glass that bends the page. A separator between a main action and a small second item makes a split button. `GlassButtonGroupText` is text that is not a button: a unit, a branch name, a count.
+
+### Vertical
+
+```tsx
+import { LocateFixed, Minus, Plus } from 'lucide-react'
+import { useState } from 'react'
+
+import { GlassButtonGroup, GlassButtonGroupItem, GlassButtonGroupSeparator } from '@/components/liquid-glass'
+
+// `orientation="vertical"` stacks the items, and the separators turn with them. Here it is
+// the zoom control of a map drawn in flat colour: blocks, a park, water and two roads.
+export default function Demo() {
+  const [zoom, setZoom] = useState(3)
+  return (
+    <div className="relative isolate flex h-80 w-full max-w-xl items-center justify-end overflow-hidden rounded-3xl bg-stone-200 pr-8 dark:bg-stone-800">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <span className="absolute top-0 right-0 h-28 w-56 bg-sky-400 dark:bg-sky-700" />
+        <span className="absolute right-24 bottom-0 h-36 w-40 bg-emerald-400 dark:bg-emerald-700" />
+        <span className="absolute top-8 left-8 h-24 w-40 rounded-xl bg-stone-300 dark:bg-stone-700" />
+        <span className="absolute bottom-8 left-8 h-28 w-28 rounded-xl bg-stone-300 dark:bg-stone-700" />
+        <span className="absolute bottom-8 left-44 h-28 w-24 rounded-xl bg-amber-300 dark:bg-amber-600" />
+        <span className="absolute inset-x-0 top-36 h-5 bg-white dark:bg-stone-600" />
+        <span className="absolute inset-y-0 right-16 w-5 bg-white dark:bg-stone-600" />
+        <span className="absolute top-12 left-12 text-sm font-semibold text-stone-500 dark:text-stone-400">Zoom {zoom}</span>
+      </div>
+      <GlassButtonGroup aria-label="Map" orientation="vertical" size="lg">
+        <GlassButtonGroupItem aria-label="Zoom in" disabled={zoom === 5} onClick={() => setZoom(zoom + 1)} className="px-0">
+          <Plus />
+        </GlassButtonGroupItem>
+        <GlassButtonGroupItem aria-label="Zoom out" disabled={zoom === 1} onClick={() => setZoom(zoom - 1)} className="px-0">
+          <Minus />
+        </GlassButtonGroupItem>
+        <GlassButtonGroupSeparator />
+        <GlassButtonGroupItem aria-label="My location" className="px-0">
+          <LocateFixed />
+        </GlassButtonGroupItem>
+      </GlassButtonGroup>
+    </div>
+  )
+}
+```
+
+`orientation="vertical"` stacks the items; the separators turn with them and the body takes corners that sit concentric with its items. For icon-only items, add `px-0` to keep them square and give each an `aria-label`.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Side by side or stacked. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Height of a horizontal group: 32, 40 or 48 px. The items follow. |
+| `material` | `'tinted' \| 'clear'` | `'tinted'` | Tinted is white, or the colour of your own `bg-*` class; clear bends the page. |
+| `tint` | `number` | `0.6` | Clear glass only: how much tint covers the backdrop (0–1). |
+| `…rest` | `div attributes` | — | Passed to the group (`aria-label`, `className`…). |
+| `GlassButtonGroupItem asChild` | `boolean` | `false` | Render the item on its single child element (a router `<Link>`, a menu trigger) instead of a `<button>`. Otherwise it takes button attributes (`onClick`, `disabled`…). |
+| `GlassButtonGroupSeparator` | `className` | — | A hairline between two items. It turns with the group. |
+| `GlassButtonGroupText` | `span attributes` | — | Text that is not a button. |
+
+## Accessibility
+
+- The group has `role="group"`: name it with `aria-label` or `aria-labelledby`.
+- Every item is a real `<button>`; Tab moves through them one by one, Enter and Space press.
+- Icon-only items need an `aria-label`. Separators are `role="separator"`.
+- Without WebGL2 it keeps its plain CSS colour.
+
+Source: https://liquid-glass-interface.pages.dev/docs/button-group
+
+# GlassDropdownMenu
+
+> A menu of actions that swells out of the control that opens it as one body of glass: a button of its own, or a whole Button Group.
+
+```tsx
+import { ChevronDown, Copy, Pencil, Share2, Trash2 } from 'lucide-react'
+
+import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// Open it: the list swells out of the whole button, a neck stretches between them and snaps,
+// and the actions arrive one by one. Close it and the same motion plays backwards.
+// Behind it, only the Press demo's fine grid on the page's own colour, centred on the button:
+// plain DOM, every cell draws its own top and left line, fainter towards the edge.
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-96 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassDropdownMenu>
+        <GlassDropdownMenuTrigger className="h-12 px-6 text-[15px]">
+          Options
+          <ChevronDown className="opacity-60" />
+        </GlassDropdownMenuTrigger>
+        <GlassDropdownMenuContent>
+          <GlassDropdownMenuItem>
+            <Pencil />
+            Rename
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuItem>
+            <Copy />
+            Duplicate
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuItem>
+            <Share2 />
+            Share
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuSeparator />
+          <GlassDropdownMenuItem destructive>
+            <Trash2 />
+            Delete
+          </GlassDropdownMenuItem>
+        </GlassDropdownMenuContent>
+      </GlassDropdownMenu>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- A handful of actions on one thing, kept out of the way until asked for: Rename, Duplicate, Delete.
+- The overflow of a Button Group: the three dots at its end.
+
+**Not for**
+
+- Picking a value that stays selected: use Select.
+- Two or three actions that fit on screen: show them in a Button Group.
+- Several of these on one screen: one stretching list is a moment, many are noise.
+
+```bash
+npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/dropdown-menu.json
+```
+
+> The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Dropdown Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+<GlassDropdownMenu>
+  <GlassDropdownMenuTrigger>Options</GlassDropdownMenuTrigger>
+  <GlassDropdownMenuContent>
+    <GlassDropdownMenuItem onSelect={rename}>Rename</GlassDropdownMenuItem>
+    <GlassDropdownMenuItem onSelect={duplicate}>Duplicate</GlassDropdownMenuItem>
+    <GlassDropdownMenuSeparator />
+    <GlassDropdownMenuItem destructive onSelect={remove}>Delete</GlassDropdownMenuItem>
+  </GlassDropdownMenuContent>
+</GlassDropdownMenu>
+```
+
+It is Select's motion on a list of actions: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. The trigger wears Button's clear glass, so it needs something behind it to bend.
+
+## Out of a Button Group
+
+Wrap one group and the content in the menu, and put the trigger on one of the group's items with `asChild`. The whole group is then the anchor: the list swells out of its body and takes its colour, white included. Wrap only the group that opens the menu.
+
+```tsx
+<GlassDropdownMenu>
+  <GlassButtonGroup>
+    <GlassDropdownMenuTrigger asChild>
+      <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
+    </GlassDropdownMenuTrigger>
+  </GlassButtonGroup>
+  <GlassDropdownMenuContent>
+    <GlassDropdownMenuItem>Mark as read</GlassDropdownMenuItem>
+    <GlassDropdownMenuItem destructive>Delete</GlassDropdownMenuItem>
+  </GlassDropdownMenuContent>
+</GlassDropdownMenu>
+```
+
+### The three dots of a toolbar
+
+```tsx
+import { Archive, ArrowLeft, BellOff, Clock, Ellipsis, Flag, MailOpen, Tag, Trash2 } from 'lucide-react'
+
+import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
+import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// The actions of a message. Some share a body of glass, some stand apart: nested groups, with
+// the outer one only spacing them. The glass is white unless a group brings its own colour,
+// as the back button does. The three dots stand apart and open a menu that stretches out of them.
+// Where the row would not fit (a phone), the labels step aside and the icons carry it.
+// Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
+// on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
+// and left line, fainter towards the edge.
+export default function Demo() {
+  return (
+    <div className="@container relative isolate flex h-72 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassButtonGroup aria-label="Message">
+        <GlassButtonGroup className="bg-neutral-900 text-white">
+          <GlassButtonGroupItem aria-label="Back" className="px-0">
+            <ArrowLeft />
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Archive />
+            <span className="@max-[440px]:sr-only">Archive</span>
+          </GlassButtonGroupItem>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Flag />
+            <span className="@max-[440px]:sr-only">Report</span>
+          </GlassButtonGroupItem>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Clock />
+            <span className="@max-[440px]:sr-only">Snooze</span>
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassDropdownMenu>
+          <GlassButtonGroup>
+            <GlassDropdownMenuTrigger asChild>
+              <GlassButtonGroupItem aria-label="More" className="px-0">
+                <Ellipsis />
+              </GlassButtonGroupItem>
+            </GlassDropdownMenuTrigger>
+          </GlassButtonGroup>
+          <GlassDropdownMenuContent>
+            <GlassDropdownMenuItem>
+              <MailOpen />
+              Mark as read
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuItem>
+              <Tag />
+              Add label
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuItem>
+              <BellOff />
+              Mute thread
+            </GlassDropdownMenuItem>
+            <GlassDropdownMenuSeparator />
+            <GlassDropdownMenuItem destructive>
+              <Trash2 />
+              Delete
+            </GlassDropdownMenuItem>
+          </GlassDropdownMenuContent>
+        </GlassDropdownMenu>
+      </GlassButtonGroup>
+    </div>
+  )
+}
+```
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state. |
+| `GlassDropdownMenuTrigger asChild` | `boolean` | `false` | Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own. |
+| `GlassDropdownMenuContent side / align` | `'top' \| 'bottom' / 'start' \| 'center' \| 'end'` | `'bottom' / 'center'` | Where the list opens against the trigger: below and centred by default. It flips when there is no room. |
+| `GlassDropdownMenuContent sideOffset` | `number` | `12` | The gap between the control and the list, where the neck stretches. |
+| `GlassDropdownMenuItem onSelect` | `() => void` | — | Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open). |
+| `GlassDropdownMenuItem destructive` | `boolean` | `false` | Paints the item red, for Delete. |
+| `GlassDropdownMenuItem disabled` | `boolean` | `false` | Dimmed and skipped by the keyboard. |
+| `GlassDropdownMenuSeparator` | `className` | — | A hairline between items. |
+
+## Accessibility
+
+- A button with `aria-haspopup` that opens a `menu` of `menuitem`s (the WAI-ARIA menu button pattern).
+- Arrow keys, Home and End move through the items, typing a letter jumps to a match, Enter runs the item, Escape closes and returns focus to the trigger.
+- An icon-only trigger needs an `aria-label`.
+- With reduced motion the list opens and closes at once. Without WebGL2 it is a plain frosted list.
+
+Source: https://liquid-glass-interface.pages.dev/docs/dropdown-menu

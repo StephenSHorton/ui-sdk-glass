@@ -72,7 +72,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm and GlassCard with the zero-dependency WebGL2 engine.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup with the zero-dependency WebGL2 engine.',
     entries: [liquid('index.ts')],
     docs: 'introduction',
   },
@@ -97,6 +97,12 @@ export const REGISTRY: RegistryItem[] = [
     description: 'Hold: a frosted glass card that holds your content while its rim bends what slides behind.',
     entries: [liquid('glass-card.tsx')],
   },
+  {
+    name: 'button-group',
+    title: 'GlassButtonGroup',
+    description: 'Share: related actions in one body of glass, side by side or stacked, with separators and text.',
+    entries: [liquid('glass-button-group.tsx')],
+  },
   // The controls below are drawn by their own renderer (controls/glass), which needs `three`.
   { name: 'slider', title: 'RangeSlider', description: 'Slide: a range slider whose glass thumb opens into a wide lens while held. Needs three.', entries: [liquid('controls/RangeSlider.tsx')] },
   { name: 'switch', title: 'Switch', description: 'Flip: an on/off switch whose knob swells into a clear lens as it crosses the track. Needs three.', entries: [liquid('controls/Switch.tsx')] },
@@ -106,6 +112,13 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassSelect',
     description: 'Stretch: a select whose list swells out of its button as one body of glass, on a neck that stretches and snaps (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-select.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'dropdown-menu',
+    title: 'GlassDropdownMenu',
+    description: 'Open: a menu of actions that swells out of its trigger, or out of a whole GlassButtonGroup, as one body of glass (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-dropdown-menu.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
 ]
@@ -1207,6 +1220,241 @@ const popup = useGlassPopup()
       },
     ],
   },
+  {
+    slug: 'button-group',
+    group: 'components',
+    title: t('Button Group', 'Button Group'),
+    name: 'GlassButtonGroup',
+    description: t(
+      'Related actions in one body of glass. The buttons share a single lens: point at any of them and the whole body swells.',
+      'Tek bir cam gövdede ilişkili eylemler. Butonlar tek bir merceği paylaşır: herhangi birinin üstüne gel, bütün gövde şişer.',
+    ),
+    verb: t('Share', 'Paylaş'),
+    signature: t('Several buttons, one body of glass.', 'Birkaç buton, tek bir cam gövde.'),
+    hero: 'glass-button-group-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Two to five actions on the same thing: a message toolbar, map controls, a split button.', 'Aynı şey üzerinde iki ila beş eylem: bir ileti araç çubuğu, harita kontrolleri, bölünmüş buton.'),
+          t('A main action with its options next to it, divided by a separator.', 'Yanında seçenekleriyle bir ana eylem; aralarında bir ayraç.'),
+        ],
+        avoid: [
+          t('Choosing between options, where one stays selected: use Tabs.', 'Birinin seçili kaldığı seçenekler arasında seçim: Tabs kullan.'),
+          t('A single action: use Button.', 'Tek bir eylem: Button kullan.'),
+          t('Unrelated actions: one body says they belong together.', 'İlişkisiz eylemler: tek gövde, birbirlerine ait olduklarını söyler.'),
+        ],
+      },
+      { type: 'install', item: 'button-group' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassButtonGroup,
+  GlassButtonGroupItem,
+  GlassButtonGroupSeparator,
+  GlassButtonGroupText,
+} from '@/components/liquid-glass'
+
+<GlassButtonGroup aria-label="Message">
+  <GlassButtonGroupItem onClick={archive}>Archive</GlassButtonGroupItem>
+  <GlassButtonGroupItem onClick={report}>Report</GlassButtonGroupItem>
+  <GlassButtonGroupSeparator />
+  <GlassButtonGroupItem aria-label="More"><Ellipsis /></GlassButtonGroupItem>
+</GlassButtonGroup>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The group is the glass, and the glass is Button\'s, with its light and shadow. It is tinted white, on light and dark pages alike, unless you colour it. Its items are plain buttons lying in it, with no glass of their own. Do not put a Button inside: a lens within a lens bends nothing. The items get no background of their own under the pointer: the glass answers for the whole group.',
+          'Cam, grubun kendisidir ve ışığı ve gölgesiyle Button\'ın camıdır. Sen boyamadıkça açık ve koyu sayfada beyaz renkli camdır. Öğeleri onun içinde duran, kendi camı olmayan sade butonlardır. İçine Button koyma: mercek içindeki mercek hiçbir şeyi bükmez. Öğeler imleç altında kendi arka planlarını almaz: grubun tamamı adına cam karşılık verir.',
+        ),
+      },
+      h('Together and apart', 'Birlikte ve ayrı'),
+      {
+        type: 'p',
+        text: t(
+          'Nest groups to keep some actions in one body and others on their own. The outer group draws no glass: it only lays the inner ones out with space between them, and a group with a single item is a button standing apart.',
+          'Bazı eylemleri tek gövdede, bazılarını ayrı tutmak için grupları iç içe koy. Dıştaki grup cam çizmez: içtekileri aralarında boşlukla dizer; tek öğeli bir grup da ayrı duran bir butondur.',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'toolbar.tsx',
+        code: `<GlassButtonGroup aria-label="Message">
+  <GlassButtonGroup>
+    <GlassButtonGroupItem aria-label="Back" className="px-0"><ArrowLeft /></GlassButtonGroupItem>
+  </GlassButtonGroup>
+  <GlassButtonGroup>
+    <GlassButtonGroupItem>Archive</GlassButtonGroupItem>
+    <GlassButtonGroupItem>Report</GlassButtonGroupItem>
+  </GlassButtonGroup>
+</GlassButtonGroup>`,
+      },
+      h('With a menu', 'Menüyle'),
+      {
+        type: 'p',
+        text: t(
+          'For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: the list stretches out of the whole group, as Select\'s does out of its button. See Dropdown Menu.',
+          'Sığmayan eylemler için bir grubu Dropdown Menu ile sar ve tetikleyicisini üç noktaya koy: liste, Select\'inkinin butonundan çıktığı gibi, bütün grubun içinden esneyerek çıkar. Dropdown Menu sayfasına bak.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-button-group-split', title: t('Tinted, split, text and sizes', 'Renkli cam, bölünmüş buton, metin ve boyutlar') },
+      {
+        type: 'p',
+        text: t(
+          'Colour the glass with a normal class on the group, such as `bg-blue-600 text-white`; `material="clear"` makes it clear glass that bends the page. A separator between a main action and a small second item makes a split button. `GlassButtonGroupText` is text that is not a button: a unit, a branch name, a count.',
+          'Camı gruba verdiğin `bg-blue-600 text-white` gibi sıradan bir sınıfla boya; `material="clear"` onu sayfayı büken berrak cam yapar. Ana eylem ile küçük ikinci öğe arasındaki ayraç bölünmüş bir buton yapar. `GlassButtonGroupText` buton olmayan metindir: bir birim, bir dal adı, bir sayı.',
+        ),
+      },
+      { type: 'demo', id: 'glass-button-group-vertical', title: t('Vertical', 'Dikey') },
+      {
+        type: 'p',
+        text: t(
+          '`orientation="vertical"` stacks the items; the separators turn with them and the body takes corners that sit concentric with its items. For icon-only items, add `px-0` to keep them square and give each an `aria-label`.',
+          '`orientation="vertical"` öğeleri üst üste dizer; ayraçlar onlarla birlikte döner, gövde de öğeleriyle eş merkezli köşeler alır. Yalnız ikonlu öğelerde kare kalmaları için `px-0` ekle ve her birine `aria-label` ver.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: t('Side by side or stacked.', 'Yan yana ya da üst üste.') },
+          { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Height of a horizontal group: 32, 40 or 48 px. The items follow.', 'Yatay grubun yüksekliği: 32, 40 ya da 48 px. Öğeler buna uyar.') },
+          { name: 'material', type: "'tinted' | 'clear'", default: "'tinted'", description: t('Tinted is white, or the colour of your own `bg-*` class; clear bends the page.', 'Tinted beyazdır ya da kendi `bg-*` sınıfının rengini alır; clear sayfayı büker.') },
+          { name: 'tint', type: 'number', default: '0.6', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: renk tonunun arkayı ne kadar örttüğü (0–1).') },
+          { name: '…rest', type: 'div attributes', description: t('Passed to the group (`aria-label`, `className`…).', 'Gruba aktarılır (`aria-label`, `className`…).') },
+          { name: 'GlassButtonGroupItem asChild', type: 'boolean', default: 'false', description: t('Render the item on its single child element (a router `<Link>`, a menu trigger) instead of a `<button>`. Otherwise it takes button attributes (`onClick`, `disabled`…).', 'Öğeyi `<button>` yerine tek çocuk öğesinde çizer (router `<Link>`, menü tetikleyicisi). Aksi halde buton özniteliklerini alır (`onClick`, `disabled`…).') },
+          { name: 'GlassButtonGroupSeparator', type: 'className', description: t('A hairline between two items. It turns with the group.', 'İki öğe arasında ince bir çizgi. Grupla birlikte döner.') },
+          { name: 'GlassButtonGroupText', type: 'span attributes', description: t('Text that is not a button.', 'Buton olmayan metin.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('The group has `role="group"`: name it with `aria-label` or `aria-labelledby`.', 'Grup `role="group"` taşır: `aria-label` ya da `aria-labelledby` ile adlandır.'),
+          t('Every item is a real `<button>`; Tab moves through them one by one, Enter and Space press.', 'Her öğe gerçek bir `<button>`; Tab aralarında tek tek gezer, Enter ve Space basar.'),
+          t('Icon-only items need an `aria-label`. Separators are `role="separator"`.', 'Yalnız ikonlu öğeler `aria-label` ister. Ayraçlar `role="separator"` taşır.'),
+          t('Without WebGL2 it keeps its plain CSS colour.', 'WebGL2 yoksa düz CSS rengini korur.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'dropdown-menu',
+    group: 'components',
+    title: t('Dropdown Menu', 'Dropdown Menu'),
+    name: 'GlassDropdownMenu',
+    description: t(
+      'A menu of actions that swells out of the control that opens it as one body of glass: a button of its own, or a whole Button Group.',
+      'Kendisini açan kontrolden tek bir cam gövde olarak şişen eylem menüsü: kendi butonundan ya da bütün bir Button Group\'tan.',
+    ),
+    verb: t('Open', 'Aç'),
+    signature: t('Actions pour out of the control that opens them, a whole button group included.', 'Eylemler, onları açan kontrolden dökülür; bütün bir buton grubundan bile.'),
+    hero: 'glass-dropdown-menu-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A handful of actions on one thing, kept out of the way until asked for: Rename, Duplicate, Delete.', 'Tek bir şey üzerinde, istenene kadar gözden uzak duran birkaç eylem: Yeniden adlandır, Çoğalt, Sil.'),
+          t('The overflow of a Button Group: the three dots at its end.', 'Bir Button Group\'un taşan eylemleri: sonundaki üç nokta.'),
+        ],
+        avoid: [
+          t('Picking a value that stays selected: use Select.', 'Seçili kalan bir değer seçmek: Select kullan.'),
+          t('Two or three actions that fit on screen: show them in a Button Group.', 'Ekrana sığan iki üç eylem: onları bir Button Group içinde göster.'),
+          t('Several of these on one screen: one stretching list is a moment, many are noise.', 'Aynı ekranda birkaç tane: esneyen tek bir liste bir andır, çoğu gürültüdür.'),
+        ],
+      },
+      { type: 'install', item: 'dropdown-menu' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Dropdown Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (klavye, harfle arama, odak, konumlandırma, ARIA) UI SDK\'dan gelir; bu yüzden Dropdown Menu `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+<GlassDropdownMenu>
+  <GlassDropdownMenuTrigger>Options</GlassDropdownMenuTrigger>
+  <GlassDropdownMenuContent>
+    <GlassDropdownMenuItem onSelect={rename}>Rename</GlassDropdownMenuItem>
+    <GlassDropdownMenuItem onSelect={duplicate}>Duplicate</GlassDropdownMenuItem>
+    <GlassDropdownMenuSeparator />
+    <GlassDropdownMenuItem destructive onSelect={remove}>Delete</GlassDropdownMenuItem>
+  </GlassDropdownMenuContent>
+</GlassDropdownMenu>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'It is Select\'s motion on a list of actions: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
+          'Bu, Select\'in hareketinin bir eylem listesindeki halidir: liste tetikleyicinin tamamından şişer, aralarındaki boyun esneyip kopar ve öğeler birer birer gelir; kapanış bunu tersine oynatır. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+        ),
+      },
+      h('Out of a Button Group', 'Bir Button Group\'tan'),
+      {
+        type: 'p',
+        text: t(
+          'Wrap one group and the content in the menu, and put the trigger on one of the group\'s items with `asChild`. The whole group is then the anchor: the list swells out of its body and takes its colour, white included. Wrap only the group that opens the menu.',
+          'Tek bir grubu ve içeriği menüyle sar, tetikleyiciyi de `asChild` ile grubun öğelerinden birine koy. Böylece çapa grubun tamamı olur: liste onun gövdesinden şişer ve rengini alır, beyaz dahil. Yalnızca menüyü açan grubu sar.',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'toolbar.tsx',
+        code: `<GlassDropdownMenu>
+  <GlassButtonGroup>
+    <GlassDropdownMenuTrigger asChild>
+      <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
+    </GlassDropdownMenuTrigger>
+  </GlassButtonGroup>
+  <GlassDropdownMenuContent>
+    <GlassDropdownMenuItem>Mark as read</GlassDropdownMenuItem>
+    <GlassDropdownMenuItem destructive>Delete</GlassDropdownMenuItem>
+  </GlassDropdownMenuContent>
+</GlassDropdownMenu>`,
+      },
+      { type: 'demo', id: 'glass-button-group-basic', title: t('The three dots of a toolbar', 'Bir araç çubuğunun üç noktası') },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state.', '`GlassDropdownMenu` üzerinde: menüyü kendin yönet ya da kendi durumunu tutsun.') },
+          { name: 'GlassDropdownMenuTrigger asChild', type: 'boolean', default: 'false', description: t('Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own.', 'Tetikleyiciyi kendi cam butonu yerine tek çocuğuna (bir `GlassButtonGroupItem`) koyar.') },
+          { name: 'GlassDropdownMenuContent side / align', type: "'top' | 'bottom' / 'start' | 'center' | 'end'", default: "'bottom' / 'center'", description: t('Where the list opens against the trigger: below and centred by default. It flips when there is no room.', 'Listenin tetikleyiciye göre nerede açıldığı: varsayılan olarak altta ve ortalı. Yer yoksa öbür tarafa döner.') },
+          { name: 'GlassDropdownMenuContent sideOffset', type: 'number', default: '12', description: t('The gap between the control and the list, where the neck stretches.', 'Kontrol ile liste arasındaki, boynun esnediği boşluk.') },
+          { name: 'GlassDropdownMenuItem onSelect', type: '() => void', description: t('Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open).', 'Öğeye basılınca çalışır; ardından menü kapanır (`closeOnSelect={false}` açık tutar).') },
+          { name: 'GlassDropdownMenuItem destructive', type: 'boolean', default: 'false', description: t('Paints the item red, for Delete.', 'Öğeyi kırmızıya boyar; Sil için.') },
+          { name: 'GlassDropdownMenuItem disabled', type: 'boolean', default: 'false', description: t('Dimmed and skipped by the keyboard.', 'Soluk; klavye onu atlar.') },
+          { name: 'GlassDropdownMenuSeparator', type: 'className', description: t('A hairline between items.', 'Öğeler arasında ince bir çizgi.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A button with `aria-haspopup` that opens a `menu` of `menuitem`s (the WAI-ARIA menu button pattern).', '`menuitem` öğelerinden oluşan bir `menu` açan, `aria-haspopup` taşıyan bir buton (WAI-ARIA menü butonu kalıbı).'),
+          t('Arrow keys, Home and End move through the items, typing a letter jumps to a match, Enter runs the item, Escape closes and returns focus to the trigger.', 'Ok tuşları, Home ve End öğeler arasında gezer; bir harf yazmak eşleşene atlar, Enter öğeyi çalıştırır, Escape kapatıp odağı tetikleyiciye döndürür.'),
+          t('An icon-only trigger needs an `aria-label`.', 'Yalnız ikonlu tetikleyici `aria-label` ister.'),
+          t('With reduced motion the list opens and closes at once. Without WebGL2 it is a plain frosted list.', 'Hareketi azalt açıksa liste anında açılıp kapanır. WebGL2 yoksa düz, buzlu bir listedir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1239,6 +1487,37 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.0',
+    date: '2026-11-22',
+    title: t('Button Group and Dropdown Menu.', 'Button Group ve Dropdown Menu.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'The button now swells under the pointer and grows when pressed, as Button does.',
+          'Buton artık Button gibi imleç altında şişiyor ve basınca büyüyor.',
+        ),
+      },
+      {
+        kind: 'new',
+        page: 'dropdown-menu',
+        text: t(
+          'Dropdown Menu: a list of actions that swells out of its button as one body of glass, with Select\'s stretch. Wrap a Button Group in it and the list pours out of the whole group, in its colour. Keyboard, focus and ARIA come from UI SDK.',
+          'Dropdown Menu: Select\'in esnemesiyle, butonundan tek bir cam gövde olarak şişen eylem listesi. Bir Button Group\'u onunla sar; liste bütün grubun içinden, onun renginde dökülür. Klavye, odak ve ARIA UI SDK\'dan gelir.',
+        ),
+      },
+      {
+        kind: 'new',
+        page: 'button-group',
+        text: t(
+          'Button Group: related actions share one body of glass, side by side or stacked, with separators and text; nest groups to set some apart. It wears Button\'s glass, tinted white unless you colour it, in three sizes.',
+          'Button Group: ilişkili eylemler tek bir cam gövdeyi paylaşır; yan yana ya da üst üste, ayraç ve metinle; bazılarını ayırmak için grupları iç içe koy. Button\'ın camını taşır; sen boyamadıkça beyaz renkli camdır, üç boyutta.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.4.2',
     date: '2026-11-22',

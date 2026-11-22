@@ -59,6 +59,8 @@ const PRESS_SCALE = 1.08
 const HOVER_SCALE = 1.04
 const HOVER_GROW = 0.08
 const MAX_GROW_PX = 6
+/** Once the popup is back inside it, the control swells as if hovered for this long (seconds), then lets go. */
+const SETTLE = 0.16
 
 const CSS = `
 [data-glass-popup]{isolation:isolate;overflow:visible!important;background:transparent}
@@ -71,6 +73,8 @@ const CSS = `
 [data-glass-popup][data-glass-arriving] :is([role=listbox],[role=menu],[data-glass-list]){overflow:hidden}
 [data-glass-popup][data-glass-off] :is([role=listbox],[role=menu],[data-glass-list]){transition:opacity .16s ease}
 [data-glass-popup][data-glass-off]:is([data-starting-style],[data-ending-style]) :is([role=listbox],[role=menu],[data-glass-list]){opacity:0}
+[data-glass-anchor]>:not(canvas){translate:0 var(--glass-sway-y,0px);scale:var(--glass-sway-sx,1) var(--glass-sway-sy,1)}
+[data-glass-popup]:not([data-glass-off]) :is([role=listbox],[role=menu],[data-glass-list]){translate:0 var(--glass-ride-y,0px)}
 [data-glass-hold]{position:absolute;width:0;height:0;opacity:1;pointer-events:none}
 [data-glass-card-shadow]{position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;opacity:0;box-shadow:0 20px 48px oklch(0 0 0 / .105),0 3px 10px oklch(0 0 0 / .045)}
 [data-glass-popup][data-glass-tone=dark]>[data-glass-card-shadow]{box-shadow:0 22px 55px oklch(0 0 0 / .34)}
@@ -106,6 +110,9 @@ function createMorph(matchWidth: boolean) {
   const swScale: Spring = { x: 1, v: 0 }
   let hovered = false
   let pressed = false
+  /** The swell that greets the popup's return: seconds of it left, and whether the popup was shut a frame ago. */
+  let settle = 0
+  let wasShut = true
   let moving = false
   let joined = false
   let wasJoined = false
@@ -182,9 +189,16 @@ function createMorph(matchWidth: boolean) {
       swPress.x = swX.x = swY.x = swPress.v = swX.v = swY.v = swScale.v = 0
       swScale.x = 1
       host.style.scale = ''
+      settle = 0
+      wasShut = shut
       return false
     }
-    const hov = hovered && shut ? 1 : 0
+    // The popup has just gone back in: the control takes it like a hover, and lets go again.
+    if (shut && !wasShut) settle = SETTLE
+    wasShut = shut
+    const greeting = settle > 0
+    settle = Math.max(0, settle - dt)
+    const hov = (hovered || greeting) && shut ? 1 : 0
     const down = pressed && shut
     const target = down ? Math.min(PRESS_SCALE, maxScale()) : hov ? Math.min(HOVER_SCALE, maxScale()) : 1
     const a = stepSpring(swPress, down ? 1 : 0, SPRINGS.press, dt)
@@ -192,7 +206,7 @@ function createMorph(matchWidth: boolean) {
     const c = stepSpring(swY, hov, SPRINGS.hoverY, dt)
     const d = stepSpring(swScale, target, SPRINGS.press, dt)
     host.style.scale = swScale.x === 1 ? '' : swScale.x.toFixed(4)
-    return a || b || c || d
+    return a || b || c || d || greeting
   }
 
   /** Everything both canvases need, in viewport px. */
@@ -237,7 +251,10 @@ function createMorph(matchWidth: boolean) {
       const hy = Math.max(Math.abs(far - near) / 2, 0.5)
       // The softness follows how far the panel sticks out: at full strength a panel still inside
       // the trigger would swell it, and with none the two bodies would meet in a visible crease.
-      const k = Math.max(TUNE.neckSoftness * b * smooth(0, 90, dir * (far - edge)), 0.05)
+      // How small the control is: 1 for a single icon or about five letters (up to twice as wide
+      // as it is tall), 0 from 2.4 times as wide (seven letters).
+      const small = 1 - smooth(2, 2.4, a.width / a.height)
+      const k = Math.max(lerp(TUNE.neckSoftness, TUNE.smallNeckSoftness, small) * b * smooth(0, 90, dir * (far - edge)), 0.05)
       // Two facing edges stay bridged while the softness is over twice the gap between them.
       joined = k > 2 * Math.max(dir * (near - (body.cy + dir * body.hy)), 0)
       blob = {
@@ -248,15 +265,35 @@ function createMorph(matchWidth: boolean) {
         // Still attached, the panel is rounder: surface tension lets go as the neck does.
         r: Math.min(lerp(panelRadius, panelRadius * 1.8, b), hx, hy),
         k,
-        // The bridge spans the whole trigger at first and gathers into a neck at its middle.
-        neck: { x: 0, w: a.width * lerp(0.2, 0.6, clamp(b)) },
+        // The bridge spans the whole trigger at first and gathers into a neck at its middle. On a
+        // small control a neck that narrow would stand out as a ridge: there it is no thinner
+        // than the control's height allows, and the softness fades towards its far edge.
+        neck: { x: 0, w: Math.max(a.width * lerp(0.2, 0.6, clamp(b)), small * a.height * lerp(TUNE.smallNeck, TUNE.smallNeckWide, clamp(b))) },
+        fade: { amount: clamp(TUNE.smallEdgeFade) * small, reach: TUNE.smallEdgeReach },
       }
     }
     const t = clamp(open.x)
     // The surface turns into the card as the neck lets go, and back before it forms again.
     const card = c ? (1 - smooth(0, 0.35, clamp(b))) * smooth(0.35, 0.8, t) : 0
     // Parted: the control draws itself alone, with its own shadow, whatever the card does.
-    return { a, c, body, blob, t, card, parted: card > 0 && !joined }
+    // What the control's own content takes of all this: the sag and the throw, and the squash.
+    const sway = { y: body.cy - (a.top + a.height / 2), sx: 1 + (3.2 * rc - 1.5 * hold) / (a.width / 2), sy: 1 + (hold - 2 * rc) / (a.height / 2) }
+    // The list rides the panel the same way (its near edge is thrown twice as far as its far one).
+    const ride = c ? 0.75 * dir * TUNE.panelJolt * rc * smooth(0, 0.35, clamp(open.x)) : 0
+    return { a, c, body, blob, t, card, sway, ride, parted: card > 0 && !joined }
+  }
+
+  /** The content moves with its glass: the control's label and the list take the sag, the throw and the squash. */
+  const carry = (s: NonNullable<ReturnType<typeof shape>>) => {
+    const set = (el: HTMLElement | null, name: string, value: string, rest: string) => {
+      if (!el) return
+      if (value === rest) el.style.removeProperty(name)
+      else if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value)
+    }
+    set(host, '--glass-sway-y', `${s.sway.y.toFixed(2)}px`, '0.00px')
+    set(host, '--glass-sway-sx', s.sway.sx.toFixed(4), '1.0000')
+    set(host, '--glass-sway-sy', s.sway.sy.toFixed(4), '1.0000')
+    set(content, '--glass-ride-y', `${s.ride.toFixed(2)}px`, '0.00px')
   }
 
   /** `card`: 0 draws the control's glass, 1 the surface's. While the neck holds they are one glass. */
@@ -376,6 +413,7 @@ function createMorph(matchWidth: boolean) {
     if (!canvas || !el || !ctx || !engine) return () => {}
     const e = engine
     host = el
+    el.dataset.glassAnchor = ''
     const page = newPage()
     const pages = [page]
     const advance = (dt: number, still: boolean): boolean => {
@@ -473,13 +511,15 @@ function createMorph(matchWidth: boolean) {
       visible: false,
       // The one place the springs advance; the popup's view reports the same answer.
       step: (dt, still) => {
-        const swelling = stepSwell(dt, still)
-        return advance(dt, still) || swelling
+        // The popup first: the control's swell reads where it has got to.
+        const morphing = advance(dt, still)
+        return stepSwell(dt, still) || morphing
       },
       lens: (refresh) => {
         if (refresh) readColours()
         const s = shape()
         if (!s) return null
+        carry(s)
         const { a } = s
         const box = {
           L: Math.floor(a.left - TRIGGER_PAD),
@@ -553,6 +593,8 @@ function createMorph(matchWidth: boolean) {
       el.removeEventListener('pointerenter', onEnter)
       el.removeEventListener('pointerleave', onLeave)
       el.style.scale = ''
+      for (const name of ['--glass-sway-y', '--glass-sway-sx', '--glass-sway-sy']) el.style.removeProperty(name)
+      delete el.dataset.glassAnchor
       pressed = hovered = false
       e.remove(view)
       ctx.clearRect(0, 0, canvas.width, canvas.height)

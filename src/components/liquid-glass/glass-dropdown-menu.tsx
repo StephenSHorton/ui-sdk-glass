@@ -68,7 +68,8 @@ export function GlassDropdownMenuTrigger({ children, asChild = false, className 
       {...rest}
     >
       <GlassPopupAnchor popup={popup} />
-      {children}
+      {/* One element, so the label sways with the glass when the neck pulls and snaps. */}
+      <span className="inline-flex items-center gap-[inherit]">{children}</span>
     </MenuTrigger>
   )
 }

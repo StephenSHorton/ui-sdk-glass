@@ -1496,8 +1496,8 @@ export const RELEASES: Release[] = [
         kind: 'improved',
         page: 'select',
         text: t(
-          'The button now swells under the pointer and grows when pressed, as Button does. The neck thins more slowly before it snaps, and the snap no longer throws the button or the list out of place.',
-          'Buton artık Button gibi imleç altında şişiyor ve basınca büyüyor. Boyun kopmadan önce daha yavaş inceliyor; kopuş artık butonu ya da listeyi yerinden savurmuyor.',
+          'The button now swells under the pointer and grows when pressed, as Button does. The neck thins more slowly before it snaps, and the snap no longer throws the button or the list out of place. The bridge no longer raises a ridge on the far edge of a small control, and small controls get a tighter bridge of their own. The label sways with the glass, and once the list is back inside, the button swells as if hovered and lets go.',
+          'Buton artık Button gibi imleç altında şişiyor ve basınca büyüyor. Boyun kopmadan önce daha yavaş inceliyor; kopuş artık butonu ya da listeyi yerinden savurmuyor. Köprü artık küçük bir kontrolün uzak kenarında çıkıntı oluşturmuyor; küçük kontroller kendi dar köprüsünü alıyor. Etiket camla birlikte sallanıyor; liste içeri döndüğünde buton, üstüne gelinmiş gibi şişip bırakıyor.',
         ),
       },
       {

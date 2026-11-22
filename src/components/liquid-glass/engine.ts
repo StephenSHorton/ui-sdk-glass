@@ -49,6 +49,8 @@ export type GlassLens = {
     k: number
     /** Gathers the bridge around one point: the softness falls off from `x` (relative to the body's centre) over `w` px, so a thinning bridge narrows into a neck there. */
     neck?: { x: number; w: number }
+    /** Fades the softness out towards the body's far edge: `amount` 0–1 (0 = none), recovering over `reach` × the body's height from that edge. */
+    fade?: { amount: number; reach: number }
   }
   /** Bevel width (design units). */
   bevel: number
@@ -217,6 +219,18 @@ export const GOOEY = {
   itemsAt: 0.85,
   itemsGap: 0.06,
   itemsFade: 0.22,
+  /**
+   * Small controls only: a single icon, or a label of about five letters (up to roughly twice as
+   * wide as they are tall). The bridge is as wide as the whole control there, so it gets its own
+   * softness in px (in place of neckSoftness), a fade of that softness towards the control's far
+   * edge (0–1, and how far in it recovers, × the height) and a neck no thinner than this × the
+   * height, at first and once it has gathered. Wider controls keep the values above.
+   */
+  smallNeckSoftness: 14,
+  smallEdgeFade: 1,
+  smallEdgeReach: 0.5,
+  smallNeck: 0.6,
+  smallNeckWide: 1.2,
 }
 
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
@@ -253,7 +267,7 @@ uniform vec2 uSize, uCenter, uHalf, uLightDir;
 uniform float uUnit, uDevicePx, uRadius, uBevel, uBodyX, uBand, uFieldRadius;
 uniform vec3 uDrop;
 uniform vec4 uBlob;
-uniform vec2 uBlobShape, uBlobNeck;
+uniform vec2 uBlobShape, uBlobNeck, uBlobFade;
 uniform float uRim, uCaustic, uInner, uTopRefl, uTopBase, uRimWidth, uFresnel;
 uniform float uShadow, uShadowSoft, uShadowOffset;
 uniform float uLightMix, uEdgeClear;
@@ -323,6 +337,12 @@ float blobSoft(vec2 p) {
     float n = (p.x - uBlobNeck.x) / uBlobNeck.y;
     // A peaked falloff: as the softness drops, the bridge thins into a thread before it breaks.
     k *= exp(0.2 - sqrt(n * n + 0.04));
+  }
+  // On a small body the bridge belongs to the side that faces the second box: towards the far
+  // edge the softness fades out (uBlobFade: how much, and how far in), or it raises a ridge there.
+  if (uBlobFade.x > 0.0) {
+    float back = smoothstep(-uHalf.y, -uHalf.y + 2.0 * uHalf.y * max(uBlobFade.y, 0.01), p.y * sign(uBlob.y));
+    k *= mix(1.0, back, uBlobFade.x);
   }
   return max(k, 1e-3);
 }
@@ -654,6 +674,7 @@ function createEngine(): GlassEngine | null {
     gl.uniform4f(u('uBlob'), (blob?.x ?? 0) / unit, (blob?.y ?? 0) / unit, (blob?.hx ?? 0) / unit, (blob?.hy ?? 0) / unit)
     gl.uniform2f(u('uBlobShape'), (blob?.r ?? 0) / unit, (blob?.k ?? 0) / unit)
     gl.uniform2f(u('uBlobNeck'), (blob?.neck?.x ?? 0) / unit, (blob?.neck?.w ?? 0) / unit)
+    gl.uniform2f(u('uBlobFade'), blob?.fade?.amount ?? 0, blob?.fade?.reach ?? 0.5)
     gl.uniform1f(u('uBevel'), Math.max(m.bevel, 2))
     const k = m.tune ?? {}
     gl.uniform1f(u('uRim'), 0.55 * m.strength * (k.rim ?? 1))

@@ -2,6 +2,10 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { GOOEY } from '@/components/liquid-glass/engine'
+import { Ellipsis } from 'lucide-react'
+
+import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
+import { GlassDropdownMenu, GlassDropdownMenuContent, GlassDropdownMenuItem, GlassDropdownMenuTrigger } from '@/components/liquid-glass/glass-dropdown-menu'
 import { GlassSelect } from '@/components/liquid-glass/glass-select'
 
 // The kit's own values, kept apart from what the sliders change.
@@ -89,12 +93,22 @@ const KNOBS: { key: Key; min: number; max: number; step: number; en: string; tr:
   { key: 'itemsFade', min: 0.02, max: 0.6, step: 0.01, en: 'Option fade (s)', tr: 'Seçenek belirme süresi (sn)', hintEn: 'How long one option takes to appear', hintTr: 'Bir seçeneğin belirme süresi' },
 ]
 
+// Small controls only (an icon button): the bridge to the list there.
+const SMALL_KNOBS: typeof KNOBS = [
+  { key: 'smallNeckSoftness', min: 4, max: 90, step: 1, en: 'Neck softness (px)', tr: 'Boyun yumuşaklığı (px)', hintEn: 'How thick and gooey the bridge is, on small buttons', hintTr: 'Küçük butonlarda köprünün kalınlığı ve akışkanlığı' },
+  { key: 'smallEdgeFade', min: 0, max: 1, step: 0.01, en: 'Far edge fade', tr: 'Uzak kenar sönümü', hintEn: '0: the far edge swells with the bridge (a ridge). 1: it keeps its own line', hintTr: '0: uzak kenar köprüyle şişer (çıkıntı). 1: kendi çizgisini korur' },
+  { key: 'smallEdgeReach', min: 0.05, max: 1, step: 0.01, en: 'Fade reach', tr: 'Sönüm derinliği', hintEn: 'How far in from the far edge the softness comes back (× the height)', hintTr: 'Yumuşaklığın uzak kenardan ne kadar içeride geri geldiği (× yükseklik)' },
+  { key: 'smallNeck', min: 0, max: 2, step: 0.05, en: 'Neck width, at first', tr: 'Boyun genişliği, başta', hintEn: 'The neck is no thinner than this × the height', hintTr: 'Boyun, yüksekliğin bu katından ince olmaz' },
+  { key: 'smallNeckWide', min: 0, max: 3, step: 0.05, en: 'Neck width, gathered', tr: 'Boyun genişliği, toplanınca', hintEn: 'The same floor once the bridge has gathered', hintTr: 'Köprü toplandıktan sonraki aynı alt sınır' },
+]
+
 const PANEL = {
-  en: { title: 'Motion', copy: 'Copy values', copied: 'Copied', reset: 'Reset', note: 'Changes apply at once. Open the select to see them.' },
-  tr: { title: 'Hareket', copy: 'Değerleri kopyala', copied: 'Kopyalandı', reset: 'Sıfırla', note: 'Değişiklikler anında uygulanır. Görmek için seçiciyi aç.' },
+  en: { title: 'Motion', small: 'Small buttons', smallNote: 'Only for a single icon or a label of about five letters. Open the three dots to see them.', copy: 'Copy values', copied: 'Copied', reset: 'Reset', note: 'Changes apply at once. Open the select to see them.' },
+  tr: { title: 'Hareket', small: 'Küçük butonlar', smallNote: 'Yalnızca tek ikonlu ya da beş harf kadar etiketli butonlar için. Görmek için üç noktayı aç.', copy: 'Değerleri kopyala', copied: 'Kopyalandı', reset: 'Sıfırla', note: 'Değişiklikler anında uygulanır. Görmek için seçiciyi aç.' },
 }
 
-const STORE = 'glass-select-tuning'
+// Bumped when the set of values changes, so stale saved ones do not override the kit's.
+const STORE = 'glass-select-tuning-2'
 
 function Tuner({ locale }: { locale: 'en' | 'tr' }) {
   const t = PANEL[locale]
@@ -136,11 +150,32 @@ function Tuner({ locale }: { locale: 'en' | 'tr' }) {
       className="fixed top-24 right-4 bottom-4 z-10 flex w-72 flex-col gap-3 overflow-y-auto rounded-xl border border-border bg-background p-4 text-ui text-foreground max-md:static max-md:mx-4 max-md:mt-10 max-md:w-auto"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-body-sm font-semibold">{t.title}</h2>
+        <h2 className="text-body-sm font-semibold">{t.small}</h2>
         <button type="button" onClick={() => setValues({ ...GLASS_SELECT_DEFAULTS })} className="press rounded-md px-2 py-1 text-caption text-muted-foreground hover:bg-accent">
           {t.reset}
         </button>
       </div>
+      <p className="text-caption text-muted-foreground">{t.smallNote}</p>
+      {SMALL_KNOBS.map((k) => (
+        <label key={k.key} className="flex flex-col gap-1" title={locale === 'tr' ? k.hintTr : k.hintEn}>
+          <span className="flex items-baseline justify-between">
+            <span>{locale === 'tr' ? k.tr : k.en}</span>
+            <span className="font-mono text-caption text-muted-foreground tabular-nums">{values[k.key]}</span>
+          </span>
+          <input
+            type="range"
+            min={k.min}
+            max={k.max}
+            step={k.step}
+            value={values[k.key]}
+            onChange={(e) => setValues((v) => ({ ...v, [k.key]: Number(e.target.value) }))}
+            className="w-full"
+          />
+          <span className="text-micro text-muted-foreground">{locale === 'tr' ? k.hintTr : k.hintEn}</span>
+        </label>
+      ))}
+      <hr className="border-border" />
+      <h2 className="text-body-sm font-semibold">{t.title}</h2>
       <p className="text-caption text-muted-foreground">{t.note}</p>
       {KNOBS.map((k) => (
         <label key={k.key} className="flex flex-col gap-1" title={locale === 'tr' ? k.hintTr : k.hintEn}>
@@ -193,6 +228,25 @@ function SelectLab() {
             <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
             <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
           </span>
+        ))}
+      </div>
+      {/* A small control: the three dots of a toolbar, white and clear. */}
+      <div className="absolute top-[188px] left-1/2 flex -translate-x-[calc(50%+220px)] gap-3 max-md:static max-md:mr-6 max-md:translate-x-0 max-md:pt-7">
+        {(['tinted', 'clear'] as const).map((material) => (
+          <GlassDropdownMenu key={material}>
+            <GlassButtonGroup material={material} size="lg">
+              <GlassDropdownMenuTrigger asChild>
+                <GlassButtonGroupItem aria-label={material} className="px-0">
+                  <Ellipsis />
+                </GlassButtonGroupItem>
+              </GlassDropdownMenuTrigger>
+            </GlassButtonGroup>
+            <GlassDropdownMenuContent>
+              {t.options.slice(0, 4).map((label) => (
+                <GlassDropdownMenuItem key={label}>{label}</GlassDropdownMenuItem>
+              ))}
+            </GlassDropdownMenuContent>
+          </GlassDropdownMenu>
         ))}
       </div>
       <div className="relative flex flex-col gap-4">

@@ -35,8 +35,9 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Slide | `RangeSlider` | Range slider whose glass pill opens into a wide lens that bends the track while it is held. Needs `three`. |
 | Flip | `Switch` | On/off switch whose knob swells into clear glass as it crosses the track. Needs `three`. |
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`. |
+| Stretch | `GlassSelect` | Select whose list swells out of its button as one body of glass, on a neck that stretches and snaps. Ships `GlassPopup` for your own menu or popover. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 
-No npm dependencies, except the three controls marked "Needs `three`". Every component has its own docs page with live examples, the exact demo source, "use it for / not for", props and an install command.
+No npm dependencies, except the components marked "Needs …". Every component has its own docs page with live examples, the exact demo source, "use it for / not for", props and an install command.
 
 ## AI assistants
 

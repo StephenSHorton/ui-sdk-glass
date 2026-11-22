@@ -1561,3 +1561,132 @@ export default function Demo() {
 - With reduced motion the mark and the cap change without springs.
 
 Source: https://liquid-glass-interface.pages.dev/docs/checkbox
+
+# GlassSelect
+
+> A select whose list swells out of its button as one body of glass, holds on by a neck that stretches and snaps, and closes by the same motion played backwards.
+
+```tsx
+import { useState } from 'react'
+
+import { GlassSelect } from '@/components/liquid-glass/glass-select'
+
+const options = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'express', label: 'Express' },
+  { value: 'same-day', label: 'Same day' },
+  { value: 'pickup', label: 'Pickup (closed today)', disabled: true },
+]
+
+// Blinds for the glass to bend: slats that run from violet to pink, lit from the top left and
+// falling into shade below. One element, three plain CSS gradients, nothing animated.
+const blinds = {
+  backgroundImage: [
+    'radial-gradient(circle at 28% 12%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 58%)',
+    'linear-gradient(180deg, rgba(12, 6, 40, 0) 30%, rgba(12, 6, 40, 0.72) 100%)',
+    'repeating-linear-gradient(90deg, #5227ff 0px, #ff9ffc 48px)',
+  ].join(', '),
+}
+
+// Open it: the list swells out of the whole button, a neck stretches between them and snaps,
+// and the options arrive one by one. Close it and the same motion plays backwards.
+export default function Demo() {
+  const [value, setValue] = useState<string | null>(null)
+  return (
+    <div className="relative isolate flex h-72 w-full max-w-xl items-start justify-center pt-1">
+      <div aria-hidden className="absolute inset-x-0 top-8 bottom-0 -z-10 rounded-3xl" style={blinds} />
+      <GlassSelect label="Delivery" placeholder="Choose a speed" options={options} value={value} onValueChange={setValue} />
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- Picking one option from a short list that should stay out of the way until asked for.
+- A form field: the value is submitted under `name`.
+
+**Not for**
+
+- Two to five options that fit on one line: use Tabs.
+- An on/off setting: use Switch.
+- Several of these on one screen: one stretching list is a moment, a form full of them is noise.
+
+```bash
+npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/select.json
+```
+
+> The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change. The rest of the kit stays dependency-free.
+
+## Usage
+
+```tsx
+import { GlassSelect } from '@/components/liquid-glass/glass-select'
+
+const [speed, setSpeed] = useState<string | null>(null)
+
+<GlassSelect
+  label="Delivery"
+  placeholder="Choose a speed"
+  value={speed}
+  onValueChange={setSpeed}
+  options={[
+    { value: 'standard', label: 'Standard' },
+    { value: 'express', label: 'Express' },
+    { value: 'pickup', label: 'Pickup', disabled: true },
+  ]}
+/>
+```
+
+Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The glass is clear, so it needs something behind it to bend.
+
+## Your own popup
+
+The stretch is not tied to a select. `GlassPopup`, which ships with it, puts the same motion on any control and the surface it opens (a menu, a popover):
+
+```tsx
+import { GlassPopupAnchor, GlassPopupSurface, useGlassPopup } from '@/components/liquid-glass'
+
+const popup = useGlassPopup()
+
+<MenuTrigger data-glass-host className="rounded-full px-5 h-12 bg-white/60 dark:bg-white/10">
+  <GlassPopupAnchor popup={popup} />
+  Options
+</MenuTrigger>
+<MenuContent data-glass-popup data-glass-skip sideOffset={12} className="rounded-3xl p-1.5">
+  <GlassPopupSurface popup={popup} />
+  <div role="menu">
+    <MenuItem style={{ '--glass-i': 0 }}>Rename</MenuItem>
+    <MenuItem style={{ '--glass-i': 1 }}>Duplicate</MenuItem>
+  </div>
+</MenuContent>
+```
+
+- `GlassPopupAnchor` is the first child of the control (marked `data-glass-host`); `GlassPopupSurface` is the first child of the content (marked `data-glass-popup`).
+- The content carries `data-open` while open and `data-ending-style` while it closes, and stays mounted until its animations finish: UI SDK's popups do this.
+- Items are `role="option"`, `role="menuitem"` or `data-glass-item`; `--glass-i` is each one's place in the queue.
+- The surface takes its corners from the content's own `rounded-*` class; leave about 12 px between it and the control for the neck.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | — | The field's label, tied to the button. |
+| `options` | `{ value: string; label: ReactNode; disabled?: boolean }[]` | — | The choices, in order. |
+| `value` | `string \| null` | — | The selected value (controlled). `null` = nothing selected. |
+| `defaultValue` | `string \| null` | — | The starting value when the select keeps its own state. |
+| `onValueChange` | `(value: string \| null) => void` | — | Called with the new value. |
+| `placeholder` | `string` | — | Shown on the button while nothing is selected. |
+| `name` | `string` | — | Submits the value with a form under this name. |
+| `disabled` | `boolean` | `false` | Dimmed and not interactive. |
+| `className` | `string` | — | Classes for the field (label and button); it is 16rem wide by default. |
+| `useGlassPopup({ matchWidth })` | `boolean` | `false` | Your own popup: keep the surface exactly as wide as its control. |
+
+## Accessibility
+
+- A `combobox` button that opens a `listbox` (the WAI-ARIA select pattern), labelled by `label`.
+- Arrow keys, Home and End move through the options, typing a letter jumps to a match, Enter selects, Escape closes and returns focus to the button. Disabled options are skipped.
+- With reduced motion the list opens and closes at once, with no stretch or jolt.
+- Without WebGL2 it is a plain frosted list.
+
+Source: https://liquid-glass-interface.pages.dev/docs/select

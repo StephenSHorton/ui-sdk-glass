@@ -100,7 +100,14 @@ export const REGISTRY: RegistryItem[] = [
   // The controls below are drawn by their own renderer (controls/glass), which needs `three`.
   { name: 'slider', title: 'RangeSlider', description: 'Slide: a range slider whose glass thumb opens into a wide lens while held. Needs three.', entries: [liquid('controls/RangeSlider.tsx')] },
   { name: 'switch', title: 'Switch', description: 'Flip: an on/off switch whose knob swells into a clear lens as it crosses the track. Needs three.', entries: [liquid('controls/Switch.tsx')] },
-  { name: 'checkbox', title: 'Checkbox', description: 'Tick: a checkbox under a cap of clear glass. Needs three.', entries: [liquid('controls/Checkbox.tsx')] },
+  { name: 'checkbox', title: 'Checkbox', description: 'Tick: a checkbox under a cap of clear glass. Needs three.', entries: [liquid('controls/Checkbox.tsx')] },  // Behaviour (keyboard, focus, the top layer, ARIA) comes from UI SDK; the glass is the kit's own engine.
+  {
+    name: 'select',
+    title: 'GlassSelect',
+    description: 'Stretch: a select whose list swells out of its button as one body of glass, on a neck that stretches and snaps (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-select.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
 ]
 
 // ── Pages ───────────────────────────────────────────────────────────────────
@@ -1075,6 +1082,130 @@ const [remember, setRemember] = useState(true)
       },
     ],
   },
+  {
+    slug: 'select',
+    group: 'components',
+    title: t('Select', 'Select'),
+    name: 'GlassSelect',
+    description: t(
+      'A select whose list swells out of its button as one body of glass, holds on by a neck that stretches and snaps, and closes by the same motion played backwards.',
+      'Listesi butonundan tek bir cam gövde olarak şişen, esneyip kopan bir boyunla ona tutunan ve aynı hareketin tersiyle kapanan seçim kutusu.',
+    ),
+    verb: t('Stretch', 'Esne'),
+    signature: t('The list and its button are one liquid: a neck stretches between them, thins and snaps.', 'Liste ile butonu tek bir sıvıdır: aralarında bir boyun esner, incelir ve kopar.'),
+    hero: 'glass-select-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Picking one option from a short list that should stay out of the way until asked for.', 'İstenene kadar gözden uzak durması gereken kısa bir listeden tek seçenek seçmek.'),
+          t('A form field: the value is submitted under `name`.', 'Bir form alanı: değer `name` ile gönderilir.'),
+        ],
+        avoid: [
+          t('Two to five options that fit on one line: use Tabs.', 'Tek satıra sığan iki ila beş seçenek: Tabs kullan.'),
+          t('An on/off setting: use Switch.', 'Aç/kapa bir ayar: Switch kullan.'),
+          t('Several of these on one screen: one stretching list is a moment, a form full of them is noise.', 'Aynı ekranda birkaç tane: esneyen tek bir liste bir andır, onlarla dolu bir form gürültüdür.'),
+        ],
+      },
+      { type: 'install', item: 'select' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change. The rest of the kit stays dependency-free.',
+          'Davranış (klavye, harfle arama, odak, konumlandırma, ARIA) UI SDK\'dan gelir; bu yüzden Select `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir. Kitin geri kalanı bağımlılıksız kalır.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassSelect } from '@/components/liquid-glass/glass-select'
+
+const [speed, setSpeed] = useState<string | null>(null)
+
+<GlassSelect
+  label="Delivery"
+  placeholder="Choose a speed"
+  value={speed}
+  onValueChange={setSpeed}
+  options={[
+    { value: 'standard', label: 'Standard' },
+    { value: 'express', label: 'Express' },
+    { value: 'pickup', label: 'Pickup', disabled: true },
+  ]}
+/>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The glass is clear, so it needs something behind it to bend.',
+          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+        ),
+      },
+      h('Your own popup', 'Kendi açılır yüzeyin'),
+      {
+        type: 'p',
+        text: t(
+          'The stretch is not tied to a select. `GlassPopup`, which ships with it, puts the same motion on any control and the surface it opens (a menu, a popover):',
+          'Esneme yalnızca seçim kutusuna bağlı değil. Onunla birlikte gelen `GlassPopup`, aynı hareketi herhangi bir kontrole ve açtığı yüzeye (menü, popover) koyar:',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'menu.tsx',
+        code: `import { GlassPopupAnchor, GlassPopupSurface, useGlassPopup } from '@/components/liquid-glass'
+
+const popup = useGlassPopup()
+
+<MenuTrigger data-glass-host className="rounded-full px-5 h-12 bg-white/60 dark:bg-white/10">
+  <GlassPopupAnchor popup={popup} />
+  Options
+</MenuTrigger>
+<MenuContent data-glass-popup data-glass-skip sideOffset={12} className="rounded-3xl p-1.5">
+  <GlassPopupSurface popup={popup} />
+  <div role="menu">
+    <MenuItem style={{ '--glass-i': 0 }}>Rename</MenuItem>
+    <MenuItem style={{ '--glass-i': 1 }}>Duplicate</MenuItem>
+  </div>
+</MenuContent>`,
+      },
+      {
+        type: 'list',
+        items: [
+          t('`GlassPopupAnchor` is the first child of the control (marked `data-glass-host`); `GlassPopupSurface` is the first child of the content (marked `data-glass-popup`).', '`GlassPopupAnchor` kontrolün (`data-glass-host` ile işaretli) ilk çocuğudur; `GlassPopupSurface` içeriğin (`data-glass-popup` ile işaretli) ilk çocuğudur.'),
+          t('The content carries `data-open` while open and `data-ending-style` while it closes, and stays mounted until its animations finish: UI SDK\'s popups do this.', 'İçerik açıkken `data-open`, kapanırken `data-ending-style` taşır ve animasyonları bitene kadar DOM\'da kalır: UI SDK\'nın açılır yüzeyleri böyle çalışır.'),
+          t('Items are `role="option"`, `role="menuitem"` or `data-glass-item`; `--glass-i` is each one\'s place in the queue.', 'Öğeler `role="option"`, `role="menuitem"` ya da `data-glass-item` taşır; `--glass-i` her birinin sıradaki yeridir.'),
+          t('The surface takes its corners from the content\'s own `rounded-*` class; leave about 12 px between it and the control for the neck.', 'Yüzey köşelerini içeriğin kendi `rounded-*` sınıfından alır; boyun için kontrolle arasında yaklaşık 12 px bırak.'),
+        ],
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'label', type: 'ReactNode', description: t('The field\'s label, tied to the button.', 'Alanın butona bağlı etiketi.') },
+          { name: 'options', type: '{ value: string; label: ReactNode; disabled?: boolean }[]', description: t('The choices, in order.', 'Seçenekler, sırasıyla.') },
+          { name: 'value', type: 'string | null', description: t('The selected value (controlled). `null` = nothing selected.', 'Seçili değer (kontrollü). `null` = seçim yok.') },
+          { name: 'defaultValue', type: 'string | null', description: t('The starting value when the select keeps its own state.', 'Seçim kutusu kendi durumunu tutarken başlangıç değeri.') },
+          { name: 'onValueChange', type: '(value: string | null) => void', description: t('Called with the new value.', 'Yeni değerle çağrılır.') },
+          { name: 'placeholder', type: 'string', description: t('Shown on the button while nothing is selected.', 'Hiçbir şey seçili değilken butonda görünür.') },
+          { name: 'name', type: 'string', description: t('Submits the value with a form under this name.', 'Değeri formla bu adla gönderir.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dimmed and not interactive.', 'Soluk ve etkileşimsiz.') },
+          { name: 'className', type: 'string', description: t('Classes for the field (label and button); it is 16rem wide by default.', 'Alan (etiket ve buton) için sınıflar; varsayılan genişlik 16rem.') },
+          { name: 'useGlassPopup({ matchWidth })', type: 'boolean', default: 'false', description: t('Your own popup: keep the surface exactly as wide as its control.', 'Kendi açılır yüzeyin: yüzeyi kontrolüyle tam aynı genişlikte tutar.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A `combobox` button that opens a `listbox` (the WAI-ARIA select pattern), labelled by `label`.', '`listbox` açan bir `combobox` butonu (WAI-ARIA seçim kalıbı); adını `label`dan alır.'),
+          t('Arrow keys, Home and End move through the options, typing a letter jumps to a match, Enter selects, Escape closes and returns focus to the button. Disabled options are skipped.', 'Ok tuşları, Home ve End seçenekler arasında gezer; bir harf yazmak eşleşene atlar, Enter seçer, Escape kapatıp odağı butona döndürür. Devre dışı seçenekler atlanır.'),
+          t('With reduced motion the list opens and closes at once, with no stretch or jolt.', 'Hareketi azalt açıksa liste esneme ve sarsıntı olmadan anında açılıp kapanır.'),
+          t('Without WebGL2 it is a plain frosted list.', 'WebGL2 yoksa düz, buzlu bir listedir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1107,6 +1238,29 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.4.0',
+    date: '2026-11-22',
+    title: t('Select: a list that stretches out of its button.', 'Select: butonundan esneyerek çıkan liste.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'select',
+        text: t(
+          'Select: the list swells out of the whole button as one body of glass, a neck stretches between them and snaps, and closing plays the same motion backwards. Keyboard, focus and ARIA come from UI SDK.',
+          'Select: liste butonun tamamından tek bir cam gövde olarak şişer, aralarında bir boyun esneyip kopar ve kapanış aynı hareketi tersine oynatır. Klavye, odak ve ARIA UI SDK\'dan gelir.',
+        ),
+      },
+      {
+        kind: 'new',
+        page: 'select',
+        text: t(
+          'GlassPopup, the building block behind it: put the same stretch on your own menu or popover.',
+          'Arkasındaki yapı taşı GlassPopup: aynı esnemeyi kendi menüne ya da popover\'ına koy.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.3.12',
     date: '2026-11-22',

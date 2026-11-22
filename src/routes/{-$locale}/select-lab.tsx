@@ -100,6 +100,9 @@ const GLOW_KNOBS: { key: keyof typeof GLOW; min: number; max: number; step: numb
   { key: 'amount', min: 0, max: 6, step: 0.05, en: 'Strength', tr: 'Güç', hintEn: 'How much one press brightens the glass', hintTr: 'Tek basışın camı ne kadar parlattığı' },
   { key: 'stack', min: 1, max: 6, step: 0.5, en: 'Presses that add up', tr: 'Biriken basış', hintEn: 'Quick presses add up, to this many at most', hintTr: 'Art arda basışlar en fazla bu kadar birikir' },
   { key: 'select', min: 0, max: 1.5, step: 0.05, en: 'Choice in the list', tr: 'Listeden seçim', hintEn: 'A choice lights the list this much of a press (0 = none)', hintTr: 'Seçim, listeyi bir basışın bu kadarıyla aydınlatır (0 = yok)' },
+  { key: 'selectReach', min: 0.1, max: 3, step: 0.05, en: 'Choice: reach', tr: 'Seçim: yarıçap', hintEn: 'Size of a choice\'s light at first (× the button\'s height)', hintTr: 'Seçim ışığının baştaki boyu (× buton yüksekliği)' },
+  { key: 'selectSpread', min: 0, max: 3, step: 0.05, en: 'Choice: spread', tr: 'Seçim: yayılma', hintEn: 'How much wider a choice\'s light gets as it fades (× the height)', hintTr: 'Seçim ışığının sönerken ne kadar genişlediği (× yükseklik)' },
+  { key: 'selectLeave', min: 0, max: 0.95, step: 0.05, en: 'Choice: leaves at', tr: 'Seçim: kapanışta sönme', hintEn: 'The light is gone once the list is this far back in (higher = sooner)', hintTr: 'Liste bu kadar geri çekilince ışık bitmiş olur (yükseldikçe daha erken söner)' },
   { key: 'reach', min: 0.1, max: 3, step: 0.05, en: 'Reach', tr: 'Yarıçap', hintEn: 'Size of the light at first (× the button\'s height)', hintTr: 'Işığın baştaki boyu (× buton yüksekliği)' },
   { key: 'spread', min: 0, max: 3, step: 0.05, en: 'Spread', tr: 'Yayılma', hintEn: 'How much wider it gets as it fades (× the height)', hintTr: 'Sönerken ne kadar genişlediği (× yükseklik)' },
   { key: 'spreadSpeed', min: 1, max: 30, step: 0.5, en: 'Spread speed', tr: 'Yayılma hızı', hintEn: 'How fast it widens', hintTr: 'Genişleme hızı' },
@@ -128,7 +131,7 @@ const PANEL = {
 
 // Bumped when the set of values changes, so stale saved ones do not override the kit's.
 const STORE = 'glass-select-tuning-2'
-const GLOW_STORE = 'glass-glow-tuning-2'
+const GLOW_STORE = 'glass-glow-tuning-7'
 
 type Knob<K extends string> = { key: K; min: number; max: number; step: number; en: string; tr: string; hintEn: string; hintTr: string }
 

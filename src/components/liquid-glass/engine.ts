@@ -129,10 +129,11 @@ export type GlassLens = {
   /**
    * Light let into the glass at one point (a press): centre relative to the body's centre and
    * reach, in CSS px, and how strong (0 = none; see GLOW). It brightens all the glass near it alike, a melted blob
-   * included. `halo` lets it spill past one edge, the body's or the blob's (0–1, how much): there
+   * included, unless `blob` says how much of it the blob takes (0–1; 0 keeps the light to the body). `halo` lets it
+   * spill past one edge, the body's or the blob's (0–1, how much): there
    * it brightens the page's colour the same way. Without it nothing shows outside the glass.
    */
-  glow?: { x: number; y: number; r: number; amount: number; halo?: { around: 'body' | 'blob'; amount: number } }
+  glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number } }
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -206,8 +207,16 @@ export const GLOW = {
   /** One press, at the centre of the light. Presses that land before the last has faded add up, to `stack` presses at most. */
   amount: 3.55,
   stack: 3,
-  /** A choice made inside an open surface: this much of a press. */
-  select: 0.55,
+  /**
+   * A choice made inside an open surface: this much of a press, and a light of its own size. It
+   * is a wide, soft light around the choice (`selectReach` at first, `selectSpread` more as it
+   * fades, both × the control's height) and it leaves as the surface starts back in.
+   */
+  select: 0.45,
+  selectReach: 1.6,
+  selectSpread: 1.2,
+  /** A choice's light is gone once the surface is this far back in (0–1 of the way open; higher = it leaves sooner). */
+  selectLeave: 0.5,
   /** The light's reach at first, and how much further it spreads as it fades (both × the control's height). */
   reach: 1.65,
   spread: 3,
@@ -341,6 +350,7 @@ uniform float uFrostEdge, uSaturation, uBendCurve, uEdgeBand;
 uniform vec2 uRadial;
 uniform vec4 uGlow;
 uniform vec2 uGlowHalo;
+uniform float uGlowBlob;
 uniform vec4 uBlobMat;
 uniform vec3 uBlobLine;
 uniform float uCssPx;
@@ -613,9 +623,10 @@ void main() {
   glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * uFresnel * step(0.001, uRim)) * lit;
 
   // Glow: light let in at one point, fading smoothly with distance. It brightens whatever glass
-  // is near, evenly from the middle to the rim, a melted blob included (the halo is above).
+  // is near, evenly from the middle to the rim, a melted blob included (the halo is above),
+  // unless the light is kept to the body (uGlowBlob: how much of it the blob takes).
   float glassL = max(dot(glass, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
-  glass *= pow(glassL, 1.0 / (1.0 + glowAt)) / glassL;
+  glass *= pow(glassL, 1.0 / (1.0 + glowAt * mix(uGlowBlob, 1.0, lit))) / glassL;
 
   // Caustic: warm light gathering inside the bottom edge.
   glass += vec3(1.0, 0.92, 0.86) * smoothstep(0.72, 0.98, depth) * down * uCaustic * lit;
@@ -895,6 +906,7 @@ function createEngine(): GlassEngine | null {
     const glow = m.glow
     set('uGlow', (glow?.x ?? 0) / unit, (glow?.y ?? 0) / unit, (glow?.r ?? 0) / unit, Math.max(0, glow?.amount ?? 0))
     set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0))
+    set('uGlowBlob', clamp(glow?.blob ?? 1))
     // The same layers and the same uniforms as the frame on the canvas: nothing to draw.
     if (fresh && on.sent.length === sent.length && sent.every((value, i) => value === on.sent[i])) return
     on.sent = sent.slice()

@@ -116,6 +116,8 @@ function createMorph(matchWidth: boolean) {
   let glowHold = 0
   /** This light opens the surface: it grows with it. */
   let glowWide = false
+  /** This light is a choice in the list: it stays around the choice and leaves with the surface. */
+  let glowList = false
   /** How small the control is, 0–1 (as the bridge reads it): which set of light values it takes. */
   let glowSmall = 0
   const smallness = (width: number, height: number) => 1 - smooth(2, 2.4, width / Math.max(height, 1))
@@ -127,7 +129,7 @@ function createMorph(matchWidth: boolean) {
     for (const key of Object.keys(mixed) as (keyof typeof GLOW)[]) mixed[key] = lerp(GLOW[key], GLOW_SMALL[key], glowSmall)
     return mixed
   }
-  /** How many presses' worth of light is asked for: each adds to what is still lit (a choice in the list adds less). */
+  /** How many presses' worth of light is asked for: each adds to what is still lit (a choice in the list adds GLOW.select of one). */
   let glowLevel = 0
   let hovered = false
   let pressed = false
@@ -229,8 +231,9 @@ function createMorph(matchWidth: boolean) {
 
   /**
    * Light at this point (viewport px), or at the control's centre. `gain` dims it; a point in the
-   * list is not held to the control's box. `wide`: the press that opens the surface, whose light
-   * grows with the surface until it covers it.
+   * list is not held to the control's box, and its light stays around it. `wide`: the press that
+   * opens the surface, whose light grows with the surface until it covers it. Any other press on
+   * the control (the one that closes the surface) lights the control alone.
    */
   const light = (x?: number, y?: number, gain = 1, inList = false, wide = !inList && !isOpen()) => {
     if (!host) return
@@ -245,6 +248,7 @@ function createMorph(matchWidth: boolean) {
     const tune = glowTune()
     glowLevel = Math.min(Math.max(glow.x, 0) + gain * (inList ? tune.select : 1), tune.stack)
     glowWide = wide
+    glowList = inList
     glowHold = tune.hold
   }
   const stepGlow = (dt: number) => {
@@ -372,16 +376,21 @@ function createMorph(matchWidth: boolean) {
     const ride = c ? 0.75 * dir * TUNE.panelJolt * rc * smooth(0, 0.35, clamp(open.x)) : 0
     // The light: around where the press landed, a little wider as it fades. The light that opens
     // the surface moves to the surface's middle and widens with it, until it covers it whole.
+    // A choice in the list keeps its light around itself, and the light leaves with the surface:
+    // a surface on its way back in is never lit whole. A press on the control while the surface
+    // is out (the one that closes it) lights the control alone.
     const tune = glowTune()
     const wide = glowWide && blob && tune.cover > 0 ? smooth(0, 1, t) : 0
-    const reach = a.height * (tune.reach + tune.spread * clamp(glowSpread.x))
+    const spreading = clamp(glowSpread.x)
+    const reach = a.height * (glowList ? tune.selectReach + tune.selectSpread * spreading : tune.reach + tune.spread * spreading)
     const lit =
       glow.x > 0.004
         ? {
             x: lerp(glowAt.x, blob?.x ?? 0, wide),
             y: lerp(glowAt.y - sway.y, blob?.y ?? 0, wide),
             r: lerp(reach, Math.max(reach, 2 * tune.cover * Math.hypot(blob?.hx ?? 0, blob?.hy ?? 0)), wide),
-            amount: Math.max(0, glow.x) * tune.amount,
+            amount: Math.max(0, glow.x) * tune.amount * (glowList ? smooth(Math.min(tune.selectLeave, 0.99), 1, t) : 1),
+            blob: glowWide || glowList ? 1 : 0,
             spill: tune.halo,
           }
         : undefined
@@ -444,7 +453,7 @@ function createMorph(matchWidth: boolean) {
       edgeClear: 0.2,
       cursorLight: card < 0.5,
       // The light may spill past the surface's edge, never past the control's.
-      glow: s.lit && (s.blob && !s.parted ? { ...s.lit, halo: { around: 'blob' as const, amount: s.out * s.lit.spill } } : s.lit),
+      glow: s.lit && (s.blob && !s.parted && s.lit.blob ? { ...s.lit, halo: { around: 'blob' as const, amount: s.out * s.lit.spill } } : s.lit),
       refraction: {
         paint: (back) => {
           const fill = rgbCss(surface)
@@ -814,7 +823,8 @@ function createMorph(matchWidth: boolean) {
                 radius: s.blob.r,
                 blob: undefined,
                 // The same light, seen from the surface's own centre.
-                glow: s.lit && { ...s.lit, x: s.lit.x - s.blob.x, y: s.lit.y - s.blob.y, halo: { around: 'body' as const, amount: s.out * s.lit.spill } },
+                // (A light kept to the control never reaches it.)
+                glow: s.lit && s.lit.blob ? { ...s.lit, x: s.lit.x - s.blob.x, y: s.lit.y - s.blob.y, halo: { around: 'body' as const, amount: s.out * s.lit.spill } } : undefined,
               }
             : {}
         // Joined, the engine draws the surface's glass on the blob; alone, the same glass is the
@@ -831,7 +841,7 @@ function createMorph(matchWidth: boolean) {
       },
     }
     panelView = view
-    // A choice in the list lights the surface where it lands, dimmer than a press on the control.
+    // A choice in the list lights the surface where it lands, around the choice alone.
     const chosen = (item: Element | null | undefined): item is Element => !!item && !item.matches("[data-disabled], [aria-disabled='true']")
     const onPick = (ev: PointerEvent) => {
       if (ev.button > 0 || !(ev.target instanceof Element) || !chosen(ev.target.closest(ITEMS))) return

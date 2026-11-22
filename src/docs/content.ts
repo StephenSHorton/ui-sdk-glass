@@ -1507,6 +1507,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.5.4',
+    date: '2026-11-23',
+    title: t('A choice lights its own spot.', 'Seçim, kendi yerini aydınlatıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'Choosing an option lights the glass around that option only, and the light leaves with the list: a list on its way back into the button is no longer lit whole. Pressing the button to close the list lights the button alone. Dropdown Menu gets the same.',
+          'Bir seçenek seçmek artık yalnızca o seçeneğin çevresindeki camı aydınlatıyor; ışık listeyle birlikte gidiyor: butona geri dönen liste artık baştan sona parlamıyor. Listeyi kapatmak için butona basmak yalnızca butonu aydınlatıyor. Dropdown Menu da aynısını alıyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.5.3',
     date: '2026-11-23',
     title: t('A press lets light into the glass.', 'Basış, cama ışık salıyor.'),

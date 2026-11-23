@@ -740,7 +740,7 @@ const [view, setView] = useState('week')
           t('**Drag.** The thumb turns to clear glass and bends the fill and the label it passes; its chevron stays in place, in the fill\'s text colour. It stays round while held, and speed stretches it along its travel. The fill trails a moment behind, joined to the thumb by a bridge that thins as they pull apart, and the track and the fill swell around the thumb like a membrane. Pushed past the end the track stretches like a rubber band; pushed against the start the wall gives a little. The thumb stays round at both.', '**Sürükle.** Topuz berrak cama dönüşür, geçtiği dolguyu ve etiketi büker; oku yerinde kalır ve dolgunun yazı rengini alır. Tutulurken yuvarlak kalır, hız onu gittiği yönde uzatır. Dolgu bir an geriden gelir; topuza, aralarındaki mesafe açıldıkça incelen bir köprüyle bağlıdır. Ray ve dolgu da topuzun çevresinde bir zar gibi şişer. Sonu aşacak kadar itilince ray lastik gibi uzar; başa doğru itilince duvar biraz esner. Topuz iki uçta da yuvarlak kalır.'),
           t('**Let go early.** Below `threshold` the thumb springs back; the fill\'s tail follows and is absorbed after it.', '**Erken bırak.** `threshold` altında topuz geri yaylanır; dolgunun kuyruğu arkasından gelir ve emilir.'),
           t('**Pending.** Past the threshold the thumb lands at the end, the track draws in to a ring around it and `pendingLabel` appears beside it while a spinner takes the chevron\'s place, until the promise from `onConfirm` settles.', '**Bekleme.** Eşiği geçince topuz sona oturur, ray onun çevresinde bir halkaya çekilir ve `pendingLabel` yanında belirir, okun yerini bir döner simge alır; `onConfirm`\'in döndürdüğü söz sonuçlanana dek.'),
-          t('**Success.** The white glass takes the fill\'s colour and the chevron\'s stroke bends into a check, beside `successLabel`. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.', '**Başarı.** Beyaz cam dolgunun rengine bürünür, okun çizgisi `successLabel`\'ın yanında bir onay işaretine bükülür. `resetAfter` vermezsen onaylı kalır; verirsen önce ray açılır ve `successLabel` onun kenarıyla birlikte çekilir, topuz ardından hızla başa döner ve başa çarparken hafifçe ezilir.'),
+          t('**Success.** The white glass takes the fill\'s colour and the chevron\'s stroke bends into a check, beside `successLabel`; the thumb swells and settles as the check appears. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.', '**Başarı.** Beyaz cam dolgunun rengine bürünür, okun çizgisi `successLabel`\'ın yanında bir onay işaretine bükülür; işaret belirirken topuz büyüyüp yerine oturur. `resetAfter` vermezsen onaylı kalır; verirsen önce ray açılır ve `successLabel` onun kenarıyla birlikte çekilir, topuz ardından hızla başa döner ve başa çarparken hafifçe ezilir.'),
           t('**Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.', '**Hata.** `onConfirm` hata fırlatırsa ray yeniden açılır, topuz geri döner ve `errorLabel` bir sonraki sürüklemeye dek yönergenin yerini alır.'),
         ],
       },
@@ -1514,6 +1514,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.11',
+    date: '2026-11-23',
+    title: t('Slide to Confirm: the check waits for the track, and the thumb greets it.', 'Slide to Confirm: tik rayı bekliyor, topuz da onu karşılıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'A success now shows only once the track has drawn in around the thumb, however soon `onConfirm` settles: the glass takes its colour and the icon turns into the check then, not while the track is still moving. As the check appears the thumb swells and settles, on the same springs a button swells with under the pointer. On a bare track (`fill={false}`) the landed thumb keeps its clear-glass icon colour until the lens is half frosted over, so the icon never sits dark on dark glass.',
+          'Başarı artık `onConfirm` ne kadar çabuk sonuçlanırsa sonuçlansın, ray topuzun çevresine oturduktan sonra görünüyor: cam rengini o zaman alıyor, ikon da o zaman tike dönüşüyor; ray hâlâ hareket ederken değil. Tik belirirken topuz, bir butonun imleç altında şiştiği yaylarla büyüyüp yerine oturuyor. Dolgusuz rayda (`fill={false}`) sona oturan topuz, mercek yarı buzlanana dek berrak camdaki ikon rengini koruyor; ikon böylece koyu camda koyu kalmıyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.10',
     date: '2026-11-23',

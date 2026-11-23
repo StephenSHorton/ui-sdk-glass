@@ -969,7 +969,7 @@ import { GlassSlideToConfirm } from '@/components/liquid-glass'
 - **Drag.** The thumb turns to clear glass and bends the fill and the label it passes; its chevron stays in place, in the fill's text colour. It stays round while held, and speed stretches it along its travel. The fill trails a moment behind, joined to the thumb by a bridge that thins as they pull apart, and the track and the fill swell around the thumb like a membrane. Pushed past the end the track stretches like a rubber band; pushed against the start the wall gives a little. The thumb stays round at both.
 - **Let go early.** Below `threshold` the thumb springs back; the fill's tail follows and is absorbed after it.
 - **Pending.** Past the threshold the thumb lands at the end, the track draws in to a ring around it and `pendingLabel` appears beside it while a spinner takes the chevron's place, until the promise from `onConfirm` settles.
-- **Success.** The white glass takes the fill's colour and the chevron's stroke bends into a check, beside `successLabel`. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.
+- **Success.** The white glass takes the fill's colour and the chevron's stroke bends into a check, beside `successLabel`; the thumb swells and settles as the check appears. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.
 - **Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.
 
 ## Examples

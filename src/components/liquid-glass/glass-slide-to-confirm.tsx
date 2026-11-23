@@ -145,12 +145,7 @@ const REOPEN = 0.09
 const POP = 0.12
 const POP_KICK_X = 29
 const POP_KICK_Y = 18.7
-/**
- * A success shows just before the track has finished drawing in around the thumb (from here on,
- * 0–1 of the way), so the check and the swell land with the track's last stretch…
- */
-const CHECK_AT = 0.92
-/** …but the grey track gives way only once it is a ring around the thumb, never while it still moves. */
+/** The track counts as drawn in around the thumb from here on (0–1 of the way): a success shows only then. */
 const DRAWN = 0.99
 /** The track draws into the thumb, and opens out of it again, in one glide that does not rebound. */
 const DRAW = { omega: 13.4, zeta: 1 }
@@ -320,8 +315,6 @@ export function GlassSlideToConfirm({
     const dissolve: Spring = { x: 0, v: 0 }
     const morph: Spring = { x: 0, v: 0 }
     const swap: Spring = { x: 0, v: 0 }
-    // The grey track under the disc: it gives way on a success, once it has drawn in around the thumb.
-    const yielded: Spring = { x: 0, v: 0 }
     // The swell that greets the check, wider and taller on springs of their own.
     const popX: Spring = { x: 0, v: 0 }
     const popY: Spring = { x: 0, v: 0 }
@@ -468,16 +461,14 @@ export function GlassSlideToConfirm({
       const k = +clamp(morph.x).toFixed(3)
       // How far the check has taken the icon's place.
       const v = +clamp(swap.x).toFixed(3)
-      // How far the grey track has given way under the dissolved disc.
-      const gone = +clamp(yielded.x).toFixed(3)
-      const next = `${s} ${u} ${k} ${v} ${gone} ${lensOn}`
+      const next = `${s} ${u} ${k} ${v} ${lensOn}`
       if (next !== marks) {
         marks = next
         // Without the glass the success colour comes in a little ahead of the disc's fading, and
         // leaves a little after it. With the glass, the glass itself takes the fill's colour.
         done.style.opacity = lensOn ? '0' : String(+Math.sqrt(u).toFixed(3))
         // The grey track gives way under it, so no grey rim shows around the disc.
-        bed.style.opacity = gone > 0 ? String(+(1 - gone).toFixed(3)) : ''
+        bed.style.opacity = u > 0 ? String(+(1 - u).toFixed(3)) : ''
         // Left to its classes until it dissolves, so the glass can still hide it.
         disc.style.opacity = u > 0 && !lensOn ? String(+(1 - u).toFixed(3)) : ''
         mark.style.opacity = String(+((1 - s) * (1 - v)).toFixed(3))
@@ -580,9 +571,9 @@ export function GlassSlideToConfirm({
         freed = homing = true
       }
       const now = live.current.state
-      // A success shows as the track finishes drawing in around the thumb, however soon it came:
-      // the glass takes the fill's colour and the icon turns into the check only then.
-      const confirmed = now === 'success' && input === 'none' && collapse.x > CHECK_AT
+      // A success shows once the track has drawn in around the thumb, however soon it came: the
+      // glass takes the fill's colour and the icon turns into the check only then.
+      const confirmed = now === 'success' && input === 'none' && collapse.x > DRAWN
       // The check's first frame kicks the swell, once per success.
       if (confirmed && !greeted && !still) {
         popX.v += POP_KICK_X
@@ -596,10 +587,10 @@ export function GlassSlideToConfirm({
       let marking = false
       if (still) {
         spin.x = spinGoal
-        dissolve.x = swap.x = yielded.x = dissolveGoal
+        dissolve.x = swap.x = dissolveGoal
         morph.x = morphGoal
         popX.x = popY.x = 0
-        spin.v = dissolve.v = morph.v = swap.v = yielded.v = popX.v = popY.v = 0
+        spin.v = dissolve.v = morph.v = swap.v = popX.v = popY.v = 0
       } else {
         // The spinner comes in softly and leaves as fast as the disc dissolves.
         const a = stepSpring(spin, spinGoal, spinGoal ? SPIN : DISSOLVE, dt)
@@ -609,8 +600,7 @@ export function GlassSlideToConfirm({
         const e = stepSpring(swap, dissolveGoal, ink ? DISSOLVE : SWAP, dt)
         const f = stepSpring(popX, 0, SPRINGS.hoverX, dt)
         const g = stepSpring(popY, 0, SPRINGS.hoverY, dt)
-        const yielding = stepSpring(yielded, dissolveGoal && (collapse.x > DRAWN || yielded.x > 0.5) ? 1 : 0, DISSOLVE, dt)
-        marking = a || b || c || e || f || g || yielding
+        marking = a || b || c || e || f || g
       }
       write()
       return moving || closing || marking || freed || (input === 'hold' && !still)

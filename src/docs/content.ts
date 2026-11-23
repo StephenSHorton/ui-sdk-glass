@@ -1517,14 +1517,14 @@ export const RELEASES: Release[] = [
   {
     version: '1.5.11',
     date: '2026-11-23',
-    title: t('Slide to Confirm: the check lands with the track, and the thumb greets it.', 'Slide to Confirm: tik rayla birlikte oturuyor, topuz da onu karşılıyor.'),
+    title: t('Slide to Confirm: the check waits for the track, and the thumb greets it.', 'Slide to Confirm: tik rayı bekliyor, topuz da onu karşılıyor.'),
     changes: [
       {
         kind: 'improved',
         page: 'slide-to-confirm',
         text: t(
-          'A success now shows as the track finishes drawing in around the thumb, however soon `onConfirm` settles: the glass takes its colour and the icon turns into the check over the track\'s last stretch, not the moment the thumb lands. As the check appears the thumb swells and settles, on the same springs a button swells with under the pointer. The grey track itself still gives way only once it has stopped. On a bare track (`fill={false}`) the landed thumb keeps its clear-glass icon colour until the lens is half frosted over, so the icon never sits dark on dark glass.',
-          'Başarı artık `onConfirm` ne kadar çabuk sonuçlanırsa sonuçlansın, ray topuzun çevresine oturmasını bitirirken görünüyor: cam rengini ve ikon tik şeklini rayın son kısmında alıyor; topuz sona vardığı anda değil. Tik belirirken topuz, bir butonun imleç altında şiştiği yaylarla büyüyüp yerine oturuyor. Gri ray ise ancak durduktan sonra çekiliyor. Dolgusuz rayda (`fill={false}`) sona oturan topuz, mercek yarı buzlanana dek berrak camdaki ikon rengini koruyor; ikon böylece koyu camda koyu kalmıyor.',
+          'A success now shows only once the track has drawn in around the thumb, however soon `onConfirm` settles: the glass takes its colour and the icon turns into the check then, not while the track is still moving. As the check appears the thumb swells and settles, on the same springs a button swells with under the pointer. On a bare track (`fill={false}`) the landed thumb keeps its clear-glass icon colour until the lens is half frosted over, so the icon never sits dark on dark glass.',
+          'Başarı artık `onConfirm` ne kadar çabuk sonuçlanırsa sonuçlansın, ray topuzun çevresine oturduktan sonra görünüyor: cam rengini o zaman alıyor, ikon da o zaman tike dönüşüyor; ray hâlâ hareket ederken değil. Tik belirirken topuz, bir butonun imleç altında şiştiği yaylarla büyüyüp yerine oturuyor. Dolgusuz rayda (`fill={false}`) sona oturan topuz, mercek yarı buzlanana dek berrak camdaki ikon rengini koruyor; ikon böylece koyu camda koyu kalmıyor.',
         ),
       },
     ],

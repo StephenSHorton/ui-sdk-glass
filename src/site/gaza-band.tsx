@@ -42,7 +42,8 @@ export function GazaBand({ locale }: { locale: Locale }) {
     </span>
   ))
   return (
-    <div className="border-b border-rail">
+    // Above the header (z-40), which would otherwise cover the lower half of the band's rivets.
+    <div className="relative z-[41] border-b border-rail">
       <div className={column}>
         <Rivets at={['bl', 'br']} />
         <a

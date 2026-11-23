@@ -1694,6 +1694,13 @@ export const RELEASES: Release[] = [
           '`over="center"` ile menü de aynı yumuşak hareketle kapanıyor ve butonun yazısı harf harf geri geliyor. `over="edge"` yeni: menü butonun kendi kenarından büyür. Yeni `from` prop\'u yukarıdan mı (varsayılan) aşağıdan mı geleceğini seçiyor.',
         ),
       },
+      {
+        kind: 'removed',
+        text: t(
+          'The stage that stood in for the Examples sections on the component pages is gone, heading included. The pages now show only what is there.',
+          'Bileşen sayfalarında Örnekler bölümlerinin yerinde duran alan, başlığıyla birlikte kaldırıldı. Sayfalar artık yalnızca var olanı gösteriyor.',
+        ),
+      },
     ],
   },
   {
@@ -2166,13 +2173,13 @@ export const RELEASES: Release[] = [
   {
     version: '1.3.12',
     date: '2026-11-22',
-    title: t('Examples are coming soon.', 'Örnekler yakında.'),
+    title: t('Examples are held back.', 'Örnekler şimdilik kaldırıldı.'),
     changes: [
       {
         kind: 'removed',
         text: t(
-          'The Examples sections on the component pages are held back for now; a "Coming soon" stage with a fine grid stands in their place.',
-          'Bileşen sayfalarındaki Örnekler bölümleri şimdilik kaldırıldı; yerlerinde ince bir ızgaranın üstünde "Yakında" yazan bir alan duruyor.',
+          'The Examples sections on the component pages are held back for now; a quiet stage with a fine grid stands in their place.',
+          'Bileşen sayfalarındaki Örnekler bölümleri şimdilik kaldırıldı; yerlerinde ince bir ızgaralı sade bir alan duruyor.',
         ),
       },
     ],

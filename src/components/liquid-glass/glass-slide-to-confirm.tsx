@@ -30,7 +30,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-import { drawDom } from './dom-snapshot'
+import { drawAround, drawDom } from './dom-snapshot'
 import { GlassStyles } from './glass-layer'
 import { SPRINGS, clamp, getGlassEngine, lerp, mixRgb, smooth, stepSpring, surfaceColorOf, type GlassView, type Rgb, type Spring } from './engine'
 
@@ -622,6 +622,19 @@ export function GlassSlideToConfirm({
             frost,
           },
           cursorLight: true,
+          // What the thumb's rim mirrors while it is held (clear): the page around the track.
+          reflection: {
+            height: d,
+            paint: (around, reach) => {
+              drawAround(around, document.body, { left: box.left - padX, top: box.top - padTop, width: W + 2 * padX, height: h + padTop + padBottom }, reach, {
+                skip: (el) => el === canvas || el === thumb || el.hasAttribute('data-glass-skip'),
+                onStale: () => {
+                  view.dirty = true
+                  gl.wake()
+                },
+              })
+            },
+          },
           screenX: box.left + cx,
           screenY: box.top + h / 2,
         }

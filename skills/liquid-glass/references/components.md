@@ -1753,7 +1753,9 @@ const fade = (col: number, row: number) => {
 
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
-// as the back button does. The three dots stand apart and open a menu that stretches out of them.
+// as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and open a
+// menu that stretches out of them.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -1784,6 +1786,8 @@ export default function Demo() {
             <Flag />
             <span className="@max-[440px]:sr-only">Report</span>
           </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup material="clear">
           <GlassButtonGroupItem className="@max-[440px]:px-0">
             <Clock />
             <span className="@max-[440px]:sr-only">Snooze</span>
@@ -2146,7 +2150,9 @@ const fade = (col: number, row: number) => {
 
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
-// as the back button does. The three dots stand apart and open a menu that stretches out of them.
+// as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and open a
+// menu that stretches out of them.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -2177,6 +2183,8 @@ export default function Demo() {
             <Flag />
             <span className="@max-[440px]:sr-only">Report</span>
           </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup material="clear">
           <GlassButtonGroupItem className="@max-[440px]:px-0">
             <Clock />
             <span className="@max-[440px]:sr-only">Snooze</span>

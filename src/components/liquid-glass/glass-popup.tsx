@@ -30,7 +30,7 @@
 
 import { createContext, useEffect, useRef, useState } from 'react'
 
-import { drawDom } from './dom-snapshot'
+import { drawAround, drawDom } from './dom-snapshot'
 import { GLOW, GLOW_SMALL, GOOEY, SPRINGS, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
 import { GlassStyles } from './glass-layer'
 
@@ -682,6 +682,16 @@ function createMorph(matchWidth: boolean) {
         )
         return {
           ...lensFor(box, s, page, dirty),
+          // What the control's rim mirrors while it is clear glass: the page around it. (Painted in its own fill it mirrors nothing, and neither does the surface: it is unlit.)
+          reflection: {
+            height: a.height,
+            paint: (around, reach) => {
+              drawAround(around, document.body, { left: box.L, top: box.T, width: box.W, height: box.H }, reach, {
+                skip: (el) => el === host || el === content || el.hasAttribute('data-glass-skip'),
+                onStale: dirty,
+              })
+            },
+          },
           blob: s.parted ? undefined : s.blob,
           left: box.L - a.left - s.edge.hostLeft,
           top: box.T - a.top - s.edge.hostTop,

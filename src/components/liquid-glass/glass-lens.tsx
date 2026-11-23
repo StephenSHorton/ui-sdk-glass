@@ -27,6 +27,7 @@
 
 import { useEffect, useRef } from 'react'
 
+import { drawAround } from './dom-snapshot'
 import { GlassStyles } from './glass-layer'
 import { SPRINGS, clamp, getGlassEngine, lerp, stepSpring, surfaceColorOf, type GlassView, type Rgb, type Spring } from './engine'
 
@@ -308,6 +309,19 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
             frost,
           },
           cursorLight: true,
+          // What the lens's rim mirrors while it travels (clear): the page around the options.
+          reflection: {
+            height: tall,
+            paint: (around, reach) => {
+              drawAround(around, document.body, { left: box.left - padX, top: box.top - padTop, width: root.offsetWidth + 2 * padX, height: root.offsetHeight + padTop + padBottom }, reach, {
+                skip: (el) => el === canvas || el.hasAttribute('data-glass-skip'),
+                onStale: () => {
+                  view.dirty = true
+                  engine.wake()
+                },
+              })
+            },
+          },
           screenX: box.left + mx.x,
           screenY: box.top + my.x,
         }

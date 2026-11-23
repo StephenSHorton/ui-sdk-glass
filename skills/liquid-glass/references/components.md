@@ -1768,8 +1768,8 @@ const fade = (col: number, row: number) => {
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
 // as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
-// grid, and its rim mirrors the white glass beside it. The three dots stand apart and open a
-// menu that stretches out of them.
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and unfold
+// into a menu that settles around them.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -1807,7 +1807,7 @@ export default function Demo() {
             <span className="@max-[440px]:sr-only">Snooze</span>
           </GlassButtonGroupItem>
         </GlassButtonGroup>
-        <GlassDropdownMenu>
+        <GlassDropdownMenu over="center">
           <GlassButtonGroup>
             <GlassDropdownMenuTrigger asChild>
               <GlassButtonGroupItem aria-label="More" className="px-0">
@@ -1894,7 +1894,7 @@ Nest groups to keep some actions in one body and others on their own. The outer 
 
 ## With a menu
 
-For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: the list stretches out of the whole group, as Select's does out of its button. See Dropdown Menu.
+For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: with `over="center"` the group unfolds into the menu, which settles around it. See Dropdown Menu.
 
 ## Examples
 
@@ -2035,8 +2035,8 @@ const fade = (col: number, row: number) => {
   return Math.min(1, Math.max(0, (1 - distance) / 0.45))
 }
 
-// Open it: the list swells out of the whole button, a neck stretches between them and snaps,
-// and the actions arrive one by one. Close it and the same motion plays backwards.
+// Open it: the button itself unfolds into the menu, which settles around it.
+// Close it and the menu folds back into the button.
 // Behind it, only the Press demo's fine grid on the page's own colour, centred on the button:
 // plain DOM, every cell draws its own top and left line, fainter towards the edge.
 export default function Demo() {
@@ -2050,7 +2050,7 @@ export default function Demo() {
           </span>
         ))}
       </div>
-      <GlassDropdownMenu>
+      <GlassDropdownMenu over="center">
         <GlassDropdownMenuTrigger className="h-12 px-6 text-[15px]">
           Options
           <ChevronDown className="opacity-60" />
@@ -2108,7 +2108,7 @@ import {
   GlassDropdownMenuTrigger,
 } from '@/components/liquid-glass/glass-dropdown-menu'
 
-<GlassDropdownMenu>
+<GlassDropdownMenu over="center">
   <GlassDropdownMenuTrigger>Options</GlassDropdownMenuTrigger>
   <GlassDropdownMenuContent>
     <GlassDropdownMenuItem onSelect={rename}>Rename</GlassDropdownMenuItem>
@@ -2119,14 +2119,83 @@ import {
 </GlassDropdownMenu>
 ```
 
-It is Select's motion on a list of actions: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. The trigger wears Button's clear glass, so it needs something behind it to bend.
+With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover's opening. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button's clear glass, so it needs something behind it to bend.
+
+## Opening on a neck
+
+Leave `over` out for Select's motion: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. It flips when there is no room.
+
+### A list that stretches out of its button
+
+```tsx
+import { ChevronDown, Copy, Pencil, Share2, Trash2 } from 'lucide-react'
+
+import {
+  GlassDropdownMenu,
+  GlassDropdownMenuContent,
+  GlassDropdownMenuItem,
+  GlassDropdownMenuSeparator,
+  GlassDropdownMenuTrigger,
+} from '@/components/liquid-glass/glass-dropdown-menu'
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// Without `over`: the list swells out of the whole button, a neck stretches between them and
+// snaps, and the actions arrive one by one. Close it and the same motion plays backwards.
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-96 w-full max-w-xl items-start justify-center pt-16">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassDropdownMenu>
+        <GlassDropdownMenuTrigger className="h-12 px-6 text-[15px]">
+          Actions
+          <ChevronDown className="opacity-60" />
+        </GlassDropdownMenuTrigger>
+        <GlassDropdownMenuContent>
+          <GlassDropdownMenuItem>
+            <Pencil />
+            Rename
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuItem>
+            <Copy />
+            Duplicate
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuItem>
+            <Share2 />
+            Share
+          </GlassDropdownMenuItem>
+          <GlassDropdownMenuSeparator />
+          <GlassDropdownMenuItem destructive>
+            <Trash2 />
+            Delete
+          </GlassDropdownMenuItem>
+        </GlassDropdownMenuContent>
+      </GlassDropdownMenu>
+    </div>
+  )
+}
+```
 
 ## Out of a Button Group
 
-Wrap one group and the content in the menu, and put the trigger on one of the group's items with `asChild`. The whole group is then the anchor: the list swells out of its body and takes its colour, white included. Wrap only the group that opens the menu.
+Wrap one group and the content in the menu, and put the trigger on one of the group's items with `asChild`. The whole group is then the anchor: the menu comes out of its body and takes its colour, white included. Wrap only the group that opens the menu.
 
 ```tsx
-<GlassDropdownMenu>
+<GlassDropdownMenu over="center">
   <GlassButtonGroup>
     <GlassDropdownMenuTrigger asChild>
       <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
@@ -2165,8 +2234,8 @@ const fade = (col: number, row: number) => {
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
 // as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
-// grid, and its rim mirrors the white glass beside it. The three dots stand apart and open a
-// menu that stretches out of them.
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and unfold
+// into a menu that settles around them.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -2204,7 +2273,7 @@ export default function Demo() {
             <span className="@max-[440px]:sr-only">Snooze</span>
           </GlassButtonGroupItem>
         </GlassButtonGroup>
-        <GlassDropdownMenu>
+        <GlassDropdownMenu over="center">
           <GlassButtonGroup>
             <GlassDropdownMenuTrigger asChild>
               <GlassButtonGroupItem aria-label="More" className="px-0">
@@ -2243,9 +2312,10 @@ export default function Demo() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state. |
+| `over` | `'center'` | — | On `GlassDropdownMenu`: the button unfolds into the menu, which settles around it. Left out, the list swells out of the control on a neck. |
 | `GlassDropdownMenuTrigger asChild` | `boolean` | `false` | Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own. |
 | `GlassDropdownMenuContent side / align` | `'top' \| 'bottom' / 'start' \| 'center' \| 'end'` | `'bottom' / 'center'` | Where the list opens against the trigger: below and centred by default. It flips when there is no room. |
-| `GlassDropdownMenuContent sideOffset` | `number` | `12` | The gap between the control and the list, where the neck stretches. |
+| `GlassDropdownMenuContent sideOffset` | `number` | `12` | The gap between the control and the list, where the neck stretches. With `over="center"`, passing it places the menu yourself. |
 | `GlassDropdownMenuItem onSelect` | `() => void` | — | Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open). |
 | `GlassDropdownMenuItem destructive` | `boolean` | `false` | Paints the item red, for Delete. |
 | `GlassDropdownMenuItem disabled` | `boolean` | `false` | Dimmed and skipped by the keyboard. |

@@ -17,8 +17,8 @@ const fade = (col: number, row: number) => {
   return Math.min(1, Math.max(0, (1 - distance) / 0.45))
 }
 
-// Open it: the list swells out of the whole button, a neck stretches between them and snaps,
-// and the actions arrive one by one. Close it and the same motion plays backwards.
+// Open it: the button itself unfolds into the menu, which settles around it.
+// Close it and the menu folds back into the button.
 // Behind it, only the Press demo's fine grid on the page's own colour, centred on the button:
 // plain DOM, every cell draws its own top and left line, fainter towards the edge.
 export default function Demo() {
@@ -32,7 +32,7 @@ export default function Demo() {
           </span>
         ))}
       </div>
-      <GlassDropdownMenu>
+      <GlassDropdownMenu over="center">
         <GlassDropdownMenuTrigger className="h-12 px-6 text-[15px]">
           Options
           <ChevronDown className="opacity-60" />

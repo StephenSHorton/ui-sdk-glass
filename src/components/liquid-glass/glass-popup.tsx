@@ -1156,6 +1156,15 @@ export type GlassPopup = ReturnType<typeof createMorph>
 export type GlassPopupOpening = 'stretch' | 'morph'
 
 /**
+ * Classes that centre a popup over its control, whatever the control's height: UI SDK keeps that
+ * height on the content (`--anchor-height`), so it is pulled back by half of it and then by half
+ * of its own height. Always with a transform: UI SDK places the box as if it had none, while a
+ * margin it would take for its own error and undo the moment the control moves (a hover's swell).
+ */
+export const OVER_CENTER =
+  '[position-try-fallbacks:none]! data-[side=bottom]:-translate-y-1/2 data-[side=top]:translate-y-1/2 data-[side=bottom]:[transform:translateY(calc(var(--anchor-height)*-0.5))] data-[side=top]:[transform:translateY(calc(var(--anchor-height)*0.5))]'
+
+/**
  * The popup a control inside may anchor: GlassDropdownMenu provides it, and a GlassButtonGroup
  * under it becomes the anchor, so the menu swells out of the whole group.
  */

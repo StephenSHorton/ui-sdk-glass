@@ -41,7 +41,7 @@
 // Without WebGL2 the surface is a plain frosted panel and the anchor keeps its CSS look.
 // COPY VERBATIM. MIT — https://github.com/bilalgursen/liquid-glass
 
-import { Children, createContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Children, createContext, useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 
 import { drawAround, drawDom } from './dom-snapshot'
 import { GLOW, GLOW_SMALL, GOOEY, MORPH, MORPH_GLOW, MORPH_GLOW_SMALL, SPRINGS, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
@@ -108,7 +108,6 @@ const CSS = `
 [data-glass-popup][data-glass-off]>[data-glass-card-shadow]{opacity:1!important}
 [data-glass-anchor][data-glass-label=in] [data-glass-char]{animation:glass-char ${LETTER.duration}s ease-out both;animation-delay:calc(var(--glass-at,0s) + var(--glass-c,0) * ${LETTER.gap}s)}
 [data-glass-anchor][data-glass-morphing] [data-glass-char]{opacity:0}
-[data-glass-spell] [data-glass-char]{animation:glass-char ${LETTER.duration}s ease-out both;animation-delay:calc(var(--glass-c,0) * ${LETTER.gap}s)}
 @keyframes glass-char{from{opacity:0;filter:blur(${LETTER.blur}px) brightness(0)}to{opacity:1;filter:blur(0) brightness(1)}}
 @keyframes glass-hold{to{opacity:0}}
 [data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{animation:glass-hold 60s linear forwards}
@@ -1269,32 +1268,6 @@ export function GlassPopupText({ children, delay = 0, className }: { children: s
     <span className={className}>
       <span className="sr-only">{children}</span>
       <span aria-hidden style={{ '--glass-at': `${delay}s` } as CSSProperties}>
-        {Array.from(children, (char, i) => (
-          <span key={i} data-glass-char="" style={{ '--glass-c': i } as CSSProperties}>
-            {char}
-          </span>
-        ))}
-      </span>
-    </span>
-  )
-}
-
-/**
- * Text on a control that changes letter by letter: whenever the string changes (a select's value),
- * the new one comes in letter by letter, out of a blur and the dark. Nothing plays on the first
- * render. Read aloud as one string.
- */
-export function GlassSpelled({ children, className }: { children: string; className?: string }) {
-  const [shown, setShown] = useState(children)
-  const [turn, setTurn] = useState(0)
-  if (shown !== children) {
-    setShown(children)
-    setTurn(turn + 1)
-  }
-  return (
-    <span className={className}>
-      <span className="sr-only">{children}</span>
-      <span key={turn} aria-hidden {...(turn ? { 'data-glass-spell': '' } : null)}>
         {Array.from(children, (char, i) => (
           <span key={i} data-glass-char="" style={{ '--glass-c': i } as CSSProperties}>
             {char}

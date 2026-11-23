@@ -2,8 +2,7 @@
 
 // GlassSelect — a select whose list is one body of liquid glass with its trigger: it swells out
 // of the whole button, holds on by a neck that thins and snaps, and closes by the same motion
-// played backwards (GlassPopup, `glass-popup.tsx`). A new choice comes into the button letter by
-// letter.
+// played backwards (GlassPopup, `glass-popup.tsx`).
 //
 //   <GlassSelect label="Role" placeholder="Pick a role" options={[{ value: 'admin', label: 'Admin' }]} />
 //
@@ -14,7 +13,7 @@
 import { Select, SelectContent, SelectItem, SelectLabel, SelectList, SelectTrigger, SelectValue } from '@ui-sdk/react/select'
 import type { CSSProperties, ReactNode } from 'react'
 
-import { GlassPopupAnchor, GlassPopupSurface, GlassSpelled, useGlassPopup } from './glass-popup'
+import { GlassPopupAnchor, GlassPopupSurface, useGlassPopup } from './glass-popup'
 
 export type GlassSelectOption = { value: string; label: ReactNode; disabled?: boolean }
 
@@ -51,13 +50,7 @@ export function GlassSelect({ label, options, value, defaultValue, onValueChange
           className="flex h-12 w-full cursor-pointer items-center justify-between rounded-full border border-black/10 bg-white/60 pr-4 pl-5 text-[15px] font-medium text-neutral-900 outline-none select-none focus-visible:ring-2 focus-visible:ring-[#3291FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900"
         >
           <GlassPopupAnchor popup={popup} />
-          {/* The chosen option's text changes letter by letter. */}
-          <SelectValue>
-            {(state: { placeholder: boolean; label: unknown }) => {
-              const text = state.placeholder ? (placeholder ?? '') : state.label
-              return typeof text === 'string' ? <GlassSpelled>{text}</GlassSpelled> : (text as ReactNode)
-            }}
-          </SelectValue>
+          <SelectValue />
           <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 opacity-60">
             <path d="m6 9 6 6 6-6" />
           </svg>

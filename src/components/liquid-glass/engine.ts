@@ -944,8 +944,11 @@ function createEngine(): GlassEngine | null {
         draw(v, refresh, moving || refresh || again)
       }
     }
-    if (running) raf = requestAnimationFrame(frame)
-    else last = 0
+    // A view may have woken the engine during this frame (a popup that has just gone back in
+    // does): the next frame is then already asked for, and asking again would start a second
+    // loop beside this one, for as long as anything on the page moves.
+    if (running) wake()
+    else if (!raf) last = 0
   }
   const wake = () => {
     if (!raf && !dead) raf = requestAnimationFrame(frame)

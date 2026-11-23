@@ -1,7 +1,7 @@
 'use client'
 
 // GlassPopover — a small surface its button unfolds into, right where the button is. The popover
-// grows from the button's edge (`over="center"`: around it), thrown a little way by its own weight
+// grows around the button (`over="edge"`: from its edge), thrown a little way by its own weight
 // and coming up into place from below (`from="top"`: down from above),
 // then settled. The button lets go of its label, its glass gives way to the card and the
 // content fades up and comes into focus inside, moving with the glass. The light the press let in grows with it, and its shadow goes
@@ -41,8 +41,8 @@ export type GlassPopoverContentProps = {
   children?: ReactNode
   className?: string
   /**
-   * Where the popover lies over its button. `edge` (default): from the button's own edge, growing
-   * away from it (see `side`). `center`: around it, the button in its middle.
+   * Where the popover lies over its button. `center` (default): around it, the button in its
+   * middle. `edge`: from the button's own edge, growing away from it (see `side`).
    */
   over?: 'center' | 'edge'
   /** With `over="edge"`: which way the popover grows from its button, down (`bottom`) or up (`top`). It flips when there is no room. */
@@ -92,8 +92,8 @@ export function GlassPopoverTrigger({ children, className = '', ...rest }: Glass
   )
 }
 
-/** The popover, from its button's edge (`over="center"`: around it) and centred on it unless `align` says otherwise. Its children are yours. Pass `sideOffset` to place it yourself. */
-export function GlassPopoverContent({ children, className = '', over = 'edge', side = 'bottom', align = 'center', sideOffset, ...rest }: GlassPopoverContentProps) {
+/** The popover, around its button (`over="edge"`: from its edge) and centred on it unless `align` says otherwise. Its children are yours. Pass `sideOffset` to place it yourself. */
+export function GlassPopoverContent({ children, className = '', over = 'center', side = 'bottom', align = 'center', sideOffset, ...rest }: GlassPopoverContentProps) {
   const popup = useContext(GlassPopupContext)
   return (
     <PopoverContent

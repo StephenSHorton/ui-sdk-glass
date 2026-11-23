@@ -240,7 +240,7 @@ const PLACES: Place[] = ['center', 'edge']
 type From = 'top' | 'bottom'
 const FROMS: From[] = ['top', 'bottom']
 /** What each component does when nothing is passed (the menu's place: its docs example's). */
-const DEFAULTS: Record<'popover' | 'menu', { from: From; place: Place }> = { popover: { from: 'bottom', place: 'edge' }, menu: { from: 'top', place: 'center' } }
+const DEFAULTS: Record<'popover' | 'menu', { from: From; place: Place }> = { popover: { from: 'bottom', place: 'center' }, menu: { from: 'top', place: 'center' } }
 /** What opens on the stage: the Popover, or the Dropdown Menu of the docs (its "Options" button). */
 type Subject = 'popover' | 'menu'
 const SUBJECTS: Subject[] = ['popover', 'menu']

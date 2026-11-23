@@ -25,7 +25,6 @@ import { useEffect, useRef } from 'react'
 import { drawAround, drawDom } from './dom-snapshot'
 import {
   DESIGN_HEIGHT,
-  GLOW_MERGE,
   SPRINGS,
   clamp,
   getGlassEngine,
@@ -201,8 +200,6 @@ export function GlassLayer({
     let w = 0
     let h = 0
     let hasDroplet = false
-    /** Canvas kept around a droplet's glass for the light at the seam to spill into. */
-    let room = 0
     /** The host's own corner radius in px; null = a pill. */
     let corner: number | null = null
     let surface: Rgb = [1, 1, 1]
@@ -245,27 +242,6 @@ export function GlassLayer({
     const growY: Spring = { x: 0, v: 0 }
     const scale: Spring = { x: 1, v: 0 }
     const drop: Spring = { x: 0, v: 0 }
-    // The light at the seam, once per landing: armed while the droplet is really apart.
-    const seam: Spring = { x: 0, v: 0 }
-    const seamSpread: Spring = { x: 0, v: 0 }
-    let seamHold = 0
-    let seamArmed = false
-    const stepSeam = (dt: number) => {
-      if (drop.x > 0.8) seamArmed = true
-      else if (seamArmed && drop.x <= GLOW_MERGE.at) {
-        seamArmed = false
-        // Only a real landing: glass that scrolled away also folds its droplet in.
-        if (view.visible && (pressed || dropletRef.current === 'merged')) {
-          seamSpread.x = seamSpread.v = 0
-          seamHold = GLOW_MERGE.hold
-        }
-      }
-      const on = seamHold > 0
-      seamHold = Math.max(0, seamHold - dt)
-      const a = stepSpring(seam, on ? 1 : 0, { omega: on ? GLOW_MERGE.riseSpeed : GLOW_MERGE.fadeSpeed, zeta: 1 }, dt)
-      const b = stepSpring(seamSpread, on || seam.x > 0.004 ? 1 : 0, { omega: GLOW_MERGE.spreadSpeed, zeta: 1 }, dt)
-      return on || a || (b && seam.x > 0.004)
-    }
     const maxScale = () => 1 + (2 * MAX_GROW_PX) / Math.max(w, 1)
 
     const view: GlassView = {
@@ -278,8 +254,6 @@ export function GlassLayer({
           press.x = growX.x = growY.x = press.v = growX.v = growY.v = 0
           drop.x = hasDroplet && dropletRef.current === 'apart' ? 1 : 0
           drop.v = 0
-          seam.x = seam.v = seamSpread.x = seamSpread.v = seamHold = 0
-          seamArmed = false
           scale.x = 1
           host.style.scale = ''
           if (colorT !== 1) view.dirty = true
@@ -294,11 +268,10 @@ export function GlassLayer({
         const d = stepSpring(scale, target, SPRINGS.press, dt)
         const apart = dropletRef.current === 'apart' && view.visible && !pressed
         const e = hasDroplet ? stepSpring(drop, apart ? 1 : 0, apart ? SPRINGS.dropletOut : SPRINGS.dropletIn, dt) : false
-        const f = hasDroplet ? stepSeam(dt) : false
         host.style.scale = scale.x === 1 ? '' : scale.x.toFixed(4)
         const fading = 1 - colorT > 0.004
         colorT = fading ? colorT + (1 - colorT) * Math.min(1, dt * 14) : 1
-        return a || b || c || d || e || f || fading || (clear && live && view.visible)
+        return a || b || c || d || e || fading || (clear && live && view.visible)
       },
       lens: (refresh) => {
         if (refresh) {
@@ -313,12 +286,6 @@ export function GlassLayer({
           hasDroplet = dropletRef.current !== 'none' && [...host.children].some((c) => c.hasAttribute('data-glass-drop'))
           // Springs step before shapes are read: one more frame lets the droplet start moving.
           if (hasDroplet !== had) engine.wake()
-          // Only where the page has that room: a canvas past its edge would make the page scroll.
-          if (hasDroplet) {
-            const r = host.getBoundingClientRect()
-            const doc = document.documentElement
-            room = Math.max(0, Math.floor(Math.min(GLOW_MERGE.room, r.left - 8, doc.clientWidth - r.right - 8, r.top + scrollY - 10, doc.scrollHeight - r.bottom - scrollY - Math.round(h * 0.8 + 4))))
-          } else room = 0
           const s = engine.resolveColor(surfaceColorOf(host.parentElement))
           surface = [s[0], s[1], s[2]]
           if (clear) {
@@ -376,9 +343,9 @@ export function GlassLayer({
           }
           return null
         }
-        const padX = 8 + room
-        const padTop = 10 + room
-        const padBottom = Math.round(h * 0.8 + 4) + room
+        const padX = 8
+        const padTop = 10
+        const padBottom = Math.round(h * 0.8 + 4)
         // The host itself is scaled; the glass inside the canvas is divided by that scale.
         const p = clamp(press.x, -0.12, 1.15)
         const s = Math.max(0.5, scale.x)
@@ -418,18 +385,6 @@ export function GlassLayer({
                   k: h * 0.34 * smooth(0, 0.15, t) * (1 - smooth(0.8, 1, t)),
                 }
               : undefined,
-          // The light at the seam: where the droplet's near edge meets the body.
-          glow:
-            seam.x > 0.004
-              ? {
-                  x: (w / 2 - h) * k,
-                  y: 0,
-                  r: h * (GLOW_MERGE.reach + GLOW_MERGE.spread * clamp(seamSpread.x)),
-                  amount: Math.max(0, seam.x) * GLOW_MERGE.amount,
-                  halo: { around: 'body' as const, amount: GLOW_MERGE.halo },
-                }
-              : undefined,
-          overscan: room,
           // Shading bands deeper than a square corner would meet in diagonal seams: the bevel
           // stays within the corner, and the bend keeps the depth it has on a pill.
           bevel: (corner === null ? bevel : Math.min(bevel, (radius / unit) * 1.2)) * Math.max(0.05, o?.bevel ?? 1),

@@ -5,7 +5,7 @@ description: Add liquid glass UI to a React app with Liquid Glass UI (bilalgurse
 
 # Liquid Glass UI
 
-Copy-paste React components drawn by one WebGL2 glass shader, one verb each. Docs: https://liquid-glass-interface.pages.dev — every page also exists as Markdown (`/docs/<page>.md`), and `https://liquid-glass-interface.pages.dev/llms-full.txt` holds everything.
+Copy-paste React components drawn by one WebGL2 glass shader, one verb each. Docs: https://onemorethink.dev — every page also exists as Markdown (`/docs/<page>.md`), and `https://onemorethink.dev/llms-full.txt` holds everything.
 
 ## Non-negotiable rules
 
@@ -35,7 +35,7 @@ Pick by the verb. They never overlap.
 | Unfold | A little more about one control, or a few choices for it, out of the button itself | `GlassPopover` from `glass-popover` with `GlassPopoverTrigger`, `GlassPopoverContent` (`over`, `align`), `GlassPopoverTitle`, `GlassPopoverDescription`, `GlassPopoverClose` (`variant="solid"`, `onClick`); needs `@ui-sdk/core` and `@ui-sdk/react` | `…/r/popover.json` |
 | — | All of them | — | `…/r/liquid-glass.json` |
 
-`…` = `npx shadcn@latest add https://liquid-glass-interface.pages.dev`. Everything wraps your own DOM. `GlassButton`, `GlassTabs`, `GlassSelect`, `GlassDropdownMenu`, `GlassPopover`, `RangeSlider`, `Switch` and `Checkbox` take their behaviour from UI SDK and need `@ui-sdk/core` and `@ui-sdk/react` (in beta: keep the exact versions the install adds); `RangeSlider`, `Switch` and `Checkbox` also need `three`. The rest have zero npm dependencies.
+`…` = `npx shadcn@latest add https://onemorethink.dev`. Everything wraps your own DOM. `GlassButton`, `GlassTabs`, `GlassSelect`, `GlassDropdownMenu`, `GlassPopover`, `RangeSlider`, `Switch` and `Checkbox` take their behaviour from UI SDK and need `@ui-sdk/core` and `@ui-sdk/react` (in beta: keep the exact versions the install adds); `RangeSlider`, `Switch` and `Checkbox` also need `three`. The rest have zero npm dependencies.
 
 ## Essentials
 
@@ -73,4 +73,4 @@ import { GlassActionButton, GlassButton, GlassTabs } from '@/components/liquid-g
 ## Reference
 
 - `references/components.md` — every component page: live example source, props table.
-- Turkish docs: https://liquid-glass-interface.pages.dev/tr/docs
+- Turkish docs: https://onemorethink.dev/tr/docs

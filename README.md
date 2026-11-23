@@ -1,13 +1,13 @@
 # Liquid Glass UI
 
-**Docs:** https://liquid-glass-interface.pages.dev · [Türkçe](https://liquid-glass-interface.pages.dev/tr) · **For AI:** [llms.txt](https://liquid-glass-interface.pages.dev/llms.txt)
+**Docs:** https://onemorethink.dev · [Türkçe](https://onemorethink.dev/tr) · **For AI:** [llms.txt](https://onemorethink.dev/llms.txt)
 
 Glass components for React, drawn by one WebGL2 shader, with behaviour from UI SDK. Each is named for the one thing it does: **press**, **merge**, **travel**, **flow**, **drag**, **hold**. Copy a file, get exactly what the demo shows. MIT.
 
 ## Install
 
 ```sh
-npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/liquid-glass.json
+npx shadcn@latest add https://onemorethink.dev/r/liquid-glass.json
 ```
 
 or copy `src/components/liquid-glass/` into your project as `components/liquid-glass/`. Requirements: React 19, Tailwind CSS v4, an `@/` alias.

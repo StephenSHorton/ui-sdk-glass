@@ -368,8 +368,8 @@ export const GOOEY = {
  * The morphing popup: a control that becomes its surface. The surface (Card's glass, as in the
  * gooey popup) comes out over the control itself: round all the way, a little past its own box,
  * then settled, while the control lets go of its label and its glass gives way to the card. The
- * surface's content comes into focus inside it as it grows. Closing is the same motion played
- * backwards. Used by GlassPopup with `opening: 'morph'` (`glass-popup.tsx`). These values are the
+ * surface's content comes into focus inside it as it grows. Closing is a calmer motion of its
+ * own: the content goes first and the surface slides back into the control, slowing as it lands. Used by GlassPopup with `opening: 'morph'` (`glass-popup.tsx`). These values are the
  * look: do not tune them casually.
  */
 export const MORPH = {
@@ -430,6 +430,21 @@ export const MORPH = {
   dropDamping: 1,
   /** Asked to close, the surface stays as it is this long (seconds) before it goes back in. */
   closeDelay: 0,
+  /**
+   * `closeSoft: 1`: closing is a motion of its own (`0`: the opening played backwards). The
+   * surface goes back into the control on one spring with no bounce (`closeSpeed`), slowing as it
+   * lands, and the control takes it with a small swell: it is not thrown and does not light up. The content
+   * does not wait for the glass: it is gone `closeFade` seconds after the close begins. A choice's
+   * light comes into the control with the surface and narrows to `closeGlowReach` (× the control's
+   * height) as it does, so it does not flood the control. `closeKick`:
+   * with the opening played backwards, how much of the throw the control takes once the surface
+   * is back in (× `kick`; 0 = it stays still).
+   */
+  closeSoft: 1,
+  closeSpeed: 14,
+  closeFade: 0.12,
+  closeGlowReach: 1,
+  closeKick: 1,
   /** The control's own glass (clear, lit) gives way to the card's between these two points of the calm follow (0–1). */
   frostFrom: 0,
   frostTo: 0.05,

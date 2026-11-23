@@ -1188,8 +1188,8 @@ const [speed, setSpeed] = useState<string | null>(null)
       {
         type: 'p',
         text: t(
-          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The button wears Button\'s glass, with its light and shadow. Once the neck lets go, the list settles into Card\'s frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.',
-          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Buton, ışığı ve gölgesiyle Button\'ın camını taşır. Boyun koptuğunda liste kendi ışığı olmayan, Card\'ın buzlu camına geçer: kenarını ince bir çizgi çizer, yumuşak bir gölge onu sayfadan ayırır. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The choice you made comes into the button letter by letter. The button wears Button\'s glass, with its light and shadow. Once the neck lets go, the list settles into Card\'s frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.',
+          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Yaptığın seçim butona harf harf gelir. Buton, ışığı ve gölgesiyle Button\'ın camını taşır. Boyun koptuğunda liste kendi ışığı olmayan, Card\'ın buzlu camına geçer: kenarını ince bir çizgi çizer, yumuşak bir gölge onu sayfadan ayırır. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
         ),
       },
       h('Your own popup', 'Kendi açılır yüzeyin'),
@@ -1437,8 +1437,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover\'s opening. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
-          '`GlassDropdownMenu` üzerinde `over="center"` ile butonun kendisi menüye dönüşür ve menü, buton ortasında kalacak şekilde çevresine oturur: Popover\'ın açılışı. Kapanışta yeniden butona katlanır. Menü yön değiştirmeden yerinde kalır; bu yüzden butonu ekranın üst ve alt kenarından uzak tut. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+          'With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover\'s opening. `over="edge"` grows it from the button\'s own edge instead, and `from="bottom"` brings it up from below where it comes down from above by default. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
+          '`GlassDropdownMenu` üzerinde `over="center"` ile butonun kendisi menüye dönüşür ve menü, buton ortasında kalacak şekilde çevresine oturur: Popover\'ın açılışı. `over="edge"` onu butonun kendi kenarından büyütür; `from="bottom"` ise varsayılan olarak yukarıdan inen menüyü aşağıdan getirir. Kapanışta yeniden butona katlanır. Menü yön değiştirmeden yerinde kalır; bu yüzden butonu ekranın üst ve alt kenarından uzak tut. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
         ),
       },
       h('Opening on a neck', 'Boyunla açılış'),
@@ -1479,7 +1479,8 @@ const popup = useGlassPopup()
         type: 'props',
         rows: [
           { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state.', '`GlassDropdownMenu` üzerinde: menüyü kendin yönet ya da kendi durumunu tutsun.') },
-          { name: 'over', type: "'center'", description: t('On `GlassDropdownMenu`: the button unfolds into the menu, which settles around it. Left out, the list swells out of the control on a neck.', '`GlassDropdownMenu` üzerinde: buton menüye dönüşür ve menü çevresine oturur. Verilmezse liste kontrolden bir boyunla şişerek çıkar.') },
+          { name: 'over', type: "'center' | 'edge'", description: t('On `GlassDropdownMenu`: the button unfolds into the menu. `center`: the menu settles around it. `edge`: it grows from the button\'s own edge, away from it. Left out, the list swells out of the control on a neck.', '`GlassDropdownMenu` üzerinde: buton menüye dönüşür. `center`: menü çevresine oturur. `edge`: butonun kendi kenarından, ondan uzağa doğru büyür. Verilmezse liste kontrolden bir boyunla şişerek çıkar.') },
+          { name: 'from', type: "'top' | 'bottom'", default: "'top'", description: t('On `GlassDropdownMenu`, with `over`: which way the menu comes into place. `top`: the button is thrown down and the menu comes down from above. `bottom`: the other way up.', '`GlassDropdownMenu` üzerinde, `over` ile: menünün yerine hangi yönden geldiği. `top`: buton aşağı savrulur, menü yukarıdan iner. `bottom`: tam tersi.') },
           { name: 'GlassDropdownMenuTrigger asChild', type: 'boolean', default: 'false', description: t('Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own.', 'Tetikleyiciyi kendi cam butonu yerine tek çocuğuna (bir `GlassButtonGroupItem`) koyar.') },
           { name: 'GlassDropdownMenuContent side / align', type: "'top' | 'bottom' / 'start' | 'center' | 'end'", default: "'bottom' / 'center'", description: t('Where the list opens against the trigger: below and centred by default. It flips when there is no room.', 'Listenin tetikleyiciye göre nerede açıldığı: varsayılan olarak altta ve ortalı. Yer yoksa öbür tarafa döner.') },
           { name: 'GlassDropdownMenuContent sideOffset', type: 'number', default: '12', description: t('The gap between the control and the list, where the neck stretches. With `over="center"`, passing it places the menu yourself.', 'Kontrol ile liste arasındaki, boynun esnediği boşluk. `over="center"` ile verilirse menüyü kendin konumlandırırsın.') },
@@ -1557,8 +1558,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'The popover grows from the button\'s own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card\'s glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start, moves with the glass on both sides, and fades up and sharpens as the glass arrives. The press\'s light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.',
-          'Popover butonun kendi kenarından, `side` aksini söylemedikçe aşağı doğru büyür (`over="center"` onu butonun çevresine oturtur). Açılırken etiket kaybolur ve butondan, ilk kareden beri Card\'ın camını taşıyan bir yüzey çıkar; kendi ağırlığı onu hafifçe savurur, boyunu biraz aşıp yerine oturur, köşeleri en son gelir. İçerik baştan beri içeridedir, camla iki yönde birlikte hareket eder ve cam yerine vardıkça belirip netleşir. Basışın ışığı onunla büyür ve içeriğe de ulaşır, gölge de onunla gider. Kapanış bunu tersine oynatır ve buton buna tepki verir: şişer, parlar ve yerine oturmadan önce ters yöne savrulur. Dışarıdayken buton gizlidir; bu yüzden dışarı basarak, Escape ile ya da bir Close parçasıyla kapanır.',
+          'The popover settles around the button, the button in its middle (`over="edge"` grows it from the button\'s own edge instead, downwards unless `side` says otherwise). Around the button it stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. Opening, the label goes and a surface comes out of the button, in Card\'s glass from the first frame; its own weight throws it a little way and it comes up into place from below (`from="top"` on `GlassPopover`: down from above), it lands a little past its size and settles, and its corners come last. The content is inside from the start, moves with the glass on both sides, and fades up and sharpens as the glass arrives. The press\'s light grows with it and reaches the content, and the shadow goes along. Closing is a calmer motion of its own: the content fades first, the surface slides back into the button and slows as it lands, and the button swells a little as it takes it while its label comes back letter by letter. A press on a Close part lights the surface where it lands, and that light goes into the button with it and fades there. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.',
+          'Popover, buton ortasında kalacak şekilde çevresine oturur (`over="edge"` onu butonun kendi kenarından, `side` aksini söylemedikçe aşağı doğru büyütür). Çevresine oturduğunda yön değiştirmeden yerinde kalır; bu yüzden butonu ekranın üst ve alt kenarından uzak tut. Açılırken etiket kaybolur ve butondan, ilk kareden beri Card\'ın camını taşıyan bir yüzey çıkar; kendi ağırlığı onu hafifçe savurur ve yerine aşağıdan çıkar (`GlassPopover` üzerinde `from="top"`: yukarıdan iner), boyunu biraz aşıp yerine oturur, köşeleri en son gelir. İçerik baştan beri içeridedir, camla iki yönde birlikte hareket eder ve cam yerine vardıkça belirip netleşir. Basışın ışığı onunla büyür ve içeriğe de ulaşır, gölge de onunla gider. Kapanış kendi başına, daha sakin bir harekettir: önce içerik solar, yüzey butona geri girer ve yaklaşırken yavaşlar, buton da onu alırken hafifçe şişer ve yazısı harf harf geri gelir. Bir Close parçasına basmak yüzeyi basılan yerden aydınlatır; bu ışık yüzeyle birlikte butona girer ve orada söner. Dışarıdayken buton gizlidir; bu yüzden dışarı basarak, Escape ile ya da bir Close parçasıyla kapanır.',
         ),
       },
       h('Your own surface', 'Kendi yüzeyin'),
@@ -1603,7 +1604,8 @@ const popup = useGlassPopup({ opening: 'morph' })
           { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassPopover`: control the popover yourself, or let it keep its own state.', '`GlassPopover` üzerinde: popover\'ı kendin yönet ya da kendi durumunu tutsun.') },
           { name: 'modal', type: "boolean | 'trap-focus'", default: 'false', description: t('`false` leaves the page usable, and focus leaving the popover closes it; `true` makes the page inert.', '`false` sayfayı kullanılabilir bırakır, odak popover\'dan çıkınca kapanır; `true` sayfayı etkisiz kılar.') },
           { name: 'GlassPopoverTrigger className', type: 'string', description: t('Classes for the button: 3rem tall with Button\'s glass by default. Any height works: the popover follows it.', 'Buton için sınıflar: varsayılan olarak 3rem yüksekliğinde ve Button\'ın camını taşır. Her yükseklik olur: popover onu izler.') },
-          { name: 'GlassPopoverContent over', type: "'edge' | 'center'", default: "'edge'", description: t('Where it lies over the button: from the button\'s own edge, or around it, the button in its middle.', 'Butonun üstünde nereye oturduğu: butonun kendi kenarından ya da buton ortasında kalacak şekilde çevresine.') },
+          { name: 'from', type: "'bottom' | 'top'", default: "'bottom'", description: t('On `GlassPopover`: which way the popover comes into place. `bottom`: the button is thrown up and the popover comes up from below. `top`: the button is thrown down and it comes down from above.', '`GlassPopover` üzerinde: popover\'ın yerine hangi yönden geldiği. `bottom`: buton yukarı savrulur, popover aşağıdan çıkar. `top`: buton aşağı savrulur, popover yukarıdan iner.') },
+          { name: 'GlassPopoverContent over', type: "'center' | 'edge'", default: "'center'", description: t('Where it lies over the button: around it, the button in its middle, or from the button\'s own edge.', 'Butonun üstünde nereye oturduğu: buton ortasında kalacak şekilde çevresine ya da butonun kendi kenarından.') },
           { name: 'GlassPopoverContent side / align', type: "'top' | 'bottom' / 'start' | 'center' | 'end'", default: "'bottom' / 'center'", description: t('`side`, with `over="edge"`: which way it grows from the button (down or up); it flips when there is no room. `align`: how it lines up with the button.', '`side`, `over="edge"` ile: butondan hangi yöne büyüdüğü (aşağı ya da yukarı); yer yoksa ters döner. `align`: butonla nasıl hizalandığı.') },
           { name: 'GlassPopoverContent sideOffset', type: 'number', description: t('Place it yourself. Left out, the popover lies over the button as `over` says.', 'Yerini kendin belirle. Verilmezse popover, `over` ne diyorsa butonun üstüne öyle oturur.') },
           { name: 'GlassPopoverContent className', type: 'string', description: t('Classes for the popover: `w-72`, `rounded-[26px]`, `p-4` by default.', 'Popover için sınıflar: varsayılan olarak `w-72`, `rounded-[26px]`, `p-4`.') },
@@ -1655,6 +1657,53 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.6.8',
+    date: '2026-11-23',
+    title: t('Popover and Dropdown Menu: a softer close.', 'Popover ve Dropdown Menu: daha yumuşak kapanış.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'select',
+        text: t(
+          'A new choice now comes into the button letter by letter, each letter out of a blur and the dark.',
+          'Yeni seçim artık butona harf harf geliyor; her harf bulanıklıktan ve karanlıktan çıkıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'The label now changes letter by letter as the state changes, each letter coming out of a blur and the dark. A label that is not plain text rises in as one piece, as before.',
+          'Durum değişirken etiket artık harf harf değişiyor; her harf bulanıklıktan ve karanlıktan çıkıyor. Düz metin olmayan etiketler eskisi gibi tek parça yükseliyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'popover',
+        text: t(
+          'Closing is no longer the opening played backwards. The content fades first, then the surface slides back into the button and slows as it lands, with no throw and no flash at the end, and the button\'s label comes back letter by letter. A press on a Close part now lights the surface where it lands, and the light goes into the button with it.',
+          'Kapanış artık açılışın tersine oynatılması değil. Önce içerik soluyor, ardından yüzey butona geri girip yaklaşırken yavaşlıyor; sonda savrulma ve parlama yok, butonun yazısı da harf harf geri geliyor. Bir Close parçasına basmak artık yüzeyi basılan yerden aydınlatıyor ve ışık yüzeyle birlikte butona giriyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'popover',
+        text: t(
+          'The popover now opens around its button and comes up into place from below. `over="edge"` on `GlassPopoverContent` brings back the opening from the button\'s edge, and the new `from` prop on `GlassPopover` picks the way: `from="top"` brings back the drop from above.',
+          'Popover artık butonunun çevresine açılıyor ve yerine aşağıdan çıkıyor. `GlassPopoverContent` üzerinde `over="edge"` butonun kenarından açılışı geri getirir; `GlassPopover` üzerindeki yeni `from` prop\'u da yönü seçiyor: `from="top"` yukarıdan inişi geri getirir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over="center"`, the menu closes the same softer way and the button\'s label comes back letter by letter. `over="edge"` is new: the menu grows from the button\'s own edge. The new `from` prop picks whether it comes down from above (the default) or up from below.',
+          '`over="center"` ile menü de aynı yumuşak hareketle kapanıyor ve butonun yazısı harf harf geri geliyor. `over="edge"` yeni: menü butonun kendi kenarından büyür. Yeni `from` prop\'u yukarıdan mı (varsayılan) aşağıdan mı geleceğini seçiyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.6.5',
     date: '2026-11-23',

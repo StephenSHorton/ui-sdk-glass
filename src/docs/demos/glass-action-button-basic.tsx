@@ -7,6 +7,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Press it: the arrow droplet melts into the button and stays merged.
 // "Start over" changes `resetKey`: the droplet splits off again and the label morphs back.
+// Each new label comes in letter by letter.
 export default function Demo() {
   const [run, setRun] = useState(0)
   return (

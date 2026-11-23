@@ -1099,7 +1099,8 @@ export default function Demo() {
     { title: 'Star liquid-glass', note: 'Leave a star on the repo', href: 'https://github.com/bilalgursen/liquid-glass', colour: '#ff6b3d' },
   ]
   return (
-    <div className="relative flex w-full flex-wrap items-center justify-center gap-5 py-14">
+    // Where the two cards do not fit side by side (a phone), only the first one shows, centred on the two rows.
+    <div className="@container relative flex w-full items-center justify-center gap-5 py-14">
       <div
         aria-hidden
         className="absolute inset-0 flex flex-col justify-center gap-3 overflow-hidden"
@@ -1125,7 +1126,7 @@ export default function Demo() {
         </div>
       </GlassCard>
 
-      <GlassCard live className="flex h-44 w-64 flex-col justify-between p-5">
+      <GlassCard live className="hidden h-44 w-64 flex-col justify-between p-5 @min-[452px]:flex">
         <div className="flex items-baseline justify-between">
           <p className="text-[14px] font-semibold">{today ? today.toLocaleDateString(undefined, { weekday: 'long' }) : 'Today'}</p>
           <p className="text-[34px] leading-none font-semibold tracking-[-0.05em] tabular-nums">{today?.getDate()}</p>

@@ -1507,6 +1507,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.5.5',
+    date: '2026-11-23',
+    title: t('One card on a phone.', 'Telefonda tek kart.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'card',
+        text: t(
+          'The first example shows one card where two do not fit side by side, centred on the two rows of colour. On a phone the cards used to stack, and the rows ran through the gap between them.',
+          'İlk örnek, iki kartın yan yana sığmadığı yerde tek kart gösteriyor; kart iki renk şeridinin ortasında duruyor. Telefonda kartlar eskiden alt alta diziliyor, şeritler aralarındaki boşluktan geçiyordu.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.5.4',
     date: '2026-11-23',
     title: t('A choice lights its own spot.', 'Seçim, kendi yerini aydınlatıyor.'),

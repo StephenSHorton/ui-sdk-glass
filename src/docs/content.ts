@@ -1547,8 +1547,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'The popover grows from the button\'s own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card\'s glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start and sharpens as the glass arrives. The press\'s light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.',
-          'Popover butonun kendi kenarından, `side` aksini söylemedikçe aşağı doğru büyür (`over="center"` onu butonun çevresine oturtur). Açılırken etiket kaybolur ve butondan, ilk kareden beri Card\'ın camını taşıyan bir yüzey çıkar; kendi ağırlığı onu hafifçe savurur, boyunu biraz aşıp yerine oturur, köşeleri en son gelir. İçerik baştan beri içeridedir ve cam yerine vardıkça netleşir. Basışın ışığı onunla büyür ve içeriğe de ulaşır, gölge de onunla gider. Kapanış bunu tersine oynatır ve buton buna tepki verir: şişer, parlar ve yerine oturmadan önce ters yöne savrulur. Dışarıdayken buton gizlidir; bu yüzden dışarı basarak, Escape ile ya da bir Close parçasıyla kapanır.',
+          'The popover grows from the button\'s own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card\'s glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start, moves with the glass on both sides, and fades up and sharpens as the glass arrives. The press\'s light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.',
+          'Popover butonun kendi kenarından, `side` aksini söylemedikçe aşağı doğru büyür (`over="center"` onu butonun çevresine oturtur). Açılırken etiket kaybolur ve butondan, ilk kareden beri Card\'ın camını taşıyan bir yüzey çıkar; kendi ağırlığı onu hafifçe savurur, boyunu biraz aşıp yerine oturur, köşeleri en son gelir. İçerik baştan beri içeridedir, camla iki yönde birlikte hareket eder ve cam yerine vardıkça belirip netleşir. Basışın ışığı onunla büyür ve içeriğe de ulaşır, gölge de onunla gider. Kapanış bunu tersine oynatır ve buton buna tepki verir: şişer, parlar ve yerine oturmadan önce ters yöne savrulur. Dışarıdayken buton gizlidir; bu yüzden dışarı basarak, Escape ile ya da bir Close parçasıyla kapanır.',
         ),
       },
       h('Your own surface', 'Kendi yüzeyin'),
@@ -1645,6 +1645,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.6.2',
+    date: '2026-11-23',
+    title: t('Popover: the content and the glass move as one.', 'Popover: içerik ve cam tek parça hareket ediyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'popover',
+        text: t(
+          'The content now follows the width and the height of the glass, so it takes the glass\'s swing instead of resting inside it while it still moves. It fades up gradually as it comes into focus, and closing is quicker.',
+          'İçerik artık camın genişliğini ve yüksekliğini izliyor; cam hâlâ hareket ederken içinde durmak yerine onun salınımına katılıyor. Netleşirken kademeli olarak beliriyor ve kapanış daha hızlı.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.6.1',
     date: '2026-11-23',

@@ -75,6 +75,8 @@ const SETTLE = 0.16
 const SETTLE_GLOW = 0.7
 /** What a morphing popup's light does to the content on it: how much it brightens it (× the light there), and the soft white bloom it leaves around it (px, alpha). */
 const CONTENT_GLOW = { lift: 0.55, bloom: 7, alpha: 0.65 }
+/** A morphing surface's content follows each side of the glass, at most this much (×) off its even size: past it, text would look stretched. */
+const MAX_STRETCH = 1.06
 
 const CSS = `
 [data-glass-popup]{isolation:isolate;overflow:visible!important;background:transparent}
@@ -195,8 +197,8 @@ function createMorph(matchWidth: boolean, morphs: boolean) {
   const stepItems = (goal: number, dt: number, still: boolean, fixed?: number) => {
     if (!content) return false
     if (morphs) {
-      // The whole list is there from the start, inside the growing glass: it comes into focus, not in a queue.
-      out = still ? goal : smooth(0, MORPH.contentIn, clamp(open.x))
+      // The whole list is there from the start, inside the growing glass: it fades up as it comes into focus, not in a queue.
+      out = still ? goal : smooth(0, Math.max(MORPH.contentFade, 0.01), clamp(calm.x))
       reveal = out > 0 ? 99 : 0
     } else if (fixed !== undefined) {
       // Rewinding: the list is wherever it was at that moment of the opening.
@@ -427,7 +429,7 @@ function createMorph(matchWidth: boolean, morphs: boolean) {
     // `opening: 'morph'`: the same two glasses, the surface coming out over the control itself. It
     // grows from the control's box to its own, in the card's glass from the first frame, while the
     // control under it keeps Button's glass until it gives way (`card`, below).
-    let morph: { cx: number; cy: number; hx: number; hy: number; r: number; zoom: number; list: Box | null } | undefined
+    let morph: { cx: number; cy: number; hx: number; hy: number; r: number; zoomX: number; zoomY: number; list: Box | null } | undefined
     if (c && morphs && content) {
       // The side that has further to go leads, on `open`; the other follows on `cross`.
       const tall = Math.abs(c.height - a.height) >= Math.abs(c.width - a.width)
@@ -449,14 +451,19 @@ function createMorph(matchWidth: boolean, morphs: boolean) {
       out = smooth(0, 48, 2 * Math.max(hx - body.hx, hy - body.hy))
       // Two shapes laid over each other, with a clean edge where they meet; gooey only if asked for.
       blob = { x: cx - body.cx, y: cy - body.cy, hx, hy, r, k: MORPH.gooey > 0.5 ? Math.max(MORPH.softness, 0.05) : 0.05, material: surfaceGlass() }
+      const fx = hx / (c.width / 2)
+      const fy = hy / (c.height / 2)
+      const even = Math.sqrt(fx * fy)
       morph = {
         cx,
         cy,
         hx,
         hy,
         r,
-        // The content is as large as the glass is far along (MORPH.zoom of that: 0 keeps it full size).
-        zoom: lerp(1, clamp(tall ? hy / (c.height / 2) : hx / (c.width / 2), 0.1, 1.5), clamp(MORPH.zoom)),
+        // The content is as large as the glass is far along (MORPH.zoom of that: 0 keeps it full size),
+        // side by side: it takes the swing of each, as far as its text can stretch without showing it.
+        zoomX: lerp(1, clamp(even * clamp(fx / even, 1 / MAX_STRETCH, MAX_STRETCH), 0.1, 1.5), clamp(MORPH.zoom)),
+        zoomY: lerp(1, clamp(even * clamp(fy / even, 1 / MAX_STRETCH, MAX_STRETCH), 0.1, 1.5), clamp(MORPH.zoom)),
         list: list && { L: c.left + content.clientLeft + list.offsetLeft, T: c.top + content.clientTop + list.offsetTop, W: list.offsetWidth, H: list.offsetHeight },
       }
     }
@@ -550,18 +557,19 @@ function createMorph(matchWidth: boolean, morphs: boolean) {
       for (const name of RIDE) set(content, name, '', '')
       return
     }
-    const k = m.zoom
+    const kx = m.zoomX
+    const ky = m.zoomY
     const lx = l.L + l.W / 2
     const ly = l.T + l.H / 2
     // Where the list's middle is on the glass, and from there the glass's box in the list's own space (before its zoom).
-    const x = m.cx + (lx - (s.c.left + s.c.width / 2)) * k
-    const y = m.cy + (ly - (s.c.top + s.c.height / 2)) * k
-    const inset = [l.H / 2 + (m.cy - m.hy - y) / k, l.W / 2 - (m.cx + m.hx - x) / k, l.H / 2 - (m.cy + m.hy - y) / k, l.W / 2 + (m.cx - m.hx - x) / k]
+    const x = m.cx + (lx - (s.c.left + s.c.width / 2)) * kx
+    const y = m.cy + (ly - (s.c.top + s.c.height / 2)) * ky
+    const inset = [l.H / 2 + (m.cy - m.hy - y) / ky, l.W / 2 - (m.cx + m.hx - x) / kx, l.H / 2 - (m.cy + m.hy - y) / ky, l.W / 2 + (m.cx - m.hx - x) / kx]
     const soft = MORPH.contentBlur * (1 - smooth(0, 1, clamp(calm.x)))
     set(content, '--glass-ride-x', `${(x - lx).toFixed(2)}px`, '')
     set(content, '--glass-ride-y', `${(y - ly).toFixed(2)}px`, '')
-    set(content, '--glass-zoom', k.toFixed(4), '')
-    set(content, '--glass-clip', `inset(${inset.map((v) => `${v.toFixed(1)}px`).join(' ')} round ${(m.r / k).toFixed(1)}px)`, '')
+    set(content, '--glass-zoom', `${kx.toFixed(4)} ${ky.toFixed(4)}`, '')
+    set(content, '--glass-clip', `inset(${inset.map((v) => `${v.toFixed(1)}px`).join(' ')} round ${(m.r / kx).toFixed(1)}px / ${(m.r / ky).toFixed(1)}px)`, '')
     set(content, '--glass-soft', soft > 0.05 ? `blur(${soft.toFixed(2)}px)` : '', '')
   }
 

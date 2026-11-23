@@ -617,8 +617,8 @@ const [view, setView] = useState('week')
       {
         type: 'p',
         text: t(
-          'The text is drawn beneath the glass, so the rim bends the letters as they pass. Whatever sits behind the badge shows through, softly blurred. Hovering the badge\'s positioned parent speeds the flow up. Colour it with `bg-*` and `text-*`.',
-          'Yazı camın altında çizilir; kenar, geçen harfleri büker. Rozetin arkasındaki her şey yumuşakça bulanık görünür. Rozetin konumlu atasının üstüne gelince akış hızlanır. `bg-*` ve `text-*` ile renklendir.',
+          'The text is drawn beneath the glass, so the rim bends the letters as they pass. Whatever sits behind the badge shows through, softly blurred. Hovering the badge\'s positioned parent speeds the flow up. Colour it with `bg-*` and `text-*`. With `tint` at 0.6 or below the glass counts as clear, and its rim mirrors the colours around it.',
+          'Yazı camın altında çizilir; kenar, geçen harfleri büker. Rozetin arkasındaki her şey yumuşakça bulanık görünür. Rozetin konumlu atasının üstüne gelince akış hızlanır. `bg-*` ve `text-*` ile renklendir. `tint` 0.6 ya da altındayken cam şeffaf sayılır ve kenarı çevresindeki renkleri yansıtır.',
         ),
       },
       h('Examples', 'Örnekler'),
@@ -1506,6 +1506,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.8',
+    date: '2026-11-23',
+    title: t('A clear badge mirrors what is around it.', 'Şeffaf rozet çevresini yansıtır.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'badge',
+        text: t(
+          'A clear badge (`tint` at 0.6 or below) now mirrors its surroundings on its rim, as clear buttons do; a badge in its own colour looks the same as before. The first example is now a plain outlined card with one orange badge on its corner.',
+          'Şeffaf rozet (`tint` 0.6 ya da altı) artık şeffaf butonlar gibi çevresini kenarında yansıtıyor; kendi renginde bir rozet eskisi gibi görünür. İlk örnek artık köşesinde tek bir turuncu rozet olan sade çerçeveli bir kart.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.7',
     date: '2026-11-23',

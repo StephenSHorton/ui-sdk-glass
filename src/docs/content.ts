@@ -1677,8 +1677,8 @@ export const RELEASES: Release[] = [
       {
         kind: 'improved',
         text: t(
-          'The header, the phone menu and the footer now carry the new logo in place of the written name.',
-          'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor.',
+          'The header, the phone menu and the footer now carry the new logo in place of the written name, and the browser tab shows its hand.',
+          'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor, tarayıcı sekmesinde de logonun eli görünüyor.',
         ),
       },
     ],

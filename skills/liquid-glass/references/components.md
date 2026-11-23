@@ -929,60 +929,69 @@ import { GlassSlideToConfirm } from '@/components/liquid-glass'
 
 ## Examples
 
-### A full-width payment
+### A bare track that mirrors its neighbour
 
 ```tsx
+import { AlarmClock } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
 import { GlassSlideToConfirm } from '@/components/liquid-glass'
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const clock = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 
-// Drag the thumb to the end: it turns to clear glass, pulls the fill behind it and bends
-// the label it passes. Let go early and it springs back.
+// An alarm laid on its side: your own clock on the left, Snooze and the slide stacked on the
+// right. Snooze is a plain button, no glass: flat orange. The track is bare (`fill={false}`):
+// the thumb pulls no fill behind it and bends the label alone. With `mirror`, the held thumb's
+// rim picks up the orange button above it.
+// Where the two would not fit side by side (a phone), the clock moves on top.
 export default function Demo() {
+  // Read after mounting, so the server's time is never shown.
+  const [time, setTime] = useState('')
+  useEffect(() => {
+    setTime(clock())
+    const id = setInterval(() => setTime(clock()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
   return (
-    <div className="flex w-full max-w-sm flex-col items-center">
-      <span className="flex size-12 items-center justify-center rounded-full bg-neutral-900 text-[15px] font-semibold text-white dark:bg-white dark:text-neutral-900">BG</span>
-      <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Sending to Bilal Gürşen</p>
-      <p className="mt-1 text-6xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$240</p>
-      <GlassSlideToConfirm className="mt-9" size="lg" pendingLabel="Sending" successLabel="Sent to Bilal" resetAfter={2600} onConfirm={() => wait(1400)}>
-        Slide to send
-      </GlassSlideToConfirm>
+    <div className="@container w-full max-w-2xl">
+      <div className="flex flex-col items-center gap-8 @lg:flex-row @lg:justify-between">
+        <div className="flex flex-col items-center @lg:items-start">
+          <p className="flex items-center gap-2 text-lg text-neutral-500 dark:text-neutral-400">
+            <AlarmClock className="size-5" />
+            <span>
+              <span className="font-light">Time to</span> <span className="font-display">wake up</span>
+            </span>
+          </p>
+          <p className={`mt-1 text-7xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white ${time ? '' : 'invisible'}`}>{time || '00:00'}</p>
+        </div>
+        <div className="flex w-full max-w-72 flex-col gap-3">
+          <button
+            type="button"
+            className="h-24 w-full cursor-pointer rounded-full bg-orange-500 text-xl font-semibold text-white transition-transform duration-150 outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 motion-safe:active:scale-[0.97]"
+          >
+            Snooze
+          </button>
+          <GlassSlideToConfirm
+            size="xl"
+            fill={false}
+            mirror
+            icon={<span className="size-7 rounded-md bg-current" />}
+            fillClassName="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+            successLabel="Stopped"
+            resetAfter={2600}
+            onConfirm={() => {}}
+          >
+            Slide to stop
+          </GlassSlideToConfirm>
+        </div>
+      </div>
     </div>
   )
 }
 ```
 
-### A coloured fill, and a failing action
-
-```tsx
-import { GlassSlideToConfirm } from '@/components/liquid-glass'
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// `fillClassName` colours the fill. The second one always fails: a rejected promise
-// springs the thumb back and writes `errorLabel` until the next slide.
-export default function Demo() {
-  return (
-    <div className="flex w-full max-w-sm flex-col gap-6">
-      <GlassSlideToConfirm size="lg" fillClassName="bg-emerald-500 text-white" successLabel="Unlocked" resetAfter={2000} onConfirm={() => {}}>
-        Slide to unlock
-      </GlassSlideToConfirm>
-      <GlassSlideToConfirm
-        size="lg"
-        fillClassName="bg-rose-500 text-white"
-        pendingLabel="Deleting"
-        errorLabel="Offline, slide to retry"
-        onConfirm={async () => {
-          await wait(1200)
-          throw new Error('offline')
-        }}
-      >
-        Slide to delete
-      </GlassSlideToConfirm>
-    </div>
-  )
-}
-```
+`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb's rim mirror the page around the track, so a colourful neighbour (the orange button here) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.
 
 Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is the label written on it, and the thumb's icon while the glass is clear. At rest the thumb is always frosted white glass with a dark icon (a flat white disc without WebGL2). The control fills its container, so set the width on a parent or with `className`.
 
@@ -1002,6 +1011,8 @@ Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is th
 | `icon` | `ReactNode` | `chevron` | The thumb's idle icon. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Track height 40, 48, 56 or 96 px. |
 | `fillClassName` | `string` | `'bg-[#3291FF] text-white'` | Classes of the fill: its colour and the colour of the text on it. |
+| `fill` | `boolean` | `true` | `false` leaves the track bare: no fill behind the thumb; `fillClassName` colours the success alone. |
+| `mirror` | `boolean` | `false` | The held thumb's rim mirrors the page around the track: a colourful neighbour lights the rim that faces it, and the icon glows. |
 | `disabled` | `boolean` | `false` | Dims the control and ignores pointer and keyboard. |
 | `className` | `string` | — | Width and position of the track. |
 

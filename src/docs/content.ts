@@ -745,8 +745,14 @@ const [view, setView] = useState('week')
         ],
       },
       h('Examples', 'Örnekler'),
-      { type: 'demo', id: 'glass-slide-to-confirm-basic', title: t('A full-width payment', 'Tam genişlikte bir ödeme') },
-      { type: 'demo', id: 'glass-slide-to-confirm-error', title: t('A coloured fill, and a failing action', 'Renkli dolgu ve başarısız bir eylem') },
+      { type: 'demo', id: 'glass-slide-to-confirm-mirror', title: t('A bare track that mirrors its neighbour', 'Komşusunu yansıtan dolgusuz bir ray') },
+      {
+        type: 'p',
+        text: t(
+          '`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb\'s rim mirror the page around the track, so a colourful neighbour (the orange button here) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.',
+          '`fill={false}` rayı dolgusuz bırakır: topuz arkasından dolgu çekmez, yalnızca etiketi büker; ikonu açık sayfada koyu, koyu sayfada beyazdır. `fillClassName` o zaman yalnızca başarı rengini belirler. `mirror`, tutulan topuzun kenarının rayın çevresindeki sayfayı yansıtmasını sağlar; renkli bir komşu (buradaki turuncu buton) kendisine bakan kenarı aydınlatır, içindeki ikon da ışıldar. İkisi de sen istemedikçe kapalıdır: topuz yalnızca berrakken yansıtır, dururken asla.',
+        ),
+      },
       {
         type: 'p',
         text: t(
@@ -770,6 +776,8 @@ const [view, setView] = useState('week')
           { name: 'icon', type: 'ReactNode', default: 'chevron', description: t('The thumb\'s idle icon.', 'Topuzun boştaki ikonu.') },
           { name: 'size', type: "'sm' | 'md' | 'lg' | 'xl'", default: "'md'", description: t('Track height 40, 48, 56 or 96 px.', 'Ray yüksekliği 40, 48, 56 ya da 96 px.') },
           { name: 'fillClassName', type: 'string', default: "'bg-[#3291FF] text-white'", description: t('Classes of the fill: its colour and the colour of the text on it.', 'Dolgunun sınıfları: rengi ve üstündeki yazının rengi.') },
+          { name: 'fill', type: 'boolean', default: 'true', description: t('`false` leaves the track bare: no fill behind the thumb; `fillClassName` colours the success alone.', '`false` rayı dolgusuz bırakır: topuzun arkasında dolgu olmaz; `fillClassName` yalnızca başarıyı renklendirir.') },
+          { name: 'mirror', type: 'boolean', default: 'false', description: t('The held thumb\'s rim mirrors the page around the track: a colourful neighbour lights the rim that faces it, and the icon glows.', 'Tutulan topuzun kenarı rayın çevresindeki sayfayı yansıtır: renkli bir komşu kendisine bakan kenarı aydınlatır, ikon da ışıldar.') },
           { name: 'disabled', type: 'boolean', default: 'false', description: t('Dims the control and ignores pointer and keyboard.', 'Bileşeni soluklaştırır; imleç ve klavyeyi yok sayar.') },
           { name: 'className', type: 'string', description: t('Width and position of the track.', 'Rayın genişliği ve konumu.') },
         ],
@@ -1506,6 +1514,37 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.9',
+    date: '2026-11-23',
+    title: t('Slide to Confirm: the mirror is yours to turn on, and the track can go bare.', 'Slide to Confirm: ayna artık isteğe bağlı, ray da dolgusuz olabiliyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'The thumb\'s rim no longer mirrors the page around the track unless you ask: the new `mirror` prop turns it on, and a colourful neighbour then lights the rim that faces it while the thumb is held, with the icon inside glowing. `fill={false}` leaves the track bare, with no fill behind the thumb. A new example shows both: an alarm with your own clock, a plain orange Snooze button and a bare slide whose thumb mirrors it.',
+          'Topuzun kenarı artık sen istemedikçe rayın çevresindeki sayfayı yansıtmıyor: yeni `mirror` prop\'u bunu açar; topuz tutulurken renkli bir komşu kendisine bakan kenarı aydınlatır, içindeki ikon da ışıldar. `fill={false}` rayı dolgusuz bırakır; topuzun arkasında dolgu olmaz. Yeni bir örnek ikisini birlikte gösteriyor: kendi saatini gösteren bir alarm, düz turuncu bir Snooze butonu ve topuzu onu yansıtan dolgusuz bir ray.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'slide-to-confirm',
+        text: t(
+          'When `onConfirm` settles at once, the icon no longer disappears and comes back before the check. The success now starts as the thumb lands, and a custom `icon` swaps straight to the check: it shrinks, blurs and fades while the check comes in the same way reversed.',
+          '`onConfirm` hemen sonuçlandığında ikon artık tikten önce kaybolup geri gelmiyor. Başarı topuz sona oturur oturmaz başlıyor ve özel bir `icon` doğrudan tike dönüşüyor: küçülüp bulanıklaşarak sönerken tik aynı yolla, tersinden geliyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'The Examples section is back on this page, with the alarm as its one example; the full-width payment and the coloured fills are gone.',
+          'Örnekler bölümü bu sayfada geri geldi; tek örneği alarm. Tam genişlikte ödeme ve renkli dolgu örnekleri kaldırıldı.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.8',
     date: '2026-11-23',

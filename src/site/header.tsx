@@ -16,7 +16,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/com
 import { CATALOG, FEATURED, PAGES, VERSION, minorOf } from '@/docs/content'
 import { cn } from '@/lib/utils'
 
-import { GitHubMark, Rivets, column } from './chrome'
+import { GitHubMark, Logo, Rivets, column } from './chrome'
 import { REPO_URL, SITE_ORIGIN, localeParam, type Locale } from './i18n'
 import { DocLink, exactActive } from './links'
 import { setTheme, useTheme } from './theme'
@@ -338,10 +338,8 @@ function MobileMenu({ locale }: { locale: Locale }) {
           <div className={`${column} flex h-16 items-center gap-6 px-4 sm:px-6`}>
             <Rivets at={['bl', 'br']} />
             {close(
-              <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
-                <span className="whitespace-nowrap">
-                  <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
-                </span>
+              <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center text-foreground">
+                <Logo />
               </Link>,
             )}
             <div className="ml-auto flex items-center gap-2">
@@ -432,10 +430,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       <div className={`${column} flex h-16 items-center gap-6 px-4 sm:px-6`}>
         <Rivets at={['bl', 'br']} />
         <div className="flex shrink-0 items-center gap-3">
-          <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center gap-2 font-display text-body leading-none tracking-normal text-foreground">
-            <span className="whitespace-nowrap">
-              <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
-            </span>
+          <Link to="/{-$locale}" params={p} activeOptions={exactActive} aria-label="Liquid Glass UI" className="flex items-center text-foreground">
+            <Logo />
           </Link>
         </div>
         {/* w-max: centred from the middle, the dock would otherwise only get half the bar and

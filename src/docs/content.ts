@@ -280,7 +280,7 @@ export function Hero() {
         type: 'code',
         title: 'prompt',
         code: `Add a glass "Deploy" button that shows Deploying… then Deployed ✓.
-Use Liquid Glass UI (https://liquid-glass-interface.pages.dev/llms.txt):
+Use Liquid Glass UI (https://onemorethink.dev/llms.txt):
 install it with the shadcn CLI, use its GlassActionButton as documented,
 and do not modify the files in components/liquid-glass/.`,
       },
@@ -1655,6 +1655,34 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.6.5',
+    date: '2026-11-23',
+    title: t('The site moved to onemorethink.dev.', 'Site onemorethink.dev adresine taşındı.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Docs, install commands, the registry and the llms files now use onemorethink.dev. The old address redirects to the same page.',
+          'Dokümanlar, kurulum komutları, registry ve llms dosyaları artık onemorethink.dev adresini kullanıyor. Eski adres aynı sayfaya yönlendiriyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.4',
+    date: '2026-11-23',
+    title: t('A new logo.', 'Yeni logo.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The header, the phone menu and the footer now carry the new logo in place of the written name.',
+          'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.6.3',
     date: '2026-11-23',

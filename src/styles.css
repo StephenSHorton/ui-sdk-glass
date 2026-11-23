@@ -5,7 +5,7 @@
 
 @theme {
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Display: page titles and the wordmark only. One weight (400), so never pair with font-semibold. */
+  /* Display: page titles and landing headings only. One weight (400), so never pair with font-semibold. */
   --font-display: 'Cal Sans', 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
@@ -51,7 +51,7 @@
   --code: #f6f6f7;
   --surface: #ffffff;
 
-  /* The brand blue: the logo and text selection. Focus rings use --ring (3:1 on every surface). */
+  /* The brand blue: text selection. Focus rings use --ring (3:1 on every surface). */
   --brand: #3291ff;
   --ring: #2788f5;
 

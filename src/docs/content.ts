@@ -1507,6 +1507,35 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.5.6',
+    date: '2026-11-23',
+    title: t('One frame loop, however often a list opens.', 'Liste kaç kez açılırsa açılsın, tek kare döngüsü.'),
+    changes: [
+      {
+        kind: 'fixed',
+        text: t(
+          'Opening and closing a Select, a Dropdown Menu or the menu on a Button Group no longer slows the page down. Each time a list went back into its control, the engine started a second frame loop beside the one already running. On a page where some glass never rests (a Badge), those loops never ended, so every open and close made each frame do more work: interactions grew slower and the fans louder. The engine now keeps to one loop, whatever wakes it.',
+          'Select, Dropdown Menu ya da Button Group üzerindeki menüyü açıp kapatmak artık sayfayı yavaşlatmıyor. Liste kontrolüne her geri döndüğünde motor, çalışan döngünün yanında ikinci bir kare döngüsü başlatıyordu. Camın hiç durmadığı bir sayfada (bir Badge) bu döngüler hiç bitmiyor, her açıp kapatma her karenin işini artırıyordu: etkileşimler yavaşlıyor, fanlar hızlanıyordu. Motor artık onu ne uyandırırsa uyandırsın tek döngüde kalıyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.5.5',
+    date: '2026-11-23',
+    title: t('One card on a phone.', 'Telefonda tek kart.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'card',
+        text: t(
+          'The first example shows one card where two do not fit side by side, centred on the two rows of colour. On a phone the cards used to stack, and the rows ran through the gap between them.',
+          'İlk örnek, iki kartın yan yana sığmadığı yerde tek kart gösteriyor; kart iki renk şeridinin ortasında duruyor. Telefonda kartlar eskiden alt alta diziliyor, şeritler aralarındaki boşluktan geçiyordu.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.5.4',
     date: '2026-11-23',
     title: t('A choice lights its own spot.', 'Seçim, kendi yerini aydınlatıyor.'),

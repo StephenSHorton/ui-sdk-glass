@@ -58,7 +58,7 @@ export function DocsSidebar({ locale }: { locale: Locale }) {
   const pathname = useLocation({ select: (l) => l.pathname })
   const onChangelog = /\/changelog\/?$/.test(pathname)
   return (
-    <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-[248px] shrink-0 flex-col py-8 pr-4 pl-4 lg:flex">
+    <aside className="sticky top-16 hidden h-[calc(100dvh-4rem-var(--band))] w-[248px] shrink-0 flex-col py-8 pr-4 pl-4 lg:flex">
       <nav aria-label={UI[locale].nav.docs} className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto overscroll-contain text-ui [scrollbar-width:thin]">
         {GROUPS.map((g) => (
           <div key={g.id} className="flex flex-col gap-0.5">

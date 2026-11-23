@@ -2,6 +2,7 @@
 export const UI = {
   en: {
     nav: { docs: 'Docs', components: 'Components', ai: 'For AI', changelog: 'Changelog', github: 'GitHub', stars: 'stars', skip: 'Skip to content', menu: 'Menu', close: 'Close', primary: 'Primary', whatsNew: 'What\'s new', allComponents: 'All components', llms: 'Plain text for language models' },
+    band: { text: 'Save Children', label: 'Save Children: donate to Gaza through IHH (opens in a new tab)' },
     lang: { label: 'Language', en: 'English', tr: 'Türkçe' },
     theme: { label: 'Toggle theme', light: 'Light', dark: 'Dark' },
     code: { copy: 'Copy', copied: 'Copied', preview: 'Preview', code: 'Code', packageManager: 'Package manager', example: 'Example' },
@@ -81,6 +82,7 @@ export const UI = {
   },
   tr: {
     nav: { docs: 'Doküman', components: 'Bileşenler', ai: 'Yapay zekâ', changelog: 'Sürüm notları', github: 'GitHub', stars: 'yıldız', skip: 'İçeriğe geç', menu: 'Menü', close: 'Kapat', primary: 'Ana menü', whatsNew: 'Yenilikler', allComponents: 'Tüm bileşenler', llms: 'Dil modelleri için düz metin' },
+    band: { text: 'Çocukları kurtar', label: 'Çocukları kurtar: İHH üzerinden Gazze\'ye bağış yap (yeni sekmede açılır)' },
     lang: { label: 'Dil', en: 'English', tr: 'Türkçe' },
     theme: { label: 'Temayı değiştir', light: 'Açık', dark: 'Koyu' },
     code: { copy: 'Kopyala', copied: 'Kopyalandı', preview: 'Önizleme', code: 'Kod', packageManager: 'Paket yöneticisi', example: 'Örnek' },

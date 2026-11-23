@@ -22,7 +22,7 @@
 
 import { useEffect, useRef } from 'react'
 
-import { drawDom } from './dom-snapshot'
+import { drawAround, drawDom } from './dom-snapshot'
 import {
   DESIGN_HEIGHT,
   SPRINGS,
@@ -90,6 +90,8 @@ export type GlassOptics = {
   inner?: number
   reflection?: number
   caustic?: number
+  /** Clear glass: × what the rim mirrors of the page around it, where a colourful neighbour lights the rim that faces it (default 1, 0 = nothing). Tinted glass mirrors nothing. */
+  mirror?: number
   /** The rim light leans towards the cursor (default true). */
   cursorLight?: boolean
   /** The drop shadow: × its strength, softness and offset (each default 1). */
@@ -398,6 +400,7 @@ export function GlassLayer({
             inner: o.inner,
             reflection: o.reflection,
             caustic: o.caustic,
+            mirror: o.mirror,
             bendCurve: o.bendCurve,
             bendDepth: o.bendDepth,
             saturation: o.saturation,
@@ -410,6 +413,19 @@ export function GlassLayer({
           surface,
           edgeClear: 0.2,
           cursorLight: o?.cursorLight ?? true,
+          // What the rim of clear glass mirrors: the page around it. Tinted glass mirrors nothing.
+          reflection: !clear ? undefined : {
+            height: h,
+            live,
+            paint: (around, reach) => {
+              const r = host.getBoundingClientRect()
+              const box = { left: r.left + (r.width - w) / 2 - padX, top: r.top + (r.height - h) / 2 - padTop, width: w + 2 * padX, height: h + padTop + padBottom }
+              drawAround(around, (backdrop ? host.closest(backdrop) : null) ?? document.body, box, reach, {
+                skip: (el) => el === host || el.hasAttribute('data-glass-skip'),
+                onStale: dirty,
+              })
+            },
+          },
           refraction: clear
             ? {
                 paint: (back) => {

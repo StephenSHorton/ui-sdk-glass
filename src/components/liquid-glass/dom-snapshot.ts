@@ -8,7 +8,8 @@
 // It is not a browser renderer: no shadows, conic gradients, masks, rotation or
 // ::before/::after. An image from another origin is requested again with CORS; if its
 // server does not allow that it is left out, because a canvas such an image has touched
-// can never become a WebGL texture. Used by `material="clear"` glass and by GlassBadge.
+// can never become a WebGL texture. Used by `material="clear"` glass, by GlassBadge and,
+// through `drawAround`, for what every rim mirrors of the page around it.
 //
 // COPY THIS FILE VERBATIM. MIT — https://github.com/bilalgursen/liquid-glass
 
@@ -780,4 +781,22 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
   walk(root, 1)
   for (let i = 0; i < deferred.length; i++) walk(deferred[i].element, deferred[i].opacity, true)
   ctx.globalAlpha = 1
+}
+
+/**
+ * Paints what surrounds a box of the viewport, `reach` px past it on every side, with the box's
+ * top-left on the context's origin: what a glass rim mirrors (`GlassLens.reflection`).
+ */
+export function drawAround(
+  ctx: CanvasRenderingContext2D,
+  root: Element,
+  box: { left: number; top: number; width: number; height: number },
+  reach: number,
+  options: Pick<DomSnapshotOptions, 'skip' | 'onStale'>,
+) {
+  drawDom(ctx, root, {
+    ...options,
+    origin: box,
+    region: { left: box.left - reach, top: box.top - reach, right: box.left + box.width + reach, bottom: box.top + box.height + reach },
+  })
 }

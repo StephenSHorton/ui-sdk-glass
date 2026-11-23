@@ -1507,6 +1507,35 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.5.7',
+    date: '2026-11-23',
+    title: t('Clear glass mirrors what is around it.', 'Şeffaf cam çevresini yansıtır.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The rim of clear glass now mirrors its surroundings. A neighbour of another colour than the surface the glass sits on shows on the rim that faces it: an orange button above a clear control lights its top edge orange, as a soft crescent that is deepest where the neighbour is nearest and thins out round the sides. Tinted glass, and a lens frosted over at rest (the Tabs lens, the Slide to Confirm thumb), mirror nothing until they turn clear. For this the engine takes a small picture of the page around each clear glass, and only when the glass is measured again: nothing extra runs at rest, on scroll or while the cursor moves. `optics.mirror` scales the reflection; 0 turns it off.',
+          'Şeffaf camın kenarı artık çevresini yansıtıyor. Camın oturduğu yüzeyden farklı renkte bir komşu, kendisine bakan kenarda görünür: şeffaf bir kontrolün üstündeki turuncu buton, kontrolün üst kenarını turuncu aydınlatır; komşunun en yakın olduğu yerde en derin, yanlara doğru incelen yumuşak bir hilal olarak. Renkli cam ve dururken buzlu olan mercekler (Tabs merceği, Slide to Confirm topuzu) şeffaflaşana dek hiçbir şey yansıtmaz. Motor bunun için her şeffaf camın çevresindeki sayfanın küçük bir resmini çeker, o da yalnız cam yeniden ölçüldüğünde: dururken, kaydırırken ya da imleç gezerken fazladan hiçbir şey çalışmaz. `optics.mirror` yansımayı ölçekler; 0 kapatır.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'button-group',
+        text: t(
+          'In the first example Snooze stands apart, in clear glass: it bends the grid behind it, and its rim mirrors the white glass on either side.',
+          'İlk örnekte Snooze ayrı duruyor ve şeffaf camdan: arkasındaki ızgarayı büküyor, kenarı da iki yanındaki beyaz camı yansıtıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'The blue edge every glass carried on its far side is gone. It was a fixed colour that came from nowhere on the page, and it stood out most on a dark one. That side of the rim light is now plain white; on clear glass it takes the colour of what is around the glass.',
+          'Her camın uzak tarafında taşıdığı mavi kenar kalktı. Sayfadaki hiçbir şeyden gelmeyen sabit bir renkti ve en çok koyu sayfada göze batıyordu. Kenar ışığının o tarafı artık düz beyaz; şeffaf camda rengini camın çevresinden alıyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.5.6',
     date: '2026-11-23',
     title: t('One frame loop, however often a list opens.', 'Liste kaç kez açılırsa açılsın, tek kare döngüsü.'),

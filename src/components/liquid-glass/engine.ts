@@ -3,7 +3,8 @@
 // glass never hits the browser's WebGL context limit.
 //
 // Zero dependencies. A GLSL lens with tinted glass, a 1 px border, a frosted resting
-// state, an opt-in gooey droplet and an opt-in frosted blur (cards).
+// state, an opt-in gooey droplet and an opt-in frosted blur (cards). The rim mirrors what
+// surrounds the glass: a colourful neighbour shows on the side that faces it.
 //
 // Cost model: the loop runs only while a spring moves, a surface is dirty or the
 // cursor light changes; at rest it stops completely. Off-screen surfaces are not
@@ -107,6 +108,17 @@ export type GlassLens = {
      */
     radial?: number
   }
+  /**
+   * What the rim mirrors, while the glass is clear: the page around it (see MIRROR). `paint` draws it into a context
+   * whose origin is the canvas's top-left (one unit = one CSS px), `reach` CSS px past the canvas
+   * on every side; leave the glass itself out. `height` is the glass's own height at rest, in CSS
+   * px: the rim looks about that far. A neighbour brighter or more colourful than the surface
+   * shows on the rim that faces it, and the rim light's far side takes its colour. Without it the
+   * glass mirrors the surface colour alone, which shows nothing. The picture is small and taken
+   * rarely: when sizes and colours are re-read and when the canvas changes size, a few times a
+   * second at most. `live` takes it again while the glass moves, too.
+   */
+  reflection?: { paint: (around: CanvasRenderingContext2D, reach: number) => void; height: number; live?: boolean }
   /** Fine-tuning of the look. Every field defaults to the kit's own value, noted in brackets. */
   tune?: {
     /** × rim light [1] and × its line's thickness [1]. */
@@ -117,6 +129,8 @@ export type GlassLens = {
     inner?: number
     reflection?: number
     caustic?: number
+    /** × what the rim of clear glass mirrors of its surroundings [1] (see `reflection` above; 0 = nothing). */
+    mirror?: number
     /** Falloff of the bend from the rim inwards, an exponent [1.6]; × how far in it reaches [1]. */
     bendCurve?: number
     bendDepth?: number
@@ -237,6 +251,45 @@ export const GLOW = {
   halo: 1,
 }
 /**
+ * What the rim mirrors of the page around the glass. Each point of the rim looks outwards and
+ * takes the colour of what it faces, where that differs from the surface the glass sits on: an
+ * orange button above a control shows as an orange edge along its top. Only clear glass
+ * mirrors: glass in its own colour (tinted, or a lens frosted over at rest) shows nothing.
+ * These values are the look.
+ */
+export const MIRROR = {
+  /** How much of a neighbour shows on the rim's own line, and at the rim in the band inside it (together 1 at most). */
+  line: 3,
+  band: 0.45,
+  /**
+   * How deep that band goes: this × the glass's shorter half (or its reach, on taller glass).
+   * The rim's edge looks `reach` far; the look shortens with depth and ends here, so a
+   * neighbour's picture fills the band where it is near and thins out where the rim turns
+   * away from it: a crescent on a round glass.
+   */
+  depth: 1.1,
+  /** How fast the picture fades from the rim inwards, an exponent (1 = evenly, higher = it keeps closer to the rim). */
+  fall: 2,
+  /** How soft the picture is: the patch each point gathers, × the reach (0 = a sharp mirror). */
+  soft: 0.3,
+  /** How much more than its plain difference from the surface a neighbour counts. */
+  gain: 1.2,
+  /** How much a darker neighbour dims the rim (× the above; 0 = not at all). */
+  dim: 0.6,
+  /** How far the rim's edge looks: this × the glass's height, between `reachMin` and `reachMax` px. */
+  reach: 0.75,
+  reachMin: 24,
+  reachMax: 96,
+  /** What a point gathers along its look: shares from its near part, from further out and from its far end. */
+  near: 0.25,
+  mid: 0.35,
+  far: 0.4,
+  /** The rim light's far side: its brightness (× the lit side's), and how much of the surroundings' colour it takes (0 = always white). */
+  bounce: 0.6,
+  tint: 1,
+}
+
+/**
  * The same light on a small control: a single icon, or a label of about five letters (up to
  * roughly twice as wide as it is tall, as in GOOEY). In between the two sets are blended. The
  * light stays close to the press there, comes up slower and holds until the surface is half open.
@@ -354,6 +407,12 @@ uniform float uGlowBlob;
 uniform vec4 uBlobMat;
 uniform vec3 uBlobLine;
 uniform float uCssPx;
+uniform sampler2D uAround;
+uniform vec4 uAroundBox;
+uniform float uAroundScale, uReach;
+uniform vec4 uMirror, uSeen;
+uniform vec2 uBounce;
+uniform float uFall, uSoft;
 out vec4 outColor;
 
 // design units -> texture uv (textures are uploaded flipped: top row at v = 1)
@@ -363,6 +422,13 @@ vec2 toUv(vec2 d) {
 }
 vec3 backdrop(vec2 st, float lod) {
   vec4 c = textureLod(uBack, st, lod);
+  return c.rgb + (1.0 - c.a) * uSurface;
+}
+// What surrounds the glass (GlassLens.reflection), at a point of the canvas in design units and
+// blurred over spread. Where the picture is empty, or there is none, it is the surface colour.
+vec3 around(vec2 d, float spread) {
+  vec2 st = clamp((d - uAroundBox.xy) / uAroundBox.zw, vec2(0.002), vec2(0.998));
+  vec4 c = textureLod(uAround, vec2(st.x, 1.0 - st.y), log2(max(spread * uAroundScale, 1.0)));
   return c.rgb + (1.0 - c.a) * uSurface;
 }
 // Frosted glass: the backdrop under a gaussian blur of deviation sigma (design units),
@@ -617,10 +683,42 @@ void main() {
   float rimDir = mix(studio, aimed, lean);
   float front = mix(right, facing, lean);
   float back = mix(left, away, lean);
-  vec3 warmCool = mix(vec3(0.82, 0.9, 1.08), vec3(1.2, 0.95, 0.78), 1.0 - smoothstep(-0.5, 0.1, nx));
-  vec3 rimCol = mix(vec3(1.0), warmCool, down * 0.6);
-  rimCol = mix(rimCol, vec3(0.12, 0.6, 1.2), back * 0.85);
+  // What this point of the glass mirrors. The bevel is a curved mirror: its very edge looks far
+  // out, the way the rim faces there, and the look shortens with depth, down to nothing at the
+  // band's inner end (uMirror.z). So a neighbour's picture is squeezed into the rim, deepest
+  // where it is nearest and thinner as the rim turns away from it: a crescent on a round glass,
+  // on a pill a band that tapers round the ends. Each point gathers a soft patch of the
+  // surroundings (uSoft wide) at three places along its look, so the picture has no hard edge.
+  float into = clamp(-dist / uMirror.z, 0.0, 1.0);
+  float look = uReach * (1.0 - into);
+  vec2 rimAt = uCenter + local - dir * dist;
+  vec2 across = vec2(-dir.y, dir.x) * uSoft * 0.7;
+  vec3 seen = vec3(0.0);
+  for (int i = 0; i < 3; i++) {
+    vec2 at = rimAt + dir * look * (0.4 + 0.3 * float(i));
+    seen += (around(at, uSoft) * 0.4 + around(at + across, uSoft) * 0.3 + around(at - across, uSoft) * 0.3) * uSeen[i];
+  }
+  // The light is white where it lands; the far side and the bottom are lit by what bounces back
+  // from the surroundings, and take their colour (white from anything dark or grey).
+  float seenMax = max(max(seen.r, seen.g), seen.b);
+  vec3 bounce = mix(vec3(1.0), seen / max(seenMax, 1e-3), smoothstep(0.08, 0.5, seenMax) * uBounce.y);
+  vec3 rimCol = mix(vec3(1.0), bounce, down * 0.6);
+  rimCol = mix(rimCol, bounce * uBounce.x, back * 0.85);
   glass += rimCol * (rimLine * rimDir * uRim + fresnel * front * uFresnel * step(0.001, uRim)) * lit;
+
+  // Reflection: the rim mirrors what differs from the surface the glass sits on. A neighbour
+  // of another colour shows on the rim that faces it; a darker one dims it a little.
+  // (uMirror: on the line, in the band inside it, that band's depth, the dimming. uSeen.w: the gain.)
+  // much: how far what is seen differs from the surface; hue: that difference at full strength.
+  vec3 differs = (seen - uSurface) * uSeen.w;
+  float much = max(max(abs(differs.r), abs(differs.g)), abs(differs.b));
+  vec3 hue = differs / max(much, 1e-4);
+  much = min(much, 1.0);
+  float mirror = min(lit * (rimLine * uMirror.x + pow(1.0 - into, uFall) * uMirror.y), 1.0) * much;
+  // What it lacks of the surface's colour is taken out of the glass; then the glass is lifted
+  // towards the neighbour's colour: dark glass mirrors it on any page.
+  glass *= 1.0 - max(-hue, 0.0) * mirror * uMirror.w;
+  glass += max(clamp(uSurface + hue, 0.0, 1.0) - glass, 0.0) * mirror;
 
   // Glow: light let in at one point, fading smoothly with distance. It brightens whatever glass
   // is near, evenly from the middle to the rim, a melted blob included (the halo is above),
@@ -692,6 +790,16 @@ function createEngine(): GlassEngine | null {
   if (!back.ctx || !front.ctx) return null
   type Painted = { back: WebGLTexture | null; front: WebGLTexture | null; w: number; h: number; at: number }
   const painted = new Map<GlassView, Painted>()
+  // A third, small one for what surrounds a lens (its reflection), and each view's own texture of it:
+  // where the picture was taken (the canvas's box then, CSS px) and how far past it it reaches.
+  const around = layer()
+  if (!around.ctx) return null
+  type Mirrored = { tex: WebGLTexture | null; w: number; h: number; at: number; left: number; top: number; reach: number; due: boolean; timer: number }
+  const mirrored = new Map<GlassView, Mirrored>()
+  /** Texels per CSS px of that picture: it is only ever seen blurred. */
+  const AROUND_SCALE = 0.5
+  /** It is taken again this often, at most (ms). */
+  const AROUND_EVERY = 400
   // What a lens without layers samples (and ignores): a texture unit is never left empty.
   const blank = { back: texture(true), front: texture(false) }
   /** The page behind a still lens is read again this often while only the light moves (ms). */
@@ -700,6 +808,7 @@ function createEngine(): GlassEngine | null {
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
   gl.uniform1i(gl.getUniformLocation(program, 'uBack'), 0)
   gl.uniform1i(gl.getUniformLocation(program, 'uFront'), 1)
+  gl.uniform1i(gl.getUniformLocation(program, 'uAround'), 2)
   const locations = new Map<string, WebGLUniformLocation | null>()
   const u = (name: string) => {
     if (!locations.has(name)) locations.set(name, gl.getUniformLocation(program, name))
@@ -836,6 +945,74 @@ function createEngine(): GlassEngine | null {
       gl.bindTexture(gl.TEXTURE_2D, blank.front)
     }
     sent.length = 0
+    // The surroundings, for the reflection. The picture is taken when it is first needed, and
+    // again when sizes and colours are re-read or the canvas changes size, AROUND_EVERY apart at
+    // most (a change that comes sooner waits its turn). A scroll takes none: what surrounds the
+    // glass rides along. Until then the picture stays where it was taken, even if the canvas has
+    // moved since.
+    // Only clear glass mirrors: in full while its own colour covers it no more than a clear
+    // button's tint does (0.6), less as the cover grows, and not at all once the glass is its
+    // own colour (tinted glass, a lens frosted over at rest, a control painted in its fill).
+    // Unlit glass mirrors nothing either. Glass that mirrors nothing takes no picture.
+    const clear = r ? clamp((1 - r.frost) / 0.4) : 0
+    const mirror = m.strength * Math.max(0, m.tune?.mirror ?? 1) * clear
+    const f = mirror > 0 ? m.reflection : undefined
+    if (refresh && m.reflection && !f) {
+      const idle = mirrored.get(v)
+      if (idle) idle.due = true
+    }
+    gl.activeTexture(gl.TEXTURE2)
+    if (f) {
+      let a = mirrored.get(v)
+      if (!a) mirrored.set(v, (a = { tex: texture(true), w: 0, h: 0, at: 0, left: 0, top: 0, reach: 0, due: true, timer: 0 }))
+      const taken = a
+      const reach = clamp(f.height * MIRROR.reach, MIRROR.reachMin, Math.max(MIRROR.reachMin, MIRROR.reachMax))
+      const aw = Math.max(2, Math.ceil((m.width + 2 * reach) * AROUND_SCALE))
+      const ah = Math.max(2, Math.ceil((m.height + 2 * reach) * AROUND_SCALE))
+      const now = performance.now()
+      gl.bindTexture(gl.TEXTURE_2D, a.tex)
+      if (refresh || (f.live && repaint) || a.w !== aw || a.h !== ah || a.reach !== reach) a.due = true
+      if (a.due && a.w && now - a.at < AROUND_EVERY) {
+        if (!a.timer)
+          a.timer = window.setTimeout(
+            () => {
+              taken.timer = 0
+              if (mirrored.get(v) !== taken) return
+              v.repaint = true
+              wake()
+            },
+            AROUND_EVERY - (now - a.at),
+          )
+      } else if (a.due) {
+        a.due = false
+        if (around.canvas.width !== aw || around.canvas.height !== ah) {
+          around.canvas.width = aw
+          around.canvas.height = ah
+        }
+        const c = around.ctx!
+        c.setTransform(1, 0, 0, 1, 0, 0)
+        c.clearRect(0, 0, aw, ah)
+        c.setTransform(AROUND_SCALE, 0, 0, AROUND_SCALE, reach * AROUND_SCALE, reach * AROUND_SCALE)
+        f.paint(c, reach)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, around.canvas)
+        gl.generateMipmap(gl.TEXTURE_2D)
+        a.w = aw
+        a.h = ah
+        a.at = now
+        a.left = m.left
+        a.top = m.top
+        a.reach = reach
+        fresh = false
+      }
+      set('uAroundBox', (a.left - m.left - a.reach) / unit, (a.top - m.top - a.reach) / unit, a.w / AROUND_SCALE / unit, a.h / AROUND_SCALE / unit)
+      set('uAroundScale', AROUND_SCALE * unit)
+      set('uReach', reach / unit)
+    } else {
+      gl.bindTexture(gl.TEXTURE_2D, blank.back)
+      set('uAroundBox', 0, 0, 1, 1)
+      set('uAroundScale', 1)
+      set('uReach', 0)
+    }
     set('uTextured', r ? 1 : 0)
     set('uRefract', r?.refract ?? 0)
     set('uMag', r?.magnify ?? 0)
@@ -880,6 +1057,16 @@ function createEngine(): GlassEngine | null {
     set('uTopBase', 0.02 * m.strength * (k.reflection ?? 1))
     set('uRimWidth', Math.max(0.05, k.rimWidth ?? 1))
     set('uFresnel', 0.02 * (k.fresnel ?? 1))
+    // The band is as deep as a share of the glass's shorter half, and of its reach on glass taller than that.
+    const reached = m.reflection ? clamp(m.reflection.height * MIRROR.reach, MIRROR.reachMin, Math.max(MIRROR.reachMin, MIRROR.reachMax)) : 0
+    const deep = (Math.max(0.01, MIRROR.depth) * Math.max(1, Math.min(m.hx, m.hy, reached || Infinity))) / unit
+    set('uMirror', MIRROR.line * mirror, MIRROR.band * mirror, deep, clamp(MIRROR.dim))
+    set('uSoft', (Math.max(0, MIRROR.soft) * reached) / unit)
+    const shares = Math.max(MIRROR.near + MIRROR.mid + MIRROR.far, 1e-3)
+    set('uSeen', MIRROR.near / shares, MIRROR.mid / shares, MIRROR.far / shares, Math.max(0, MIRROR.gain))
+    // The far side of the rim light takes the surroundings' colour on clear glass only.
+    set('uBounce', Math.max(0, MIRROR.bounce), clamp(MIRROR.tint) * clear)
+    set('uFall', Math.max(0.05, MIRROR.fall))
     set('uBendCurve', Math.max(0.05, k.bendCurve ?? 1.6))
     set('uEdgeBand', 0.35 * Math.max(0.05, k.bendDepth ?? 1))
     set('uSaturation', Math.max(0, k.saturation ?? 1))
@@ -1000,6 +1187,12 @@ function createEngine(): GlassEngine | null {
     },
     remove: (v) => {
       views.delete(v)
+      const a = mirrored.get(v)
+      if (a) {
+        mirrored.delete(v)
+        clearTimeout(a.timer)
+        gl.deleteTexture(a.tex)
+      }
       const p = painted.get(v)
       if (!p) return
       painted.delete(v)

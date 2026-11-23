@@ -613,12 +613,17 @@ export function GlassSlideToConfirm({
       dirty: false,
       visible: false,
       step: tick,
-      lens: () => {
+      lens: (refresh) => {
         if (!lensOn || !engine) return null
+        // A theme switch (or anything else that asks for the colours again): the thumb is glass at
+        // rest too, so it re-reads its own colour, the fill's and the page's here.
+        if (refresh) measure()
         const p = clamp(press.x, -0.12, 1.15)
         const pc = clamp(press.x)
         const frost = 1 - pc
-        const padX = 16 + OVERFLOW
+        // Room for the thumb's shadow on either side: its far, soft part reaches about 0.6 of the
+        // thumb's width past its edge while it is held, and the canvas fades out over its last 14 px.
+        const padX = Math.round(d * 0.75 + 12) + OVERFLOW
         const padTop = Math.round(d * 0.3 + 6)
         const padBottom = Math.round(d * 1.1 + 8)
         const box = root.getBoundingClientRect()

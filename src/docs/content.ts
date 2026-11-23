@@ -702,7 +702,7 @@ const [view, setView] = useState('week')
     ),
     verb: t('Drag', 'Sürükle'),
     signature: t('Drag the glass thumb to the end to confirm.', 'Cam topuzu sona kadar sürükle, onaylansın.'),
-    hero: 'glass-slide-to-confirm-compact',
+    hero: 'glass-slide-to-confirm-mirror',
     blocks: [
       {
         type: 'when',
@@ -745,12 +745,12 @@ const [view, setView] = useState('week')
         ],
       },
       h('Examples', 'Örnekler'),
-      { type: 'demo', id: 'glass-slide-to-confirm-mirror', title: t('A bare track that mirrors its neighbour', 'Komşusunu yansıtan dolgusuz bir ray') },
+      { type: 'demo', id: 'glass-slide-to-confirm-compact', title: t('A fill, and an action that takes a moment', 'Dolgulu ray ve biraz süren bir eylem') },
       {
         type: 'p',
         text: t(
-          '`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb\'s rim mirror the page around the track, so a colourful neighbour (the orange button here) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.',
-          '`fill={false}` rayı dolgusuz bırakır: topuz arkasından dolgu çekmez, yalnızca etiketi büker; ikonu açık sayfada koyu, koyu sayfada beyazdır. `fillClassName` o zaman yalnızca başarı rengini belirler. `mirror`, tutulan topuzun kenarının rayın çevresindeki sayfayı yansıtmasını sağlar; renkli bir komşu (buradaki turuncu buton) kendisine bakan kenarı aydınlatır, içindeki ikon da ışıldar. İkisi de sen istemedikçe kapalıdır: topuz yalnızca berrakken yansıtır, dururken asla.',
+          '`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb\'s rim mirror the page around the track, so a colourful neighbour (the orange button in the preview at the top of this page) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.',
+          '`fill={false}` rayı dolgusuz bırakır: topuz arkasından dolgu çekmez, yalnızca etiketi büker; ikonu açık sayfada koyu, koyu sayfada beyazdır. `fillClassName` o zaman yalnızca başarı rengini belirler. `mirror`, tutulan topuzun kenarının rayın çevresindeki sayfayı yansıtmasını sağlar; renkli bir komşu (sayfanın başındaki önizlemede turuncu buton) kendisine bakan kenarı aydınlatır, içindeki ikon da ışıldar. İkisi de sen istemedikçe kapalıdır: topuz yalnızca berrakken yansıtır, dururken asla.',
         ),
       },
       {
@@ -1514,6 +1514,33 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.10',
+    date: '2026-11-23',
+    title: t('Slide to Confirm is introduced by the alarm.', 'Slide to Confirm artık alarmla tanıtılıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'slide-to-confirm',
+        text: t(
+          'The alarm (your own clock, a Snooze button and a bare slide whose thumb mirrors it) is now the preview at the top of the page and the component\'s tile on the home page. The short "Send" track with its fill and pending action moves to the Examples.',
+          'Alarm (kendi saatin, bir Snooze butonu ve topuzu onu yansıtan dolgusuz bir ray) artık sayfanın başındaki önizleme ve bileşenin ana sayfadaki kutusu. Dolgulu ve beklemeli kısa "Send" rayı Örnekler\'e taşındı.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'slide-to-confirm',
+        text: t(
+          'The thumb\'s shadow is no longer cut off at the sides: the glass now has room for all of it, at every size. And after a theme switch the thumb re-reads its colours, so a held thumb no longer shows the old theme\'s page through it.',
+          'Topuzun gölgesi artık yanlardan kesilmiyor: cam, her boyutta gölgenin tamamına yer bırakıyor. Tema değiştikten sonra topuz renklerini yeniden okuyor; tutulan topuzun içinden artık eski temanın zemini görünmüyor.',
+        ),
+      },
+      {
+        kind: 'removed',
+        text: t('The version pill beside the wordmark in the header. The version still sits in the footer and on the changelog.', 'Üst bilgide logonun yanındaki sürüm rozeti. Sürüm, alt bilgide ve sürüm notlarında durmaya devam ediyor.'),
+      },
+    ],
+  },
   {
     version: '1.5.9',
     date: '2026-11-23',

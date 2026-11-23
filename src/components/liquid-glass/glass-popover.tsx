@@ -1,12 +1,13 @@
 'use client'
 
 // GlassPopover — a small surface its button unfolds into, right where the button is. The popover
-// grows from the button's edge (`over="center"`: around it), thrown a little way by its own weight,
+// grows from the button's edge (`over="center"`: around it), thrown a little way by its own weight
+// and coming up into place from below (`from="top"`: down from above),
 // then settled. The button lets go of its label, its glass gives way to the card and the
 // content fades up and comes into focus inside, moving with the glass. The light the press let in grows with it, and its shadow goes
-// along. Closing is the same motion played backwards, and the button answers it: it lights up and
-// is thrown the other way as the surface comes back in (GlassPopup with `opening: 'morph'`,
-// `glass-popup.tsx`).
+// along. Closing is a calmer motion of its own: the content fades first, the surface slides back
+// into the button, slowing as it lands, and the button's label comes back letter by letter
+// (GlassPopup with `opening: 'morph'`, `glass-popup.tsx`).
 //
 //   <GlassPopover>
 //     <GlassPopoverTrigger>Remind me</GlassPopoverTrigger>
@@ -24,9 +25,15 @@
 import { Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, type PopoverProps } from '@ui-sdk/react/popover'
 import { useContext, type ComponentProps, type ReactNode } from 'react'
 
-import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, OVER_CENTER, useGlassPopup } from './glass-popup'
+import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, OVER_CENTER, OVER_EDGE, spellLabel, useGlassPopup } from './glass-popup'
 
-export type GlassPopoverProps = PopoverProps
+export type GlassPopoverProps = PopoverProps & {
+  /**
+   * Which way the popover comes into place. `bottom` (default): the button is thrown up and the
+   * popover comes up from below. `top`: the button is thrown down and it comes down from above.
+   */
+  from?: 'top' | 'bottom'
+}
 
 export type GlassPopoverTriggerProps = { children?: ReactNode; className?: string } & Omit<ComponentProps<typeof PopoverTrigger>, 'children' | 'className' | 'render'>
 
@@ -57,11 +64,11 @@ export type GlassPopoverCloseProps = {
  */
 const OVER = {
   center: OVER_CENTER,
-  edge: 'data-[side=bottom]:[transform:translateY(calc(var(--anchor-height)*-1))] data-[side=top]:[transform:translateY(var(--anchor-height))]',
+  edge: OVER_EDGE,
 }
 
-export function GlassPopover({ children, ...options }: GlassPopoverProps) {
-  const popup = useGlassPopup({ opening: 'morph' })
+export function GlassPopover({ children, from = 'bottom', ...options }: GlassPopoverProps) {
+  const popup = useGlassPopup({ opening: 'morph', from })
   return (
     <Popover {...options}>
       <GlassPopupContext.Provider value={popup}>{children}</GlassPopupContext.Provider>
@@ -79,8 +86,8 @@ export function GlassPopoverTrigger({ children, className = '', ...rest }: Glass
       {...rest}
     >
       {popup && <GlassPopupAnchor popup={popup} />}
-      {/* One element: the label goes as the glass leaves. */}
-      <span className="inline-flex items-center gap-[inherit]">{children}</span>
+      {/* One element: the label goes as the glass leaves, and its text comes back letter by letter. */}
+      <span className="inline-flex items-center gap-[inherit]">{spellLabel(children)}</span>
     </PopoverTrigger>
   )
 }
@@ -127,6 +134,8 @@ export function GlassPopoverClose({ variant = 'quiet', className = '', ...rest }
       : 'bg-current/10 hover:bg-current/15'
   return (
     <PopoverClose
+      // A press lights the surface where it lands, as a choice in a menu does.
+      data-glass-pick=""
       className={`inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold whitespace-nowrap outline-none transition-[background-color,scale] duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] active:scale-[0.97] [&_svg]:size-4 [&_svg]:shrink-0 ${look} ${className}`}
       {...rest}
     />

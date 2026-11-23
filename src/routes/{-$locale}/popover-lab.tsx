@@ -1,8 +1,9 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { AlarmClock, Moon, Sunrise } from 'lucide-react'
+import { AlarmClock, ChevronDown, Copy, Moon, Pencil, Share2, Sunrise, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { MORPH, MORPH_GLOW as GLOW } from '@/components/liquid-glass/engine'
+import { GlassDropdownMenu, GlassDropdownMenuContent, GlassDropdownMenuItem, GlassDropdownMenuSeparator, GlassDropdownMenuTrigger } from '@/components/liquid-glass/glass-dropdown-menu'
 import { GlassPopover, GlassPopoverClose, GlassPopoverContent, GlassPopoverDescription, GlassPopoverTitle, GlassPopoverTrigger } from '@/components/liquid-glass/glass-popover'
 
 // The kit's own values, kept apart from what the sliders change.
@@ -78,16 +79,23 @@ const COPY = {
     title: 'Remind me',
     description: 'We will send one notification, then leave you alone.',
     times: ['In an hour', 'Tonight at 8', 'Tomorrow morning'],
+    menu: 'Options',
+    actions: ['Rename', 'Duplicate', 'Share'],
+    remove: 'Delete',
   },
   tr: {
     trigger: 'Hatırlat',
     title: 'Hatırlat',
     description: 'Tek bir bildirim göndeririz, sonra seni rahat bırakırız.',
     times: ['Bir saat sonra', 'Bu akşam 8\'de', 'Yarın sabah'],
+    menu: 'Seçenekler',
+    actions: ['Yeniden adlandır', 'Çoğalt', 'Paylaş'],
+    remove: 'Sil',
   },
 }
 
 const ICONS = [AlarmClock, Moon, Sunrise]
+const ACTION_ICONS = [Pencil, Copy, Share2]
 
 type Key = keyof typeof MORPH
 
@@ -119,6 +127,12 @@ const DROP_KNOBS: Knob[] = [
   { key: 'dropDamping', min: 0.3, max: 1, step: 0.01, en: 'Drop settling', tr: 'Düşüş sönümü', hintEn: 'Below 1 it lands past its place and comes back', hintTr: '1 altında yerini aşıp geri gelir' },
 ]
 
+// Closing as a motion of its own (MORPH.closeSoft).
+const CLOSE_SOFT_KNOB: Knob = { key: 'closeSpeed', min: 4, max: 40, step: 0.5, en: 'Soft close: speed', tr: 'Yumuşak kapanış: hız', hintEn: 'How fast the surface goes back in; it slows down as it lands', hintTr: 'Yüzeyin geri girme hızı; yerine yaklaşırken yavaşlar' }
+const CLOSE_FADE_KNOB: Knob = { key: 'closeFade', min: 0.02, max: 0.6, step: 0.01, en: 'Soft close: content gone in (s)', tr: 'Yumuşak kapanış: içerik sönmesi (sn)', hintEn: 'The content fades out this fast, ahead of the glass (lower = sooner)', hintTr: 'İçerik camdan önce, bu sürede saydamlaşır (düştükçe daha çabuk)' }
+const CLOSE_GLOW_KNOB: Knob = { key: 'closeGlowReach', min: 0.3, max: 3, step: 0.05, en: 'Soft close: light on the button', tr: 'Yumuşak kapanış: butondaki ışık', hintEn: 'How wide a choice\'s light is once it is on the button (× the button\'s height)', hintTr: 'Seçimin ışığının butona vardığındaki genişliği (× buton yüksekliği)' }
+const CLOSE_KICK_KNOB: Knob = { key: 'closeKick', min: 0, max: 1.5, step: 0.05, en: 'Button\'s answer', tr: 'Butonun tepkisi', hintEn: 'How hard the button is thrown once the surface is back in (0 = it stays still)', hintTr: 'Yüzey geri girince butonun ne kadar savrulduğu (0 = yerinde kalır)' }
+
 const GOOEY_KNOB: Knob = { key: 'softness', min: 0, max: 40, step: 1, en: 'Gooey: softness (px)', tr: 'Gooey: yumuşaklık (px)', hintEn: 'How far the surface and the button melt into each other where they meet', hintTr: 'Yüzey ile butonun birleştikleri yerde birbirine ne kadar eridiği' }
 
 const KNOBS: Knob[] = [
@@ -147,6 +161,13 @@ const PANEL = {
     speed: 'Speed',
     loop: 'Open and close by itself',
     options: 'How it opens',
+    subject: 'Component',
+    popover: 'Popover',
+    menu: 'Options',
+    from: 'Comes from',
+    top: 'Above',
+    bottom: 'Below',
+    fromNote: 'The `from` prop. Above: the button is thrown down and the card comes down into place. Below: the other way up, the card comes up into place. Popover starts from below, the menu from above.',
     place: 'Opens',
     center: 'In the middle',
     edge: 'From the edge',
@@ -159,6 +180,9 @@ const PANEL = {
     contentNote: 'The card comes down into its place from above, softly, a moment after the press.',
     glow: 'Light (glow)',
     glowNote: 'The light a press lets in: it grows with the card until it covers it, then fades. Select\'s own light; the same values move in /select-lab.',
+    close: 'Closing',
+    closeNote: 'Off: the opening is played backwards, so it starts slowly and hits the button at full speed. On: the surface goes back in on a spring of its own and slows down as it lands; the button is not thrown and does not light up.',
+    closeSoft: 'Soft close',
     title: 'Arrival',
     note: 'Changes apply at once: open the popover to see them. The button, the card and the light are Select\'s own; tune those in /select-lab.',
     copy: 'Copy values',
@@ -171,6 +195,13 @@ const PANEL = {
     speed: 'Hız',
     loop: 'Kendi kendine aç kapa',
     options: 'Nasıl açılır',
+    subject: 'Bileşen',
+    popover: 'Popover',
+    menu: 'Options',
+    from: 'Geliş yönü',
+    top: 'Yukarıdan',
+    bottom: 'Aşağıdan',
+    fromNote: '`from` prop\'u. Yukarıdan: buton aşağı savrulur, kart yukarıdan yerine iner. Aşağıdan: tersi, buton yukarı savrulur, kart aşağıdan yerine çıkar. Popover aşağıdan, menü yukarıdan başlar.',
     place: 'Açılış yeri',
     center: 'Tam ortada',
     edge: 'Kenardan',
@@ -183,6 +214,9 @@ const PANEL = {
     contentNote: 'Kart, basıştan bir an sonra yukarıdan yumuşakça yerine iner.',
     glow: 'Işık (glow)',
     glowNote: 'Basışın cama saldığı ışık: kartla birlikte büyüyüp onu kaplar, sonra söner. Select\'in kendi ışığıdır; aynı değerler /select-lab\'de de değişir.',
+    close: 'Kapanış',
+    closeNote: 'Kapalı: açılış tersine oynar; yavaş başlar, butona en yüksek hızda çarpar. Açık: yüzey kendi yayıyla geri girer ve yerine yaklaşırken yavaşlar; buton savrulmaz, ışık da yanmaz.',
+    closeSoft: 'Yumuşak kapanış',
     title: 'Geliş',
     note: 'Değişiklikler anında uygulanır: görmek için popover\'ı aç. Buton, kart ve ışık Select\'in kendisidir; onları /select-lab\'de ayarla.',
     copy: 'Değerleri kopyala',
@@ -193,13 +227,62 @@ const PANEL = {
 
 // Bumped when the set of values changes, so stale saved ones do not override the kit's.
 const STORE = 'glass-morph-tuning-5'
-const PLACE_STORE = 'glass-morph-place-1'
+const PLACE_STORE = 'glass-morph-place-2'
 /** /select-lab's key for the light: `{ wide, small }`. This lab tunes `wide`, the set a button this size takes. */
 const GLOW_STORE = 'glass-morph-glow-1'
 
-type Place = 'center' | 'edge'
+const FROM_STORE = 'glass-morph-from-2'
+const SUBJECT_STORE = 'glass-morph-subject-1'
 
-function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace }: { locale: 'en' | 'tr'; rate: number; setRate: (rate: number) => void; loop: boolean; setLoop: (loop: boolean) => void; place: Place; setPlace: (place: Place) => void }) {
+type Place = 'center' | 'edge'
+const PLACES: Place[] = ['center', 'edge']
+/** Which way the surface comes into place: the components' `from` prop. */
+type From = 'top' | 'bottom'
+const FROMS: From[] = ['top', 'bottom']
+/** What each component does when nothing is passed (the menu's place: its docs example's). */
+const DEFAULTS: Record<'popover' | 'menu', { from: From; place: Place }> = { popover: { from: 'bottom', place: 'edge' }, menu: { from: 'top', place: 'center' } }
+/** What opens on the stage: the Popover, or the Dropdown Menu of the docs (its "Options" button). */
+type Subject = 'popover' | 'menu'
+const SUBJECTS: Subject[] = ['popover', 'menu']
+
+/** A choice that survives a reload. */
+function useSaved<T extends string>(key: string, choices: readonly T[], initial: T) {
+  const [value, setValue] = useState<T>(initial)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(key) as T | null
+      setValue(saved && choices.includes(saved) ? saved : initial)
+    } catch {
+      // Storage is unavailable: the first choice stands.
+      setValue(initial)
+    }
+  }, [key, choices, initial])
+  const choose = (next: T) => {
+    setValue(next)
+    try {
+      localStorage.setItem(key, next)
+    } catch {
+      // Storage is unavailable: the choice still applies for this visit.
+    }
+  }
+  return [value, choose] as const
+}
+
+type TunerProps = {
+  locale: 'en' | 'tr'
+  rate: number
+  setRate: (rate: number) => void
+  loop: boolean
+  setLoop: (loop: boolean) => void
+  place: Place
+  setPlace: (place: Place) => void
+  from: From
+  setFrom: (from: From) => void
+  subject: Subject
+  setSubject: (subject: Subject) => void
+}
+
+function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace, from, setFrom, subject, setSubject }: TunerProps) {
   const t = PANEL[locale]
   const [values, setValues] = useState({ ...MORPH_DEFAULTS })
   const [glow, setGlow] = useState({ ...GLOW_DEFAULTS })
@@ -242,7 +325,7 @@ function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace }: { loca
     [],
   )
 
-  const text = JSON.stringify({ over: place, MORPH: values, GLOW: glow }, null, 2)
+  const text = JSON.stringify({ component: subject, over: place, from, MORPH: values, GLOW: glow }, null, 2)
   const set = (key: Key, value: number) => setValues((v) => ({ ...v, [key]: value }))
   const sliders = (knobs: Knob[]) =>
     knobs.map((k) => (
@@ -301,7 +384,8 @@ function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace }: { loca
           type="button"
           onClick={() => {
             setValues({ ...MORPH_DEFAULTS })
-            setPlace('edge')
+            setPlace(DEFAULTS[subject].place)
+            setFrom(DEFAULTS[subject].from)
           }}
           className="press rounded-md px-2 py-1 text-caption text-muted-foreground hover:bg-accent"
         >
@@ -309,9 +393,30 @@ function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace }: { loca
         </button>
       </div>
       <div className="flex items-center justify-between gap-2">
+        <span>{t.subject}</span>
+        <span className="flex gap-1">
+          {SUBJECTS.map((s) => (
+            <button key={s} type="button" aria-pressed={subject === s} onClick={() => setSubject(s)} className={choice(subject === s)}>
+              {t[s]}
+            </button>
+          ))}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span>{t.from}</span>
+        <span className="grid grid-cols-2 gap-1">
+          {FROMS.map((f) => (
+            <button key={f} type="button" aria-pressed={from === f} onClick={() => setFrom(f)} className={choice(from === f)}>
+              {t[f]}
+            </button>
+          ))}
+        </span>
+        <span className="text-micro text-muted-foreground">{t.fromNote}</span>
+      </div>
+      <div className="flex items-center justify-between gap-2">
         <span>{t.place}</span>
         <span className="flex gap-1">
-          {(['center', 'edge'] as const).map((p) => (
+          {PLACES.map((p) => (
             <button key={p} type="button" aria-pressed={place === p} onClick={() => setPlace(p)} className={choice(place === p)}>
               {t[p]}
             </button>
@@ -357,6 +462,14 @@ function Tuner({ locale, rate, setRate, loop, setLoop, place, setPlace }: { loca
       <h2 className="text-body-sm font-semibold">{t.title}</h2>
       <p className="text-caption text-muted-foreground">{t.note}</p>
       {sliders(KNOBS)}
+      <hr className="border-border" />
+      <h2 className="text-body-sm font-semibold">{t.close}</h2>
+      <label className="flex items-center justify-between gap-2">
+        <span>{t.closeSoft}</span>
+        <input type="checkbox" checked={values.closeSoft > 0.5} onChange={(e) => set('closeSoft', e.target.checked ? 1 : 0)} />
+      </label>
+      <p className="text-micro text-muted-foreground">{t.closeNote}</p>
+      {sliders(values.closeSoft > 0.5 ? [CLOSE_SOFT_KNOB, CLOSE_FADE_KNOB, CLOSE_GLOW_KNOB] : [CLOSE_KICK_KNOB])}
       <button type="button" onClick={copy} className="press mt-1 rounded-md bg-foreground px-3 py-2 text-ui font-medium text-background">
         {copied ? t.copied : t.copy}
       </button>
@@ -381,24 +494,10 @@ function PopoverLab() {
   const [rate, setRate] = useState(1)
   const [loop, setLoop] = useState(false)
   const [picked, setPicked] = useState<number | null>(null)
-  const [place, setPlace] = useState<Place>('edge')
-  // Where it opens survives a reload too.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(PLACE_STORE)
-      if (saved === 'center' || saved === 'edge') setPlace(saved)
-    } catch {
-      // Storage is unavailable: it opens in the middle.
-    }
-  }, [])
-  const choosePlace = (next: Place) => {
-    setPlace(next)
-    try {
-      localStorage.setItem(PLACE_STORE, next)
-    } catch {
-      // Storage is unavailable: the choice still applies for this visit.
-    }
-  }
+  const [subject, setSubject] = useSaved<Subject>(SUBJECT_STORE, SUBJECTS, 'popover')
+  // Each component keeps its own choices, and starts from its own defaults.
+  const [place, choosePlace] = useSaved<Place>(`${PLACE_STORE}-${subject}`, PLACES, DEFAULTS[subject].place)
+  const [from, setFrom] = useSaved<From>(`${FROM_STORE}-${subject}`, FROMS, DEFAULTS[subject].from)
 
   // The slowed clock, for as long as the lab is on screen.
   useEffect(() => {
@@ -440,7 +539,31 @@ function PopoverLab() {
         ))}
       </div>
       {/* While it opens and closes by itself, a press on a slider must not close it. */}
-      <GlassPopover open={open} onOpenChange={(next: boolean) => !loop && setOpen(next)} dismissible={!loop}>
+      {subject === 'menu' ? (
+        <GlassDropdownMenu over={place} from={from} open={open} onOpenChange={(next: boolean) => !loop && setOpen(next)}>
+          <GlassDropdownMenuTrigger className="h-12 px-6 text-[15px]">
+            {t.menu}
+            <ChevronDown className="opacity-60" />
+          </GlassDropdownMenuTrigger>
+          <GlassDropdownMenuContent>
+            {t.actions.map((label, i) => {
+              const Icon = ACTION_ICONS[i]
+              return (
+                <GlassDropdownMenuItem key={label}>
+                  <Icon />
+                  {label}
+                </GlassDropdownMenuItem>
+              )
+            })}
+            <GlassDropdownMenuSeparator />
+            <GlassDropdownMenuItem destructive>
+              <Trash2 />
+              {t.remove}
+            </GlassDropdownMenuItem>
+          </GlassDropdownMenuContent>
+        </GlassDropdownMenu>
+      ) : (
+      <GlassPopover from={from} open={open} onOpenChange={(next: boolean) => !loop && setOpen(next)} dismissible={!loop}>
         <GlassPopoverTrigger>
           <AlarmClock />
           {picked === null ? t.trigger : t.times[picked]}
@@ -461,7 +584,23 @@ function PopoverLab() {
           </div>
         </GlassPopoverContent>
       </GlassPopover>
-      <Tuner locale={locale} rate={rate} setRate={setRate} loop={loop} setLoop={setLoop} place={place} setPlace={choosePlace} />
+      )}
+      <Tuner
+        locale={locale}
+        rate={rate}
+        setRate={setRate}
+        loop={loop}
+        setLoop={setLoop}
+        place={place}
+        setPlace={choosePlace}
+        from={from}
+        setFrom={setFrom}
+        subject={subject}
+        setSubject={(next) => {
+          setOpen(false)
+          setSubject(next)
+        }}
+      />
     </main>
   )
 }

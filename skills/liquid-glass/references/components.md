@@ -246,6 +246,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Press it: the arrow droplet melts into the button and stays merged.
 // "Start over" changes `resetKey`: the droplet splits off again and the label morphs back.
+// Each new label comes in letter by letter.
 export default function Demo() {
   const [run, setRun] = useState(0)
   return (
@@ -1687,7 +1688,7 @@ const [speed, setSpeed] = useState<string | null>(null)
 />
 ```
 
-Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The button wears Button's glass, with its light and shadow. Once the neck lets go, the list settles into Card's frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.
+Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The choice you made comes into the button letter by letter. The button wears Button's glass, with its light and shadow. Once the neck lets go, the list settles into Card's frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.
 
 ## Your own popup
 
@@ -2119,7 +2120,7 @@ import {
 </GlassDropdownMenu>
 ```
 
-With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover's opening. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button's clear glass, so it needs something behind it to bend.
+With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover's opening. `over="edge"` grows it from the button's own edge instead, and `from="bottom"` brings it up from below where it comes down from above by default. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button's clear glass, so it needs something behind it to bend.
 
 ## Opening on a neck
 
@@ -2312,7 +2313,8 @@ export default function Demo() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state. |
-| `over` | `'center'` | — | On `GlassDropdownMenu`: the button unfolds into the menu, which settles around it. Left out, the list swells out of the control on a neck. |
+| `over` | `'center' \| 'edge'` | — | On `GlassDropdownMenu`: the button unfolds into the menu. `center`: the menu settles around it. `edge`: it grows from the button's own edge, away from it. Left out, the list swells out of the control on a neck. |
+| `from` | `'top' \| 'bottom'` | `'top'` | On `GlassDropdownMenu`, with `over`: which way the menu comes into place. `top`: the button is thrown down and the menu comes down from above. `bottom`: the other way up. |
 | `GlassDropdownMenuTrigger asChild` | `boolean` | `false` | Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own. |
 | `GlassDropdownMenuContent side / align` | `'top' \| 'bottom' / 'start' \| 'center' \| 'end'` | `'bottom' / 'center'` | Where the list opens against the trigger: below and centred by default. It flips when there is no room. |
 | `GlassDropdownMenuContent sideOffset` | `number` | `12` | The gap between the control and the list, where the neck stretches. With `over="center"`, passing it places the menu yourself. |
@@ -2431,7 +2433,7 @@ import {
 </GlassPopover>
 ```
 
-The popover grows from the button's own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card's glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start, moves with the glass on both sides, and fades up and sharpens as the glass arrives. The press's light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.
+The popover grows from the button's own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card's glass from the first frame; its own weight throws it a little way and it comes up into place from below (`from="top"` on `GlassPopover`: down from above), it lands a little past its size and settles, and its corners come last. The content is inside from the start, moves with the glass on both sides, and fades up and sharpens as the glass arrives. The press's light grows with it and reaches the content, and the shadow goes along. Closing is a calmer motion of its own: the content fades first, the surface slides back into the button and slows as it lands, and the button swells a little as it takes it while its label comes back letter by letter. A press on a Close part lights the surface where it lands, and that light goes into the button with it and fades there. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.
 
 ## Your own surface
 
@@ -2466,6 +2468,7 @@ const popup = useGlassPopup({ opening: 'morph' })
 | `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassPopover`: control the popover yourself, or let it keep its own state. |
 | `modal` | `boolean \| 'trap-focus'` | `false` | `false` leaves the page usable, and focus leaving the popover closes it; `true` makes the page inert. |
 | `GlassPopoverTrigger className` | `string` | — | Classes for the button: 3rem tall with Button's glass by default. Any height works: the popover follows it. |
+| `from` | `'bottom' \| 'top'` | `'bottom'` | On `GlassPopover`: which way the popover comes into place. `bottom`: the button is thrown up and the popover comes up from below. `top`: the button is thrown down and it comes down from above. |
 | `GlassPopoverContent over` | `'edge' \| 'center'` | `'edge'` | Where it lies over the button: from the button's own edge, or around it, the button in its middle. |
 | `GlassPopoverContent side / align` | `'top' \| 'bottom' / 'start' \| 'center' \| 'end'` | `'bottom' / 'center'` | `side`, with `over="edge"`: which way it grows from the button (down or up); it flips when there is no room. `align`: how it lines up with the button. |
 | `GlassPopoverContent sideOffset` | `number` | — | Place it yourself. Left out, the popover lies over the button as `over` says. |

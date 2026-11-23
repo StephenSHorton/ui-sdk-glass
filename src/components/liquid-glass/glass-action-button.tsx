@@ -22,9 +22,11 @@
 // `resetAfter` (ms) splits it off again after a success; by default it stays merged.
 // Change `resetKey` to split it off yourself ("Start over"): the button stays mounted, so
 // the droplet springs out and the label morphs back instead of snapping.
+// A label that is plain text changes letter by letter, each coming out of a blur and the dark;
+// any other label rises in as one piece.
 // Without WebGL2 it is a plain button with a divider. COPY VERBATIM. MIT.
 
-import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react'
 
 import { GlassLayer, type GlassMaterial } from './glass-layer'
 
@@ -69,6 +71,13 @@ const fallback: Record<GlassMaterial, string> = {
     'border border-black/10 bg-white/60 text-neutral-900 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900',
   tinted: '',
 }
+
+// Letter by letter: each letter takes 0.4s and starts 0.01s after the one before it.
+const LETTERS_CSS = `
+@keyframes glass-letter{from{opacity:0;filter:blur(10px) brightness(0)}}
+[data-glass-letter]{animation:glass-letter .4s ease-out both;animation-delay:calc(var(--glass-c,0) * .01s)}
+@media (prefers-reduced-motion:reduce){[data-glass-letter]{animation:none}}
+`
 
 const ease = 'duration-300 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none'
 
@@ -168,6 +177,8 @@ export function GlassActionButton({
   }
 
   const swap = touched ? { 'data-glass-in': '' } : {}
+  // Plain text changes letter by letter: each letter is its own element, in a queue.
+  const spelled = typeof label === 'string'
   return (
     <button
       type={type}
@@ -182,13 +193,26 @@ export function GlassActionButton({
       {...rest}
     >
       <GlassLayer material={material} tint={tint} droplet={state === 'idle' ? 'apart' : 'merged'} />
+      <style href="liquid-glass-letters" precedence="default">
+        {LETTERS_CSS}
+      </style>
       <span aria-hidden className={`relative inline-flex overflow-hidden transition-[width] ${ease}`} style={{ width: labelWidth }}>
         <span ref={sizer} className="invisible absolute">
           {label}
         </span>
-        <span key={state} {...swap}>
-          {label}
-        </span>
+        {spelled ? (
+          <span key={state}>
+            {Array.from(label, (char, i) => (
+              <span key={i} {...(touched ? { 'data-glass-letter': '' } : {})} style={{ '--glass-c': i } as CSSProperties}>
+                {char}
+              </span>
+            ))}
+          </span>
+        ) : (
+          <span key={state} {...swap}>
+            {label}
+          </span>
+        )}
       </span>
       <span aria-hidden className={`shrink-0 transition-[width] ${ease}`} style={{ width: state === 'idle' ? s.apart - s.merged : 0 }} />
       {/* Divider for the plain CSS look; hidden once the glass draws the droplet itself. */}

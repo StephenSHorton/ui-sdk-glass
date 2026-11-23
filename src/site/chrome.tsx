@@ -208,7 +208,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             {t.footer}{' '}
             <a href="https://github.com/bilalgursen" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
               bilalgursen
-            </a>
+            </a>{' '}
+            {t.footerFrom}
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
             <p className="font-mono">{t.stack}</p>

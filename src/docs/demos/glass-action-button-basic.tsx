@@ -6,12 +6,13 @@ import { GlassActionButton } from '@/components/liquid-glass'
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Press it: the arrow droplet melts into the button and stays merged.
+// "Start over" changes `resetKey`: the droplet splits off again and the label morphs back.
 export default function Demo() {
   const [run, setRun] = useState(0)
   return (
     <div className="flex flex-col items-center gap-6">
       <GlassActionButton
-        key={run}
+        resetKey={run}
         size="lg"
         material="tinted"
         className="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"

@@ -275,15 +275,17 @@ function BlockView({ block, locale }: { block: Block; locale: Locale }) {
 /**
  * The Examples sections are held back for now: the site shows the heading and a
  * "Coming soon" stage instead. The blocks stay in content.ts (and in the Markdown and
- * llms files); set this to false to bring them back.
+ * llms files); set this to false to bring them back. Pages listed in EXAMPLES_SHOWN
+ * (by slug) show theirs already.
  */
 const EXAMPLES_SOON = true
+const EXAMPLES_SHOWN = new Set(['slide-to-confirm'])
 
 const SOON = Symbol('soon')
 
 /** Each Examples section, up to the next heading, becomes one SOON marker. */
-function withoutExamples(blocks: Block[]): (Block | typeof SOON)[] {
-  if (!EXAMPLES_SOON) return blocks
+function withoutExamples(blocks: Block[], slug: string): (Block | typeof SOON)[] {
+  if (!EXAMPLES_SOON || EXAMPLES_SHOWN.has(slug)) return blocks
   const out: (Block | typeof SOON)[] = []
   let skipping = false
   for (const b of blocks) {
@@ -504,7 +506,7 @@ export function DocArticle({ page, locale }: { page: DocPage; locale: Locale }) 
         </header>
         {page.group === 'components' && <ComponentNews slug={page.slug} locale={locale} />}
         {page.hero && <Preview id={page.hero} locale={locale} />}
-        {withoutExamples(page.blocks).map((b, k) => (b === SOON ? <Soon key={k} locale={locale} /> : <BlockView key={k} block={b} locale={locale} />))}
+        {withoutExamples(page.blocks, page.slug).map((b, k) => (b === SOON ? <Soon key={k} locale={locale} /> : <BlockView key={k} block={b} locale={locale} />))}
         <nav aria-label={t.pagination} className="mt-12 grid grid-cols-2 gap-3 text-ui">
           {prev ? (
             <DocLink page={prev} locale={locale} className="flex flex-col gap-1 rounded-xl border border-border p-4 transition-colors hover:bg-muted">

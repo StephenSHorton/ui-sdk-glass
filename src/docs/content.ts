@@ -1188,8 +1188,8 @@ const [speed, setSpeed] = useState<string | null>(null)
       {
         type: 'p',
         text: t(
-          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The choice you made comes into the button letter by letter. The button wears Button\'s glass, with its light and shadow. Once the neck lets go, the list settles into Card\'s frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.',
-          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Yaptığın seçim butona harf harf gelir. Buton, ışığı ve gölgesiyle Button\'ın camını taşır. Boyun koptuğunda liste kendi ışığı olmayan, Card\'ın buzlu camına geçer: kenarını ince bir çizgi çizer, yumuşak bir gölge onu sayfadan ayırır. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+          'Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The button wears Button\'s glass, with its light and shadow. Once the neck lets go, the list settles into Card\'s frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.',
+          'Açılırken liste butonun tamamından şişer, aralarındaki boyun esneyip kopar, iki parça da sarsılır ve seçenekler birer birer gelir. Kapanış, açılışın kare kare tersidir; yoldayken yeniden açarsan kaldığı yerden devam eder. Buton, ışığı ve gölgesiyle Button\'ın camını taşır. Boyun koptuğunda liste kendi ışığı olmayan, Card\'ın buzlu camına geçer: kenarını ince bir çizgi çizer, yumuşak bir gölge onu sayfadan ayırır. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
         ),
       },
       h('Your own popup', 'Kendi açılır yüzeyin'),
@@ -1662,14 +1662,6 @@ export const RELEASES: Release[] = [
     date: '2026-11-23',
     title: t('Popover and Dropdown Menu: a softer close.', 'Popover ve Dropdown Menu: daha yumuşak kapanış.'),
     changes: [
-      {
-        kind: 'improved',
-        page: 'select',
-        text: t(
-          'A new choice now comes into the button letter by letter, each letter out of a blur and the dark.',
-          'Yeni seçim artık butona harf harf geliyor; her harf bulanıklıktan ve karanlıktan çıkıyor.',
-        ),
-      },
       {
         kind: 'improved',
         page: 'action-button',

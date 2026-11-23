@@ -1688,7 +1688,7 @@ const [speed, setSpeed] = useState<string | null>(null)
 />
 ```
 
-Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The choice you made comes into the button letter by letter. The button wears Button's glass, with its light and shadow. Once the neck lets go, the list settles into Card's frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.
+Opening, the list swells out of the whole button, the neck between them stretches and snaps, both halves take the jolt and the options arrive one after another. Closing is the opening played backwards, frame for frame; reopen it on the way and it carries on from there. The button wears Button's glass, with its light and shadow. Once the neck lets go, the list settles into Card's frost with no light of its own: a thin line draws its edge and a soft shadow lifts it off the page. The glass is clear, so it needs something behind it to bend.
 
 ## Your own popup
 

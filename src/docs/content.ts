@@ -441,6 +441,7 @@ and do not modify the files in components/liquid-glass/.`,
           t('**Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.', '**Bekleme.** Tek gövde; etiket `pendingLabel`\'a dönüşür ve okun yerinde bir döner simge, `onAction`\'ın döndürdüğü söz sonuçlanana dek döner.'),
           t('**Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. `resetAfter` vermezsen öyle kalır.'),
           t('**Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.', '**Hata.** `onAction` hata fırlatırsa damla yeniden ayrılır ve hata `onActionError`\'a gider.'),
+          t('**Start over.** Change `resetKey` and the droplet splits off again from any state. Don\'t remount the button with `key`: that snaps it back.', '**Baştan başla.** `resetKey`\'i değiştirince damla her durumdan yeniden ayrılır. Butonu `key` ile baştan kurma: o zaman birden atlar.'),
         ],
       },
       h('Examples', 'Örnekler'),
@@ -462,6 +463,7 @@ and do not modify the files in components/liquid-glass/.`,
           { name: 'pendingLabel', type: 'ReactNode', default: 'children', description: t('Label while `onAction` runs.', '`onAction` çalışırken etiket.') },
           { name: 'successLabel', type: 'ReactNode', default: 'children', description: t('Label after it succeeds.', 'Başarıdan sonraki etiket.') },
           { name: 'resetAfter', type: 'number', default: '0', description: t('Milliseconds before splitting off again after a success. `0` stays merged.', 'Başarıdan sonra yeniden ayrılmadan önceki milisaniye. `0` birleşik kalır.') },
+          { name: 'resetKey', type: 'unknown', description: t('Change it to return to idle: the droplet splits off again. A running action\'s result is dropped.', 'Değiştirince buton boşta durumuna döner: damla yeniden ayrılır. Süren eylemin sonucu yok sayılır.') },
           { name: 'icon', type: 'ReactNode', default: 'arrow', description: t('The droplet\'s idle icon.', 'Damlanın boştaki ikonu.') },
           { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('As on GlassButton.', 'GlassButton\'daki gibi.') },
           { name: 'size', type: "'sm' | 'md' | 'lg'", default: "'md'", description: t('Height 32, 40 or 48 px.', 'Yükseklik 32, 40 ya da 48 px.') },
@@ -1514,6 +1516,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.5.12',
+    date: '2026-11-23',
+    title: t('Action Button: start over without a jump.', 'Action Button: baştan başlarken sıçramıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'A new `resetKey` prop returns the button to idle whenever its value changes: the droplet splits off again and the label morphs back, from a success or in the middle of an action (whose result is then dropped). "Start over" in the preview uses it; it used to rebuild the button, which snapped back to its first shape.',
+          'Yeni `resetKey` prop\'u, değeri her değiştiğinde butonu boşta durumuna döndürüyor: damla yeniden ayrılıyor, etiket eski hâline dönüşüyor; başarıdan sonra da, eylemin ortasında da (o eylemin sonucu artık butona yansımıyor). Önizlemedeki "Start over" bunu kullanıyor; eskiden butonu baştan kuruyordu ve buton ilk biçimine birden atlıyordu.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.11',
     date: '2026-11-23',

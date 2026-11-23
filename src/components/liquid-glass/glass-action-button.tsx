@@ -20,6 +20,8 @@
 //
 // If the action throws, the droplet splits off again and `onActionError` is called.
 // `resetAfter` (ms) splits it off again after a success; by default it stays merged.
+// Change `resetKey` to split it off yourself ("Start over"): the button stays mounted, so
+// the droplet springs out and the label morphs back instead of snapping.
 // Without WebGL2 it is a plain button with a divider. COPY VERBATIM. MIT.
 
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
@@ -41,6 +43,8 @@ export type GlassActionButtonProps = {
   successLabel?: ReactNode
   /** Milliseconds after a success before the droplet splits off again. 0 (default) stays merged. */
   resetAfter?: number
+  /** Change it to return to idle: the droplet splits off again, and a running action's result is dropped. */
+  resetKey?: unknown
   /** The droplet's idle icon. Default: an arrow. */
   icon?: ReactNode
   material?: GlassMaterial
@@ -95,6 +99,7 @@ export function GlassActionButton({
   pendingLabel,
   successLabel,
   resetAfter = 0,
+  resetKey,
   icon,
   material = 'clear',
   size = 'md',
@@ -136,15 +141,28 @@ export function GlassActionButton({
     return () => clearTimeout(id)
   }, [state, resetAfter])
 
+  // A new `resetKey` returns to idle from wherever the button is. The action that was
+  // running is not cancelled, but its result no longer reaches the button.
+  const runId = useRef(0)
+  const lastKey = useRef(resetKey)
+  useEffect(() => {
+    if (Object.is(lastKey.current, resetKey)) return
+    lastKey.current = resetKey
+    runId.current++
+    setState('idle')
+  }, [resetKey])
+
   const run = async () => {
     if (state !== 'idle' || disabled) return
+    const id = ++runId.current
+    const current = () => alive.current && id === runId.current
     setTouched(true)
     setState('pending')
     try {
       await onAction()
-      if (alive.current) setState('success')
+      if (current()) setState('success')
     } catch (error) {
-      if (alive.current) setState('idle')
+      if (current()) setState('idle')
       onActionError?.(error)
     }
   }

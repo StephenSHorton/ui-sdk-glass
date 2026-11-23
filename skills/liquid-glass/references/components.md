@@ -245,12 +245,13 @@ import { GlassActionButton } from '@/components/liquid-glass'
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Press it: the arrow droplet melts into the button and stays merged.
+// "Start over" changes `resetKey`: the droplet splits off again and the label morphs back.
 export default function Demo() {
   const [run, setRun] = useState(0)
   return (
     <div className="flex flex-col items-center gap-6">
       <GlassActionButton
-        key={run}
+        resetKey={run}
         size="lg"
         material="tinted"
         className="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
@@ -311,6 +312,7 @@ import { GlassActionButton } from '@/components/liquid-glass'
 - **Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.
 - **Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.
 - **Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.
+- **Start over.** Change `resetKey` and the droplet splits off again from any state. Don't remount the button with `key`: that snaps it back.
 
 ## Examples
 
@@ -367,6 +369,7 @@ With `resetAfter={2400}` the droplet splits off again 2.4 seconds after a succes
 | `pendingLabel` | `ReactNode` | `children` | Label while `onAction` runs. |
 | `successLabel` | `ReactNode` | `children` | Label after it succeeds. |
 | `resetAfter` | `number` | `0` | Milliseconds before splitting off again after a success. `0` stays merged. |
+| `resetKey` | `unknown` | — | Change it to return to idle: the droplet splits off again. A running action's result is dropped. |
 | `icon` | `ReactNode` | `arrow` | The droplet's idle icon. |
 | `material` | `'clear' \| 'tinted'` | `'clear'` | As on GlassButton. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Height 32, 40 or 48 px. |

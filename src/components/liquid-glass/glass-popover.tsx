@@ -3,7 +3,7 @@
 // GlassPopover — a small surface its button unfolds into, right where the button is. The popover
 // grows from the button's edge (`over="center"`: around it), thrown a little way by its own weight,
 // then settled. The button lets go of its label, its glass gives way to the card and the
-// content comes into focus inside. The light the press let in grows with it, and its shadow goes
+// content fades up and comes into focus inside, moving with the glass. The light the press let in grows with it, and its shadow goes
 // along. Closing is the same motion played backwards, and the button answers it: it lights up and
 // is thrown the other way as the surface comes back in (GlassPopup with `opening: 'morph'`,
 // `glass-popup.tsx`).

@@ -387,10 +387,11 @@ export const MORPH = {
   /** Corners, frost and the content's focus follow at this speed, without a bounce. */
   calmSpeed: 12,
   /** Closing replays the opening backwards, at this × its pace. */
-  closePace: 1,
-  /** The control's label is gone once the surface is this far out (0–1), and the content is all there by this far. */
+  closePace: 1.7,
+  /** The control's label is gone once the surface is this far out (0–1). */
   labelOut: 0.02,
-  contentIn: 0.02,
+  /** The content fades in with the calm follow, and is fully visible once that is this far (0–1). */
+  contentFade: 0.75,
   /** How soft the label gets as it goes, and the content as it starts (a blur, CSS px). */
   labelBlur: 0,
   contentBlur: 5.5,

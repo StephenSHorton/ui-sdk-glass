@@ -25,7 +25,7 @@ type Locale = 'en' | 'tr'
 
 // Each knob: its range and what it does, in both languages.
 const KNOBS: { key: Key; min: number; max: number; step: number; en: string; tr: string; hintEn: string; hintTr: string }[] = [
-  { key: 'line', min: 0, max: 6, step: 0.05, en: 'On the rim line', tr: 'Kenar çizgisinde', hintEn: 'How much of the neighbour shows on the thin line at the rim', hintTr: 'Komşunun, kenardaki ince çizgide ne kadar göründüğü' },
+  { key: 'line', min: 0, max: 1, step: 0.05, en: 'On the rim line', tr: 'Kenar çizgisinde', hintEn: 'How much of the neighbour shows on the line at the rim. The line is as thin as the rim light under the cursor, and gets no thicker', hintTr: 'Komşunun, kenardaki çizgide ne kadar göründüğü. Çizgi imleç altındaki kenar ışığı kadar incedir, kalınlaşmaz' },
   { key: 'band', min: 0, max: 2, step: 0.05, en: 'Picture inside the rim', tr: 'Kenarın içindeki görüntü', hintEn: 'How much of it shows just inside the line; it fades inwards from there', hintTr: 'Çizginin hemen içinde ne kadar göründüğü; oradan içeri doğru söner' },
   { key: 'depth', min: 0.05, max: 2, step: 0.01, en: 'Picture depth', tr: 'Görüntü derinliği', hintEn: 'How deep the picture goes (× half the glass): deepest where the neighbour is nearest, thinner round the sides', hintTr: 'Görüntünün ne kadar derine indiği (× camın yarısı): komşunun en yakın olduğu yerde en derin, yanlara doğru incelir' },
   { key: 'fall', min: 0.2, max: 6, step: 0.05, en: 'Fade inwards', tr: 'İçeri sönüş', hintEn: 'How fast it fades from the rim inwards: higher keeps it closer to the rim', hintTr: 'Kenardan içeri ne kadar hızlı söndüğü: yükseldikçe kenara yakın kalır' },
@@ -101,7 +101,7 @@ type Scene = { colour: string; gap: number; size: number; side: 'above' | 'below
 const SCENE_DEFAULTS: Scene = { colour: SWATCHES[0], gap: 14, size: 56, side: 'above', off: false }
 
 // Bumped when the set of values changes, so stale saved ones do not override the kit's.
-const STORE = 'glass-mirror-tuning-3'
+const STORE = 'glass-mirror-tuning-4'
 const SCENE_STORE = 'glass-mirror-scene-1'
 
 /** A range input with its name, its value and what it does. */

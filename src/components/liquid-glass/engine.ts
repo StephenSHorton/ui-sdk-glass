@@ -258,8 +258,11 @@ export const GLOW = {
  * These values are the look.
  */
 export const MIRROR = {
-  /** How much of a neighbour shows on the rim's own line, and at the rim in the band inside it (together 1 at most). */
-  line: 3,
+  /**
+   * How much of a neighbour shows on the rim's line (1 at most: the line is the rim light's own,
+   * as thin as the one that leans towards the cursor), and in the band that begins inside it.
+   */
+  line: 1,
   band: 0.45,
   /**
    * How deep that band goes: this × the glass's shorter half (or its reach, on taller glass).
@@ -714,7 +717,9 @@ void main() {
   float much = max(max(abs(differs.r), abs(differs.g)), abs(differs.b));
   vec3 hue = differs / max(much, 1e-4);
   much = min(much, 1.0);
-  float mirror = min(lit * (rimLine * uMirror.x + pow(1.0 - into, uFall) * uMirror.y), 1.0) * much;
+  // On the rim it is the rim light's own line, no thicker; the band begins inside that line.
+  float band = pow(1.0 - into, uFall) * uMirror.y * smoothstep(0.0, rimW * 1.8, -dist);
+  float mirror = min(lit * max(rimLine * uMirror.x, band), 1.0) * much;
   // What it lacks of the surface's colour is taken out of the glass; then the glass is lifted
   // towards the neighbour's colour: dark glass mirrors it on any page.
   glass *= 1.0 - max(-hue, 0.0) * mirror * uMirror.w;
@@ -1060,7 +1065,7 @@ function createEngine(): GlassEngine | null {
     // The band is as deep as a share of the glass's shorter half, and of its reach on glass taller than that.
     const reached = m.reflection ? clamp(m.reflection.height * MIRROR.reach, MIRROR.reachMin, Math.max(MIRROR.reachMin, MIRROR.reachMax)) : 0
     const deep = (Math.max(0.01, MIRROR.depth) * Math.max(1, Math.min(m.hx, m.hy, reached || Infinity))) / unit
-    set('uMirror', MIRROR.line * mirror, MIRROR.band * mirror, deep, clamp(MIRROR.dim))
+    set('uMirror', clamp(MIRROR.line) * mirror, MIRROR.band * mirror, deep, clamp(MIRROR.dim))
     set('uSoft', (Math.max(0, MIRROR.soft) * reached) / unit)
     const shares = Math.max(MIRROR.near + MIRROR.mid + MIRROR.far, 1e-3)
     set('uSeen', MIRROR.near / shares, MIRROR.mid / shares, MIRROR.far / shares, Math.max(0, MIRROR.gain))

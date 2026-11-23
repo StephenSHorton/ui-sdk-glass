@@ -122,6 +122,13 @@ export const REGISTRY: RegistryItem[] = [
     entries: [liquid('glass-dropdown-menu.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
+  {
+    name: 'popover',
+    title: 'GlassPopover',
+    description: 'Unfold: a small surface its button unfolds into, right where the button is (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-popover.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
 ]
 
 // ── Pages ───────────────────────────────────────────────────────────────────
@@ -1484,6 +1491,128 @@ const popup = useGlassPopup()
       },
     ],
   },
+  {
+    slug: 'popover',
+    group: 'components',
+    title: t('Popover', 'Popover'),
+    name: 'GlassPopover',
+    description: t(
+      'A small surface its button unfolds into, right where the button is: the button lets go of its label, its glass grows over it into the popover and settles, and closing folds it back.',
+      'Butonun bulunduğu yerde yayılarak dönüştüğü küçük yüzey: buton etiketini bırakır, camı kendi üstünde büyüyüp popover\'a oturur; kapanış onu geri toplar.',
+    ),
+    verb: t('Unfold', 'Yayıl'),
+    signature: t('The button unfolds into a small surface, right where it is.', 'Buton, bulunduğu yerde küçük bir yüzeye yayılır.'),
+    hero: 'glass-popover-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A little more about one control, or a few choices for it, without leaving the page: a reminder time, a colour, a short field.', 'Sayfadan ayrılmadan tek bir kontrol hakkında biraz daha fazlası ya da onun için birkaç seçenek: hatırlatma zamanı, renk, kısa bir alan.'),
+          t('Content that belongs to the button and should come out of it and go back into it.', 'Butona ait olan, ondan çıkıp ona dönmesi gereken içerik.'),
+        ],
+        avoid: [
+          t('A plain list of actions: use Dropdown Menu. Picking a value for a form: use Select.', 'Düz bir eylem listesi: Dropdown Menu kullan. Bir form için değer seçmek: Select kullan.'),
+          t('A hint shown on hover: the button is hidden while the popover is out, so it must be pressed.', 'Üstüne gelince görünen bir ipucu: popover dışarıdayken buton gizlenir, bu yüzden basılması gerekir.'),
+        ],
+      },
+      { type: 'install', item: 'popover' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (the top layer, positioning, focus, Escape, the outside press, ARIA) comes from UI SDK, so Popover needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (üst katman, konumlandırma, odak, Escape, dışarı basma, ARIA) UI SDK\'dan gelir; bu yüzden Popover `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassPopover,
+  GlassPopoverClose,
+  GlassPopoverContent,
+  GlassPopoverTitle,
+  GlassPopoverTrigger,
+} from '@/components/liquid-glass/glass-popover'
+
+<GlassPopover>
+  <GlassPopoverTrigger>Remind me</GlassPopoverTrigger>
+  <GlassPopoverContent>
+    <GlassPopoverTitle>Remind me</GlassPopoverTitle>
+    <GlassPopoverClose onClick={() => remind('hour')}>In an hour</GlassPopoverClose>
+    <GlassPopoverClose onClick={() => remind('tomorrow')}>Tomorrow morning</GlassPopoverClose>
+  </GlassPopoverContent>
+</GlassPopover>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The popover grows from the button\'s own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card\'s glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start and sharpens as the glass arrives. The press\'s light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.',
+          'Popover butonun kendi kenarından, `side` aksini söylemedikçe aşağı doğru büyür (`over="center"` onu butonun çevresine oturtur). Açılırken etiket kaybolur ve butondan, ilk kareden beri Card\'ın camını taşıyan bir yüzey çıkar; kendi ağırlığı onu hafifçe savurur, boyunu biraz aşıp yerine oturur, köşeleri en son gelir. İçerik baştan beri içeridedir ve cam yerine vardıkça netleşir. Basışın ışığı onunla büyür ve içeriğe de ulaşır, gölge de onunla gider. Kapanış bunu tersine oynatır ve buton buna tepki verir: şişer, parlar ve yerine oturmadan önce ters yöne savrulur. Dışarıdayken buton gizlidir; bu yüzden dışarı basarak, Escape ile ya da bir Close parçasıyla kapanır.',
+        ),
+      },
+      h('Your own surface', 'Kendi yüzeyin'),
+      {
+        type: 'p',
+        text: t(
+          'The motion is `GlassPopup`\'s second way out, and it is not tied to a popover. For a surface of your own, `useGlassPopup({ opening: \'morph\' })` turns any control into what it opens (a menu, say); the surface should lie over its control, so give its content a negative `sideOffset`, the control\'s height:',
+          'Bu hareket `GlassPopup`\'ın ikinci açılışıdır ve yalnızca popover\'a bağlı değildir. Kendi yüzeyin için `useGlassPopup({ opening: \'morph\' })`, herhangi bir kontrolü açtığı şeye (örneğin bir menüye) dönüştürür; yüzey kontrolünün üstüne oturmalıdır, bu yüzden içeriğe kontrolün yüksekliği kadar negatif `sideOffset` ver:',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'menu.tsx',
+        code: `import { GlassPopupAnchor, GlassPopupSurface, useGlassPopup } from '@/components/liquid-glass'
+
+const popup = useGlassPopup({ opening: 'morph' })
+
+<MenuTrigger data-glass-host className="rounded-full px-5 h-12 bg-white/60 dark:bg-white/10">
+  <GlassPopupAnchor popup={popup} />
+  <span>Actions</span>
+</MenuTrigger>
+<MenuContent data-glass-popup data-glass-skip sideOffset={-48} className="rounded-3xl p-1.5">
+  <GlassPopupSurface popup={popup} />
+  <div data-glass-list>
+    <MenuItem>Rename</MenuItem>
+    <MenuItem>Duplicate</MenuItem>
+  </div>
+</MenuContent>`,
+      },
+      {
+        type: 'list',
+        items: [
+          t('What rides the glass is the element marked `data-glass-list` (or `role="menu"` / `role="listbox"`) inside the content: wrap your content in one.', 'Camla birlikte taşınan şey, içeriğin içindeki `data-glass-list` (ya da `role="menu"` / `role="listbox"`) işaretli öğedir: içeriğini bir tanesine sar.'),
+          t('The control keeps its place while the surface is out, with its label hidden: it is the surface now.', 'Yüzey dışarıdayken kontrol yerini korur, etiketi gizlenir: artık yüzeyin kendisidir.'),
+          t('The surface takes its corners from the content\'s own `rounded-*` class.', 'Yüzey köşelerini içeriğin kendi `rounded-*` sınıfından alır.'),
+        ],
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassPopover`: control the popover yourself, or let it keep its own state.', '`GlassPopover` üzerinde: popover\'ı kendin yönet ya da kendi durumunu tutsun.') },
+          { name: 'modal', type: "boolean | 'trap-focus'", default: 'false', description: t('`false` leaves the page usable, and focus leaving the popover closes it; `true` makes the page inert.', '`false` sayfayı kullanılabilir bırakır, odak popover\'dan çıkınca kapanır; `true` sayfayı etkisiz kılar.') },
+          { name: 'GlassPopoverTrigger className', type: 'string', description: t('Classes for the button: 3rem tall with Button\'s glass by default. Any height works: the popover follows it.', 'Buton için sınıflar: varsayılan olarak 3rem yüksekliğinde ve Button\'ın camını taşır. Her yükseklik olur: popover onu izler.') },
+          { name: 'GlassPopoverContent over', type: "'edge' | 'center'", default: "'edge'", description: t('Where it lies over the button: from the button\'s own edge, or around it, the button in its middle.', 'Butonun üstünde nereye oturduğu: butonun kendi kenarından ya da buton ortasında kalacak şekilde çevresine.') },
+          { name: 'GlassPopoverContent side / align', type: "'top' | 'bottom' / 'start' | 'center' | 'end'", default: "'bottom' / 'center'", description: t('`side`, with `over="edge"`: which way it grows from the button (down or up); it flips when there is no room. `align`: how it lines up with the button.', '`side`, `over="edge"` ile: butondan hangi yöne büyüdüğü (aşağı ya da yukarı); yer yoksa ters döner. `align`: butonla nasıl hizalandığı.') },
+          { name: 'GlassPopoverContent sideOffset', type: 'number', description: t('Place it yourself. Left out, the popover lies over the button as `over` says.', 'Yerini kendin belirle. Verilmezse popover, `over` ne diyorsa butonun üstüne öyle oturur.') },
+          { name: 'GlassPopoverContent className', type: 'string', description: t('Classes for the popover: `w-72`, `rounded-[26px]`, `p-4` by default.', 'Popover için sınıflar: varsayılan olarak `w-72`, `rounded-[26px]`, `p-4`.') },
+          { name: 'GlassPopoverTitle / GlassPopoverDescription', type: 'className', description: t('Name the popover and say what it is for.', 'Popover\'ı adlandırır ve ne için olduğunu söyler.') },
+          { name: 'GlassPopoverClose variant', type: "'quiet' | 'solid'", default: "'quiet'", description: t('A soft button in the popover\'s own tone, or the main action. It closes the popover; `onClick` runs as it does.', 'Popover\'ın kendi tonunda yumuşak bir buton ya da ana eylem. Popover\'ı kapatır; `onClick` o sırada çalışır.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A button with `aria-expanded` that opens a `dialog` named by its title.', 'Adını başlığından alan bir `dialog` açan, `aria-expanded` taşıyan bir buton.'),
+          t('Focus moves into the popover as it opens. Escape, a press outside, focus leaving and every Close part close it, and focus returns to the button.', 'Açılırken odak popover\'a geçer. Escape, dışarı basma, odağın çıkması ve her Close parçası onu kapatır; odak butona döner.'),
+          t('An icon-only button needs an `aria-label`.', 'Yalnız ikonlu buton `aria-label` ister.'),
+          t('With reduced motion the popover opens and closes at once. Without WebGL2 it is a plain frosted panel.', 'Hareketi azalt açıksa popover anında açılıp kapanır. WebGL2 yoksa düz, buzlu bir paneldir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1516,6 +1645,60 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.6.1',
+    date: '2026-11-23',
+    title: t('Select and Dropdown Menu: no square behind the control as it opens.', 'Select ve Dropdown Menu: açılırken kontrolün arkasında kare çıkmıyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'select',
+        text: t(
+          'Opening a Select no longer shows a faint square around its control. While the list swells out, the control\'s glass and the list\'s are two canvases that meet along the control\'s box; they overlapped by a pixel, and by more while the control was still swollen from the hover, so the shadow there was drawn twice. They now meet on one line and draw in the same space.',
+          'Select açılırken kontrolün çevresinde artık silik bir kare görünmüyor. Liste şişerken kontrolün camı ile listenin camı, kontrolün kutusu boyunca birleşen iki ayrı canvas; bunlar bir piksel, kontrol hover\'dan hâlâ şişkinken daha da fazla üst üste biniyordu ve oradaki gölge iki kez çiziliyordu. Artık tek bir çizgide birleşiyor ve aynı uzayda çiziliyorlar.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'The same square is gone from Dropdown Menu, and from a Button Group that opens one.',
+          'Aynı kare Dropdown Menu\'den ve menü açan Button Group\'tan da kalktı.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.0',
+    date: '2026-11-23',
+    title: t('Popover.', 'Popover.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'popover',
+        text: t(
+          'Popover: a small surface its button unfolds into, right where the button is. It grows from the button\'s edge, thrown a little way by its own weight, and settles with the content coming into focus inside. The button, the card and the light are Select\'s. Positioning, focus, Escape and ARIA come from UI SDK.',
+          'Popover: butonun bulunduğu yerde yayılarak dönüştüğü küçük yüzey. Butonun kenarından büyür, kendi ağırlığıyla hafifçe savrulur ve yerine oturur, içerik içeride netleşir. Buton, kart ve ışık Select\'inkidir. Konumlandırma, odak, Escape ve ARIA UI SDK\'dan gelir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'popover',
+        text: t(
+          '`GlassPopup` has a second way out: `useGlassPopup({ opening: \'morph\' })` turns any control into the surface it opens, for a menu of your own. Popover is built on it; Select and Dropdown Menu keep their stretch.',
+          '`GlassPopup`\'a ikinci bir açılış geldi: `useGlassPopup({ opening: \'morph\' })`, kendi menün için herhangi bir kontrolü açtığı yüzeye dönüştürür. Popover bunun üstüne kurulu; Select ve Dropdown Menu esnemelerini korur.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'popover',
+        text: t(
+          'Popover answers its own closing: as the surface comes back in, the button swells, lights up and is thrown the other way before it settles. The light reaches the label and the content too.',
+          'Popover kendi kapanışına tepki veriyor: yüzey geri girerken buton şişiyor, parlıyor ve yerine oturmadan önce ters yöne savruluyor. Işık etiketi ve içeriği de etkiliyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.5.12',
     date: '2026-11-23',

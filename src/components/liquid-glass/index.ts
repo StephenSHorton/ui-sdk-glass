@@ -28,5 +28,5 @@ export {
 // Building blocks: GlassLens puts the travelling lens on your own tabs (Radix Tabs, a radiogroup).
 export { GlassLens, type GlassLensProps } from './glass-lens'
 // GlassPopup makes a popup (a select's list, a menu, a popover) one gooey body with the control that opens it.
-export { GlassPopupAnchor, GlassPopupSurface, useGlassPopup, type GlassPopup } from './glass-popup'
+export { GlassPopupAnchor, GlassPopupSurface, useGlassPopup, type GlassPopup, type GlassPopupOpening } from './glass-popup'
 export { GlassLayer, GlassStyles, GLASS_CSS, type GlassLayerProps, type GlassMaterial, type GlassDroplet, type GlassOptics } from './glass-layer'

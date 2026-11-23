@@ -2259,3 +2259,155 @@ export default function Demo() {
 - With reduced motion the list opens and closes at once. Without WebGL2 it is a plain frosted list.
 
 Source: https://liquid-glass-interface.pages.dev/docs/dropdown-menu
+
+# GlassPopover
+
+> A small surface its button unfolds into, right where the button is: the button lets go of its label, its glass grows over it into the popover and settles, and closing folds it back.
+
+```tsx
+import { AlarmClock, Moon, Sunrise } from 'lucide-react'
+import { useState } from 'react'
+
+import { GlassPopover, GlassPopoverClose, GlassPopoverContent, GlassPopoverDescription, GlassPopoverTitle, GlassPopoverTrigger } from '@/components/liquid-glass/glass-popover'
+
+const times = [
+  { id: 'hour', label: 'In an hour', icon: AlarmClock },
+  { id: 'tonight', label: 'Tonight at 8', icon: Moon },
+  { id: 'tomorrow', label: 'Tomorrow morning', icon: Sunrise },
+]
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// Press it: the button lets go of its label and unfolds, right where it is, into the popover:
+// round all the way, a little past it, then settled. Pick a time and it folds back into the button.
+// Behind it, only the Press demo's fine grid on the page's own colour, centred on the button:
+// plain DOM, every cell draws its own top and left line, fainter towards the edge.
+export default function Demo() {
+  const [picked, setPicked] = useState<string | null>(null)
+  return (
+    <div className="relative isolate flex h-[30rem] w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassPopover>
+        <GlassPopoverTrigger>
+          <AlarmClock />
+          {times.find((t) => t.id === picked)?.label ?? 'Remind me'}
+        </GlassPopoverTrigger>
+        <GlassPopoverContent>
+          <GlassPopoverTitle>Remind me</GlassPopoverTitle>
+          <GlassPopoverDescription>We will send one notification, then leave you alone.</GlassPopoverDescription>
+          <div className="flex flex-col gap-1.5">
+            {times.map(({ id, label, icon: Icon }) => (
+              <GlassPopoverClose key={id} className="justify-start px-4" onClick={() => setPicked(id)}>
+                <Icon />
+                {label}
+              </GlassPopoverClose>
+            ))}
+          </div>
+        </GlassPopoverContent>
+      </GlassPopover>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- A little more about one control, or a few choices for it, without leaving the page: a reminder time, a colour, a short field.
+- Content that belongs to the button and should come out of it and go back into it.
+
+**Not for**
+
+- A plain list of actions: use Dropdown Menu. Picking a value for a form: use Select.
+- A hint shown on hover: the button is hidden while the popover is out, so it must be pressed.
+
+```bash
+npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/popover.json
+```
+
+> The behaviour (the top layer, positioning, focus, Escape, the outside press, ARIA) comes from UI SDK, so Popover needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import {
+  GlassPopover,
+  GlassPopoverClose,
+  GlassPopoverContent,
+  GlassPopoverTitle,
+  GlassPopoverTrigger,
+} from '@/components/liquid-glass/glass-popover'
+
+<GlassPopover>
+  <GlassPopoverTrigger>Remind me</GlassPopoverTrigger>
+  <GlassPopoverContent>
+    <GlassPopoverTitle>Remind me</GlassPopoverTitle>
+    <GlassPopoverClose onClick={() => remind('hour')}>In an hour</GlassPopoverClose>
+    <GlassPopoverClose onClick={() => remind('tomorrow')}>Tomorrow morning</GlassPopoverClose>
+  </GlassPopoverContent>
+</GlassPopover>
+```
+
+The popover grows from the button's own edge, downwards unless `side` says otherwise (`over="center"` settles it around the button instead). Opening, the label goes and a surface comes out of the button, in Card's glass from the first frame; its own weight throws it a little way, it lands a little past its size and settles, and its corners come last. The content is inside from the start and sharpens as the glass arrives. The press's light grows with it and reaches the content, and the shadow goes along. Closing plays it backwards, and the button answers: it swells, lights up and is thrown the other way before it settles. While it is out the button is hidden, so it closes by a press outside, Escape or a Close part.
+
+## Your own surface
+
+The motion is `GlassPopup`'s second way out, and it is not tied to a popover. For a surface of your own, `useGlassPopup({ opening: 'morph' })` turns any control into what it opens (a menu, say); the surface should lie over its control, so give its content a negative `sideOffset`, the control's height:
+
+```tsx
+import { GlassPopupAnchor, GlassPopupSurface, useGlassPopup } from '@/components/liquid-glass'
+
+const popup = useGlassPopup({ opening: 'morph' })
+
+<MenuTrigger data-glass-host className="rounded-full px-5 h-12 bg-white/60 dark:bg-white/10">
+  <GlassPopupAnchor popup={popup} />
+  <span>Actions</span>
+</MenuTrigger>
+<MenuContent data-glass-popup data-glass-skip sideOffset={-48} className="rounded-3xl p-1.5">
+  <GlassPopupSurface popup={popup} />
+  <div data-glass-list>
+    <MenuItem>Rename</MenuItem>
+    <MenuItem>Duplicate</MenuItem>
+  </div>
+</MenuContent>
+```
+
+- What rides the glass is the element marked `data-glass-list` (or `role="menu"` / `role="listbox"`) inside the content: wrap your content in one.
+- The control keeps its place while the surface is out, with its label hidden: it is the surface now.
+- The surface takes its corners from the content's own `rounded-*` class.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassPopover`: control the popover yourself, or let it keep its own state. |
+| `modal` | `boolean \| 'trap-focus'` | `false` | `false` leaves the page usable, and focus leaving the popover closes it; `true` makes the page inert. |
+| `GlassPopoverTrigger className` | `string` | — | Classes for the button: 3rem tall with Button's glass by default. Any height works: the popover follows it. |
+| `GlassPopoverContent over` | `'edge' \| 'center'` | `'edge'` | Where it lies over the button: from the button's own edge, or around it, the button in its middle. |
+| `GlassPopoverContent side / align` | `'top' \| 'bottom' / 'start' \| 'center' \| 'end'` | `'bottom' / 'center'` | `side`, with `over="edge"`: which way it grows from the button (down or up); it flips when there is no room. `align`: how it lines up with the button. |
+| `GlassPopoverContent sideOffset` | `number` | — | Place it yourself. Left out, the popover lies over the button as `over` says. |
+| `GlassPopoverContent className` | `string` | — | Classes for the popover: `w-72`, `rounded-[26px]`, `p-4` by default. |
+| `GlassPopoverTitle / GlassPopoverDescription` | `className` | — | Name the popover and say what it is for. |
+| `GlassPopoverClose variant` | `'quiet' \| 'solid'` | `'quiet'` | A soft button in the popover's own tone, or the main action. It closes the popover; `onClick` runs as it does. |
+
+## Accessibility
+
+- A button with `aria-expanded` that opens a `dialog` named by its title.
+- Focus moves into the popover as it opens. Escape, a press outside, focus leaving and every Close part close it, and focus returns to the button.
+- An icon-only button needs an `aria-label`.
+- With reduced motion the popover opens and closes at once. Without WebGL2 it is a plain frosted panel.
+
+Source: https://liquid-glass-interface.pages.dev/docs/popover

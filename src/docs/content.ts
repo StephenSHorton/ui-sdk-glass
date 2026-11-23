@@ -1332,8 +1332,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: the list stretches out of the whole group, as Select\'s does out of its button. See Dropdown Menu.',
-          'Sığmayan eylemler için bir grubu Dropdown Menu ile sar ve tetikleyicisini üç noktaya koy: liste, Select\'inkinin butonundan çıktığı gibi, bütün grubun içinden esneyerek çıkar. Dropdown Menu sayfasına bak.',
+          'For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: with `over="center"` the group unfolds into the menu, which settles around it. See Dropdown Menu.',
+          'Sığmayan eylemler için bir grubu Dropdown Menu ile sar ve tetikleyicisini üç noktaya koy: `over="center"` ile grup menüye dönüşür ve menü çevresine oturur. Dropdown Menu sayfasına bak.',
         ),
       },
       h('Examples', 'Örnekler'),
@@ -1424,7 +1424,7 @@ const popup = useGlassPopup()
   GlassDropdownMenuTrigger,
 } from '@/components/liquid-glass/glass-dropdown-menu'
 
-<GlassDropdownMenu>
+<GlassDropdownMenu over="center">
   <GlassDropdownMenuTrigger>Options</GlassDropdownMenuTrigger>
   <GlassDropdownMenuContent>
     <GlassDropdownMenuItem onSelect={rename}>Rename</GlassDropdownMenuItem>
@@ -1437,22 +1437,31 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'It is Select\'s motion on a list of actions: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
-          'Bu, Select\'in hareketinin bir eylem listesindeki halidir: liste tetikleyicinin tamamından şişer, aralarındaki boyun esneyip kopar ve öğeler birer birer gelir; kapanış bunu tersine oynatır. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+          'With `over="center"` on `GlassDropdownMenu`, the button itself unfolds into the menu, which settles around it with the button in its middle: Popover\'s opening. Closing folds it back into the button. The menu stays where it is instead of flipping, so keep the button away from the top and bottom of the screen. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
+          '`GlassDropdownMenu` üzerinde `over="center"` ile butonun kendisi menüye dönüşür ve menü, buton ortasında kalacak şekilde çevresine oturur: Popover\'ın açılışı. Kapanışta yeniden butona katlanır. Menü yön değiştirmeden yerinde kalır; bu yüzden butonu ekranın üst ve alt kenarından uzak tut. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
         ),
       },
+      h('Opening on a neck', 'Boyunla açılış'),
+      {
+        type: 'p',
+        text: t(
+          'Leave `over` out for Select\'s motion: the list swells out of the whole trigger, the neck between them stretches and snaps, and the items arrive one after another; closing plays it backwards. It flips when there is no room.',
+          '`over` vermezsen Select\'in hareketi oynar: liste tetikleyicinin tamamından şişer, aralarındaki boyun esneyip kopar ve öğeler birer birer gelir; kapanış bunu tersine oynatır. Yer yoksa öbür tarafa döner.',
+        ),
+      },
+      { type: 'demo', id: 'glass-dropdown-menu-stretch', title: t('A list that stretches out of its button', 'Butonundan esneyerek çıkan liste') },
       h('Out of a Button Group', 'Bir Button Group\'tan'),
       {
         type: 'p',
         text: t(
-          'Wrap one group and the content in the menu, and put the trigger on one of the group\'s items with `asChild`. The whole group is then the anchor: the list swells out of its body and takes its colour, white included. Wrap only the group that opens the menu.',
-          'Tek bir grubu ve içeriği menüyle sar, tetikleyiciyi de `asChild` ile grubun öğelerinden birine koy. Böylece çapa grubun tamamı olur: liste onun gövdesinden şişer ve rengini alır, beyaz dahil. Yalnızca menüyü açan grubu sar.',
+          'Wrap one group and the content in the menu, and put the trigger on one of the group\'s items with `asChild`. The whole group is then the anchor: the menu comes out of its body and takes its colour, white included. Wrap only the group that opens the menu.',
+          'Tek bir grubu ve içeriği menüyle sar, tetikleyiciyi de `asChild` ile grubun öğelerinden birine koy. Böylece çapa grubun tamamı olur: menü onun gövdesinden çıkar ve rengini alır, beyaz dahil. Yalnızca menüyü açan grubu sar.',
         ),
       },
       {
         type: 'code',
         title: 'toolbar.tsx',
-        code: `<GlassDropdownMenu>
+        code: `<GlassDropdownMenu over="center">
   <GlassButtonGroup>
     <GlassDropdownMenuTrigger asChild>
       <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
@@ -1470,9 +1479,10 @@ const popup = useGlassPopup()
         type: 'props',
         rows: [
           { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassDropdownMenu`: control the menu yourself, or let it keep its own state.', '`GlassDropdownMenu` üzerinde: menüyü kendin yönet ya da kendi durumunu tutsun.') },
+          { name: 'over', type: "'center'", description: t('On `GlassDropdownMenu`: the button unfolds into the menu, which settles around it. Left out, the list swells out of the control on a neck.', '`GlassDropdownMenu` üzerinde: buton menüye dönüşür ve menü çevresine oturur. Verilmezse liste kontrolden bir boyunla şişerek çıkar.') },
           { name: 'GlassDropdownMenuTrigger asChild', type: 'boolean', default: 'false', description: t('Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own.', 'Tetikleyiciyi kendi cam butonu yerine tek çocuğuna (bir `GlassButtonGroupItem`) koyar.') },
           { name: 'GlassDropdownMenuContent side / align', type: "'top' | 'bottom' / 'start' | 'center' | 'end'", default: "'bottom' / 'center'", description: t('Where the list opens against the trigger: below and centred by default. It flips when there is no room.', 'Listenin tetikleyiciye göre nerede açıldığı: varsayılan olarak altta ve ortalı. Yer yoksa öbür tarafa döner.') },
-          { name: 'GlassDropdownMenuContent sideOffset', type: 'number', default: '12', description: t('The gap between the control and the list, where the neck stretches.', 'Kontrol ile liste arasındaki, boynun esnediği boşluk.') },
+          { name: 'GlassDropdownMenuContent sideOffset', type: 'number', default: '12', description: t('The gap between the control and the list, where the neck stretches. With `over="center"`, passing it places the menu yourself.', 'Kontrol ile liste arasındaki, boynun esnediği boşluk. `over="center"` ile verilirse menüyü kendin konumlandırırsın.') },
           { name: 'GlassDropdownMenuItem onSelect', type: '() => void', description: t('Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open).', 'Öğeye basılınca çalışır; ardından menü kapanır (`closeOnSelect={false}` açık tutar).') },
           { name: 'GlassDropdownMenuItem destructive', type: 'boolean', default: 'false', description: t('Paints the item red, for Delete.', 'Öğeyi kırmızıya boyar; Sil için.') },
           { name: 'GlassDropdownMenuItem disabled', type: 'boolean', default: 'false', description: t('Dimmed and skipped by the keyboard.', 'Soluk; klavye onu atlar.') },
@@ -1645,6 +1655,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.6.3',
+    date: '2026-11-23',
+    title: t('Dropdown Menu: it can open around its button.', 'Dropdown Menu: butonunun çevresinde açılabiliyor.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over="center"`, the button or Button Group unfolds into the menu and the menu settles around it, the way Popover opens. The examples now use it. Without the prop, the opening has not changed.',
+          '`over="center"` ile buton ya da Button Group menüye dönüşüyor ve menü, Popover\'ın açıldığı gibi çevresine oturuyor. Örnekler artık bunu kullanıyor. Bu prop verilmezse açılış değişmiyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.6.2',
     date: '2026-11-23',

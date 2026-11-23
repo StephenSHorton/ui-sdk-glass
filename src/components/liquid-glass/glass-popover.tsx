@@ -24,7 +24,7 @@
 import { Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, type PopoverProps } from '@ui-sdk/react/popover'
 import { useContext, type ComponentProps, type ReactNode } from 'react'
 
-import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, useGlassPopup } from './glass-popup'
+import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, OVER_CENTER, useGlassPopup } from './glass-popup'
 
 export type GlassPopoverProps = PopoverProps
 
@@ -56,8 +56,7 @@ export type GlassPopoverCloseProps = {
  * error and undo the moment the button moves (a hover's swell), a button's height off.
  */
 const OVER = {
-  center:
-    '[position-try-fallbacks:none]! data-[side=bottom]:-translate-y-1/2 data-[side=top]:translate-y-1/2 data-[side=bottom]:[transform:translateY(calc(var(--anchor-height)*-0.5))] data-[side=top]:[transform:translateY(calc(var(--anchor-height)*0.5))]',
+  center: OVER_CENTER,
   edge: 'data-[side=bottom]:[transform:translateY(calc(var(--anchor-height)*-1))] data-[side=top]:[transform:translateY(var(--anchor-height))]',
 }
 

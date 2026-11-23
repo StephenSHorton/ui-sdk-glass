@@ -31,11 +31,17 @@
 // Without WebGL2 it is a plain frosted list.
 
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, type MenuProps } from '@ui-sdk/react/menu'
-import { Children, cloneElement, isValidElement, useContext, type CSSProperties, type ComponentProps, type ReactElement, type ReactNode } from 'react'
+import { Children, cloneElement, createContext, isValidElement, useContext, type CSSProperties, type ComponentProps, type ReactElement, type ReactNode } from 'react'
 
-import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, useGlassPopup } from './glass-popup'
+import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, OVER_CENTER, useGlassPopup } from './glass-popup'
 
-export type GlassDropdownMenuProps = MenuProps
+export type GlassDropdownMenuProps = MenuProps & {
+  /** `center`: the control itself unfolds into the menu, which lies around it (Popover's opening). Left out, the list swells out of the control on a neck. */
+  over?: 'center'
+}
+
+/** Whether this menu lies over its control. */
+const OverContext = createContext(false)
 
 export type GlassDropdownMenuTriggerProps = {
   children?: ReactNode
@@ -48,11 +54,14 @@ export type GlassDropdownMenuContentProps = { children?: ReactNode; className?: 
 
 export type GlassDropdownMenuItemProps = { className?: string } & Omit<ComponentProps<typeof MenuItem>, 'className' | 'render'>
 
-export function GlassDropdownMenu({ children, ...options }: GlassDropdownMenuProps) {
-  const popup = useGlassPopup()
+export function GlassDropdownMenu({ children, over, ...options }: GlassDropdownMenuProps) {
+  const centered = over === 'center'
+  const popup = useGlassPopup({ opening: centered ? 'morph' : 'stretch' })
   return (
     <Menu {...options}>
-      <GlassPopupContext.Provider value={popup}>{children}</GlassPopupContext.Provider>
+      <OverContext.Provider value={centered}>
+        <GlassPopupContext.Provider value={popup}>{children}</GlassPopupContext.Provider>
+      </OverContext.Provider>
     </Menu>
   )
 }
@@ -74,17 +83,19 @@ export function GlassDropdownMenuTrigger({ children, asChild = false, className 
   )
 }
 
-/** The list, centred on its control unless `align` says otherwise. Its children are items and separators; they arrive one after another. */
-export function GlassDropdownMenuContent({ children, className = '', sideOffset = 12, align = 'center', ...rest }: GlassDropdownMenuContentProps) {
+/** The list, centred on its control unless `align` says otherwise. Its children are items and separators; they arrive one after another (with `over="center"`, together). */
+export function GlassDropdownMenuContent({ children, className = '', sideOffset, align = 'center', ...rest }: GlassDropdownMenuContentProps) {
   const popup = useContext(GlassPopupContext)
+  const centered = useContext(OverContext)
   return (
     <MenuContent
       data-glass-popup=""
       data-glass-skip=""
-      sideOffset={sideOffset}
+      sideOffset={sideOffset ?? (centered ? 0 : 12)}
       align={align}
-      className={`group/glass min-w-44 rounded-3xl p-1.5 text-[15px] text-neutral-900 outline-none data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900 ${className}`}
+      className={`group/glass min-w-44 rounded-3xl p-1.5 text-[15px] text-neutral-900 outline-none data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900 ${centered && sideOffset === undefined ? OVER_CENTER : ''} ${className}`}
       {...rest}
+      {...(centered ? { side: 'bottom' as const } : null)}
     >
       {popup && <GlassPopupSurface popup={popup} />}
       <div data-glass-list="" className="flex flex-col">

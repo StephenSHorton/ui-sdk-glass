@@ -874,64 +874,6 @@ Source: https://liquid-glass-interface.pages.dev/docs/badge
 > A slide-to-confirm track. Drag its glass thumb to the end to run one deliberate action; let go early and it springs back.
 
 ```tsx
-import { GlassSlideToConfirm } from '@/components/liquid-glass'
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// Short and chunky: the `xl` track in a narrow width, with a one-word label.
-export default function Demo() {
-  return (
-    <GlassSlideToConfirm className="max-w-64" size="xl" pendingLabel="Sending" successLabel="Sent" resetAfter={2600} onConfirm={() => wait(1400)}>
-      Send
-    </GlassSlideToConfirm>
-  )
-}
-```
-
-**Use it for**
-
-- A routine action a stray tap must not trigger: send money, pay, unlock, start a shift.
-- Phone-first surfaces, where a deliberate horizontal gesture replaces a confirm dialog.
-
-**Not for**
-
-- Easily undone actions: use GlassButton.
-- An async action a single press may start: use GlassActionButton.
-- Consequences people must read first: use a dialog.
-
-```bash
-npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/slide-to-confirm.json
-```
-
-## Usage
-
-```tsx
-import { GlassSlideToConfirm } from '@/components/liquid-glass'
-
-<GlassSlideToConfirm
-  pendingLabel="Sending"
-  successLabel="Sent"
-  errorLabel="Not sent, slide to retry"
-  onConfirm={send} // return the promise
->
-  Slide to send $240
-</GlassSlideToConfirm>
-```
-
-## The flow
-
-- **Idle.** The thumb rests at the start as frosted white glass; the instruction is written in the track.
-- **Drag.** The thumb turns to clear glass and bends the fill and the label it passes; its chevron stays in place, in the fill's text colour. It stays round while held, and speed stretches it along its travel. The fill trails a moment behind, joined to the thumb by a bridge that thins as they pull apart, and the track and the fill swell around the thumb like a membrane. Pushed past the end the track stretches like a rubber band; pushed against the start the wall gives a little. The thumb stays round at both.
-- **Let go early.** Below `threshold` the thumb springs back; the fill's tail follows and is absorbed after it.
-- **Pending.** Past the threshold the thumb lands at the end, the track draws in to a ring around it and `pendingLabel` appears beside it while a spinner takes the chevron's place, until the promise from `onConfirm` settles.
-- **Success.** The white glass takes the fill's colour and the chevron's stroke bends into a check, beside `successLabel`. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.
-- **Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.
-
-## Examples
-
-### A bare track that mirrors its neighbour
-
-```tsx
 import { AlarmClock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -991,7 +933,65 @@ export default function Demo() {
 }
 ```
 
-`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb's rim mirror the page around the track, so a colourful neighbour (the orange button here) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.
+**Use it for**
+
+- A routine action a stray tap must not trigger: send money, pay, unlock, start a shift.
+- Phone-first surfaces, where a deliberate horizontal gesture replaces a confirm dialog.
+
+**Not for**
+
+- Easily undone actions: use GlassButton.
+- An async action a single press may start: use GlassActionButton.
+- Consequences people must read first: use a dialog.
+
+```bash
+npx shadcn@latest add https://liquid-glass-interface.pages.dev/r/slide-to-confirm.json
+```
+
+## Usage
+
+```tsx
+import { GlassSlideToConfirm } from '@/components/liquid-glass'
+
+<GlassSlideToConfirm
+  pendingLabel="Sending"
+  successLabel="Sent"
+  errorLabel="Not sent, slide to retry"
+  onConfirm={send} // return the promise
+>
+  Slide to send $240
+</GlassSlideToConfirm>
+```
+
+## The flow
+
+- **Idle.** The thumb rests at the start as frosted white glass; the instruction is written in the track.
+- **Drag.** The thumb turns to clear glass and bends the fill and the label it passes; its chevron stays in place, in the fill's text colour. It stays round while held, and speed stretches it along its travel. The fill trails a moment behind, joined to the thumb by a bridge that thins as they pull apart, and the track and the fill swell around the thumb like a membrane. Pushed past the end the track stretches like a rubber band; pushed against the start the wall gives a little. The thumb stays round at both.
+- **Let go early.** Below `threshold` the thumb springs back; the fill's tail follows and is absorbed after it.
+- **Pending.** Past the threshold the thumb lands at the end, the track draws in to a ring around it and `pendingLabel` appears beside it while a spinner takes the chevron's place, until the promise from `onConfirm` settles.
+- **Success.** The white glass takes the fill's colour and the chevron's stroke bends into a check, beside `successLabel`. It stays confirmed, unless you set `resetAfter`: then the track opens first, `successLabel` leaving with its edge, and the thumb flies home after it, squashing a little as it lands against the start.
+- **Error.** If `onConfirm` throws, the track opens again, the thumb returns and `errorLabel` replaces the instruction until the next slide.
+
+## Examples
+
+### A fill, and an action that takes a moment
+
+```tsx
+import { GlassSlideToConfirm } from '@/components/liquid-glass'
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Short and chunky: the `xl` track in a narrow width, with a one-word label.
+export default function Demo() {
+  return (
+    <GlassSlideToConfirm className="max-w-64" size="xl" pendingLabel="Sending" successLabel="Sent" resetAfter={2600} onConfirm={() => wait(1400)}>
+      Send
+    </GlassSlideToConfirm>
+  )
+}
+```
+
+`fill={false}` leaves the track bare: the thumb pulls no fill behind it and bends the label alone, its icon dark on a light page and white on a dark one; `fillClassName` then colours only the success. `mirror` lets the held thumb's rim mirror the page around the track, so a colourful neighbour (the orange button in the preview at the top of this page) lights the rim that faces it, and the icon inside glows. Both are off unless you ask: the thumb mirrors only while it is clear, never at rest.
 
 Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is the label written on it, and the thumb's icon while the glass is clear. At rest the thumb is always frosted white glass with a dark icon (a flat white disc without WebGL2). The control fills its container, so set the width on a parent or with `className`.
 

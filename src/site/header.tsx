@@ -2,7 +2,6 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { ArrowRight, Menu, Moon, Sun, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type PointerEvent, type ReactNode } from 'react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -438,13 +437,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <span className="font-sans font-light tracking-[-0.04em]">Liquid</span>Glass<span className="ml-[0.08em] font-sans font-light tracking-[-0.04em]">Interfaces</span>
             </span>
           </Link>
-          {/* The version, one click from what changed in it. Hidden while the centred dock
-              would reach it (tablet widths) and on the narrowest phones. */}
-          <Badge asChild size="lg" className="press font-mono max-[400px]:hidden md:max-lg:hidden">
-            <Link to="/{-$locale}/changelog" params={p} activeOptions={exactActive} aria-label={`${UI[locale].changelog.title}: v${VERSION}`}>
-              <span aria-hidden className="size-1.5 rounded-full bg-kind-new" />v{VERSION}
-            </Link>
-          </Badge>
         </div>
         {/* w-max: centred from the middle, the dock would otherwise only get half the bar and
             wrap its labels at tablet widths. */}

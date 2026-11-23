@@ -396,7 +396,6 @@ function MobileMenu({ locale }: { locale: Locale }) {
 // ── Header ──
 
 export function SiteHeader({ locale }: { locale: Locale }) {
-  const t = UI[locale].nav
   const p = { locale: localeParam(locale) }
   const path = useLocation({ select: (l) => l.pathname })
   const home = /^\/(tr\/?)?$/.test(path)
@@ -430,9 +429,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           solid ? 'bg-background/80 backdrop-blur-xl backdrop-saturate-150' : 'bg-transparent'
         }`}
       />
-      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded-md focus:bg-background focus:px-3 focus:py-2">
-        {t.skip}
-      </a>
       {/* The header is part of the frame: its rails are the page's rails, its border the first divider. */}
       <div className={`${column} flex h-16 items-center gap-6 px-4 sm:px-6`}>
         <Rivets at={['bl', 'br']} />

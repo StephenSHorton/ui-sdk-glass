@@ -37,6 +37,8 @@
 /* Site tokens. The glass reads its surface from the nearest opaque background, so
    previews just sit on --stage. Every text token clears 4.5:1 on the surfaces it is used on. */
 :root {
+  /* Height of the band above the header (site/gaza-band.tsx). */
+  --band: 2.25rem;
   --background: #fbfbfc;
   --foreground: #0b0b0c;
   --muted: #f3f3f5;
@@ -215,6 +217,40 @@
   background: var(--background);
   box-shadow: 0 0 0 1px var(--node);
   pointer-events: none;
+}
+
+/* ── The band above the header (site/gaza-band.tsx) ─────────────────────────
+   The track is two equal halves and rewinds after travelling one. It pauses under the
+   pointer or keyboard focus. The window fades the text out at both ends (--edge wide) and
+   the progressive blur layers sit on top of that. Reduced motion: no run, no blur, one
+   centred message. */
+@keyframes band-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.band-window {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--edge), #000 calc(100% - var(--edge)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--edge), #000 calc(100% - var(--edge)), transparent);
+}
+.band-track {
+  animation: band-run 48s linear infinite;
+}
+.band:hover .band-track,
+.band:focus-visible .band-track {
+  animation-play-state: paused;
+}
+.band-still {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .band-window,
+  .band-blur {
+    display: none;
+  }
+  .band-still {
+    display: flex;
+  }
 }
 
 /* ── Entrance ───────────────────────────────────────────────────────────────

@@ -1507,6 +1507,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.5.9',
+    date: '2026-11-23',
+    title: t('An action button lights up as it merges.', 'Action Button birleşirken parlar.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'The moment the droplet becomes one with the body, light comes in at the seam and fades. On glass already at its brightest it spills softly onto the page around it.',
+          'Damla gövdeyle bir olduğu anda birleşme noktasından içeri ışık girer ve söner. Zaten en parlak haldeki camda ışık çevresindeki sayfaya hafifçe taşar.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.5.8',
     date: '2026-11-23',
     title: t('A clear badge mirrors what is around it.', 'Şeffaf rozet çevresini yansıtır.'),

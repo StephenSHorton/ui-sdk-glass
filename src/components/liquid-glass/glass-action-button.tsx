@@ -2,7 +2,7 @@
 
 // GlassActionButton — a button for one async action, whose arrow is a separate glass droplet.
 // Press it and the droplet melts into the body (the kit's one gooey effect) and stays merged
-// while the action runs and after it succeeds:
+// while the action runs and after it succeeds. The moment they are one, light comes in at the seam:
 //
 //   idle      [ Deploy ]  ( → )      the arrow floats apart as a droplet
 //   pending   [ Deploying     ◌ ]    merged; a spinner turns where the arrow was

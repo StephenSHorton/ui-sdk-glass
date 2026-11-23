@@ -148,6 +148,8 @@ export type GlassLens = {
    * it brightens the page's colour the same way. Without it nothing shows outside the glass.
    */
   glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number } }
+  /** CSS px of the canvas, on every side, kept for the halo alone: the shadow fades out as if they were not there. */
+  overscan?: number
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -299,6 +301,27 @@ export const MIRROR = {
  */
 export const GLOW_SMALL: typeof GLOW = { ...GLOW, reach: 0.7, spread: 0.7, riseSpeed: 24, coverUntil: 0.5 }
 
+/**
+ * A droplet landing in its body (GlassActionButton): the same light, let in once at the seam.
+ * `at` is the moment they are one: how far apart the droplet still is (0–1) when the neck
+ * between them has filled out to the full height of the glass.
+ */
+export const GLOW_MERGE = {
+  at: 0.49,
+  amount: 2.4,
+  /** Its reach at first, and how much further it spreads as it fades (both × the control's height). */
+  reach: 0.9,
+  spread: 1.4,
+  /** Seconds it stays before it fades; springs as in GLOW. */
+  hold: 0.08,
+  riseSpeed: 60,
+  fadeSpeed: 5.5,
+  spreadSpeed: 5,
+  /** How much of it spills onto the page, where glass already at its brightest can't show it; and the room it gets there (CSS px). */
+  halo: 0.5,
+  room: 28,
+}
+
 /** Every spring the kit uses. Hover width/height bounce out of phase: the glass wobbles like a drop. */
 export const SPRINGS = {
   press: { omega: 16, zeta: 0.6 },
@@ -407,6 +430,7 @@ uniform vec2 uRadial;
 uniform vec4 uGlow;
 uniform vec2 uGlowHalo;
 uniform float uGlowBlob;
+uniform float uOverscan;
 uniform vec4 uBlobMat;
 uniform vec3 uBlobLine;
 uniform float uCssPx;
@@ -555,7 +579,7 @@ void main() {
   float near = 1.0 - smoothstep(-6.0, uShadowSoft, caster(local - vec2(0.0, uShadowOffset)));
   float far = 1.0 - smoothstep(-10.0, uShadowSoft * 1.5, caster(local - vec2(0.0, uShadowOffset * 1.6)));
   float border = min(min(px.x, px.y), min(uSize.x - px.x, uSize.y - px.y));
-  float sh = clamp((near + far) * uShadow * vFade * outside, 0.0, 0.85) * smoothstep(0.0, 14.0, border);
+  float sh = clamp((near + far) * uShadow * vFade * outside, 0.0, 0.85) * smoothstep(0.0, 14.0, border - uOverscan);
   vec4 outsideCol = vec4(0.0, 0.0, 0.0, 1.0 - dim(1.0 - sh));
 
   // Glow (see below): its strength here. It stays inside the glass unless a halo is asked for
@@ -1099,6 +1123,7 @@ function createEngine(): GlassEngine | null {
     set('uGlow', (glow?.x ?? 0) / unit, (glow?.y ?? 0) / unit, (glow?.r ?? 0) / unit, Math.max(0, glow?.amount ?? 0))
     set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0))
     set('uGlowBlob', clamp(glow?.blob ?? 1))
+    set('uOverscan', (m.overscan ?? 0) * dpr)
     // The same layers and the same uniforms as the frame on the canvas: nothing to draw.
     if (fresh && on.sent.length === sent.length && sent.every((value, i) => value === on.sent[i])) return
     on.sent = sent.slice()

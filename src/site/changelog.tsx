@@ -237,7 +237,7 @@ export function ChangelogPage({ locale, search }: { locale: Locale; search: Chan
                         <li key={r.version} id={`v${r.version}`} className="relative scroll-mt-32 pb-14 pl-9">
                           <span
                             aria-hidden
-                            className={`absolute top-[9px] left-0 size-2.5 rounded-[3px] ${latest ? 'bg-foreground shadow-[0_0_0_4px_var(--background)]' : 'bg-border-strong shadow-[0_0_0_4px_var(--background)]'}`}
+                            className={`absolute top-[9px] left-0 size-2.5 rounded-full ${latest ? 'bg-foreground shadow-[0_0_0_4px_var(--background)]' : 'bg-background shadow-[0_0_0_4px_var(--background),inset_0_0_0_6px_var(--border-strong)]'}`}
                           />
                           <ReleaseHead r={r} locale={locale} latest={latest} />
                           <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-pretty text-foreground/80">{r.title[locale]}</p>
@@ -256,7 +256,7 @@ export function ChangelogPage({ locale, search }: { locale: Locale; search: Chan
                 const patches = g.releases.slice(0, -1)
                 return (
                   <li key={g.minor} id={`v${last.version}`} className="relative scroll-mt-32 pb-10 pl-9">
-                    <span aria-hidden className="absolute top-[9px] left-0 size-2.5 rounded-[3px] bg-foreground shadow-[0_0_0_4px_var(--background)]" />
+                    <span aria-hidden className="absolute top-[9px] left-0 size-2.5 rounded-full bg-foreground shadow-[0_0_0_4px_var(--background)]" />
                     <ReleaseHead r={last} locale={locale} latest label={`v${g.minor}`} />
                     <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-pretty text-foreground/80">{last.title[locale]}</p>
                     <div className="mt-6">
@@ -279,7 +279,7 @@ export function ChangelogPage({ locale, search }: { locale: Locale; search: Chan
               }
               return (
                 <li key={g.minor} id={`v${g.minor}`} className="relative scroll-mt-32 pb-6 pl-9">
-                  <span aria-hidden className="absolute top-[15px] left-[1px] size-2 rounded-[2px] bg-border-strong shadow-[0_0_0_4px_var(--background)]" />
+                  <span aria-hidden className="absolute top-[15px] left-[1px] size-2 rounded-full bg-background shadow-[0_0_0_4px_var(--background),inset_0_0_0_6px_var(--border-strong)]" />
                   <details className="disclose group">
                     <summary className="-ml-2 flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg px-2 py-2 transition-colors duration-150 hover:bg-muted/60">
                       <span className="text-lead font-semibold tracking-[-0.02em] text-foreground tabular-nums">v{g.minor}</span>

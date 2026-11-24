@@ -1658,6 +1658,45 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.6.11',
+    date: '2026-11-24',
+    title: t('Dropdown Menu: icons come back with the label, the list stays inside the glass.', 'Dropdown Menu: ikonlar yazıyla birlikte geri geliyor, liste camın içinde kalıyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, an icon on the control (the three dots of a Button Group, an icon beside a label) now comes back with the letters, out of the same blur and dark, instead of fading in on its own ahead of them.',
+          '`over` ile kontroldeki ikon (Button Group\'un üç noktası, yazının yanındaki ikon) artık harflerle birlikte, aynı bulanıklıktan ve karanlıktan geri geliyor; onlardan önce kendi başına belirmiyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, the list no longer has its corners cut off while the surface is still round: it shrinks a little more until it fits inside the glass.',
+          '`over` ile yüzey henüz yuvarlakken listenin köşeleri artık kesilmiyor: liste cama sığana dek biraz daha küçük kalıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'dropdown-menu',
+        text: t(
+          'The light of the press that opens a surface spills past its edge as a much fainter glow, on every popup.',
+          'Yüzeyi açan basışın ışığı, bütün açılır yüzeylerde kenarından çok daha hafif bir parıltıyla taşıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, the content no longer leaves the surface empty and white while it goes back in: it shrinks with the glass and fades over 0.24 s, nearly to the end.',
+          '`over` ile içerik, yüzey geri girerken onu artık boş ve beyaz bırakmıyor: camla birlikte küçülüyor ve 0,24 sn içinde, neredeyse sonuna kadar soluyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.6.10',
     date: '2026-11-24',
     title: t('Action Button: a whole end after the merge.', 'Action Button: birleşmeden sonra uç tam.'),

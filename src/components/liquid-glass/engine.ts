@@ -248,7 +248,7 @@ export const GLOW = {
   coverUntil: 0.1,
   coverFadeSpeed: 10,
   /** How much of the light spills past an open surface's edge (0 = none). */
-  halo: 1,
+  halo: 0.35,
 }
 /**
  * What the rim mirrors of the page around the glass. Each point of the rim looks outwards and
@@ -442,7 +442,7 @@ export const MORPH = {
    */
   closeSoft: 1,
   closeSpeed: 14,
-  closeFade: 0.12,
+  closeFade: 0.24,
   closeGlowReach: 1,
   closeKick: 1,
   /** The control's own glass (clear, lit) gives way to the card's between these two points of the calm follow (0–1). */

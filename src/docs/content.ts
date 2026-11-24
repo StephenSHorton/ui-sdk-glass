@@ -1871,6 +1871,13 @@ export const RELEASES: Release[] = [
           'Menu, Select, Dropdown Menu ve Popover: cam kontrolünden çıkarken ya da geri dönerken, kontrolün kenarında camın üzerinde ince, koyu bir çizgi görünebiliyor ve kontrolün kendi kutusu camın geri kalanından açık görünebiliyordu. Cam orada iki tuvalle çiziliyor, kontrolünkü ve yüzeyinki; ikisi kontrolün kenarında buluşuyor. İkisi de aynı çizgiden kesildiği için o çizgi boyunca ikisi de yarım çiziliyor ve sayfa aradan görünüyordu; basışın ışığı da yalnız kontrol tarafını yakıyordu. Kontrolün tuvali artık yüzeyinkinin bir piksel altına uzanıyor ve yüzeyinki de aynı ışığı alıyor.',
         ),
       },
+      {
+        kind: 'improved',
+        text: t(
+          'Select, Dropdown Menu, Popover and Menu: on the way out the content fades sooner, ahead of the glass. Popover and an over-the-control Dropdown Menu take it in 0.12 s instead of 0.24 s, Select and Dropdown Menu no longer keep it until the glass is nearly back in: it is gone in 0.07 s, and Menu no longer waits for the glass to shrink: its content is gone in 0.12 s.',
+          'Select, Dropdown Menu, Popover ve Menu: kapanırken içerik camın önünde, daha çabuk saydamlaşıyor. Popover ve kontrolün üzerinde açılan Dropdown Menu bunu 0,24 sn yerine 0,12 sn\'de, Select ve Dropdown Menu içeriği artık cam neredeyse geri girene kadar tutmuyor, 0,07 sn\'de söndürüyor; Menu de artık camın küçülmesini beklemiyor, içeriği 0,12 sn\'de gidiyor.',
+        ),
+      },
     ],
   },
   {

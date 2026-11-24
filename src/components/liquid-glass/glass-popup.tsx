@@ -83,6 +83,8 @@ const ITEMS = ':is([role=option],[role=menuitem],[data-glass-item])'
 /** What lights the surface where it is pressed: the items, and anything marked `data-glass-pick` (a popover's Close). */
 const PICKS = ':is([role=option],[role=menuitem],[data-glass-item],[data-glass-pick])'
 const LIST = ':is([role=listbox],[role=menu],[data-glass-list])'
+/** Closing, a stretching surface's list is gone this long (seconds) after the close begins, ahead of the glass. */
+const LIST_OUT = 0.07
 /** What a morphing surface writes on its content for the list: where it is, how large, its cut and its focus. */
 const RIDE = ['--glass-ride-x', '--glass-ride-y', '--glass-zoom', '--glass-clip', '--glass-soft']
 /** The bridge forms fast; once the thread has broken, what is left of the tension lets go at once. */
@@ -269,7 +271,9 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
     if (!content) return false
     if (grows) {
       // The whole list is in its place from the start: it shows as the glass opens over it, and goes as the glass closes.
-      out = still ? goal : smooth(MENU.contentFrom, Math.max(MENU.contentTo, MENU.contentFrom + 0.01), clamp(open.x))
+      const follows = still ? goal : smooth(MENU.contentFrom, Math.max(MENU.contentTo, MENU.contentFrom + 0.01), clamp(open.x))
+      // Closing, the content goes ahead of the glass, in MENU.closeFade seconds.
+      out = !still && !goal ? Math.min(follows, Math.max(0, out - dt / Math.max(MENU.closeFade, 0.01))) : follows
       reveal = out > 0 ? 99 : 0
     } else if (morphs) {
       // The whole list is there from the start, inside the growing glass: it fades up as it comes into focus, not in a queue.
@@ -278,9 +282,9 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
       out = !still && !goal && MORPH.closeSoft > 0.5 ? Math.min(follows, Math.max(0, out - dt / Math.max(MORPH.closeFade, 0.01))) : follows
       reveal = out > 0 ? 99 : 0
     } else if (fixed !== undefined) {
-      // Rewinding: the list is wherever it was at that moment of the opening.
+      // Rewinding: the list is wherever it was at that moment of the opening, and fades ahead of the glass.
       reveal = fixed
-      out = 1
+      out = Math.max(0, out - dt / LIST_OUT)
     } else if (still) {
       reveal = goal ? 99 : 0
       out = goal
@@ -288,7 +292,7 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
       out = 1
       if (open.x > TUNE.itemsAt) reveal = Math.min(reveal + dt, 99)
     } else {
-      out = Math.max(0, out - dt / 0.12)
+      out = Math.max(0, out - dt / LIST_OUT)
       if (!out) reveal = 0
     }
     // Written only when a value changes: each write restyles the whole list.

@@ -23,11 +23,11 @@ export function KindPill({ kind, locale, size = 'sm' }: { kind: ChangeKind; loca
   )
 }
 
-/** The small New pill on sidebar rows and page titles: a component the announced version added. */
-export function BadgePill({ locale }: { locale: Locale }) {
+/** The small pill on sidebar rows and page titles: New on a component the announced version added, Updated on one a later patch changed. */
+export function BadgePill({ locale, kind = 'new' }: { locale: Locale; kind?: 'new' | 'updated' }) {
   return (
-    <Badge variant="new" size="sm">
-      {UI[locale].docs.badgeNew}
+    <Badge variant={kind === 'new' ? 'new' : 'improved'} size="sm">
+      {kind === 'new' ? UI[locale].docs.badgeNew : UI[locale].docs.badgeUpdated}
     </Badge>
   )
 }

@@ -421,7 +421,8 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
     // The popup has just gone back in: the control takes it like a hover, and lets go again.
     // (Not after a soft close, which lands slowing down and ends still.)
     if (shut && !wasShut) {
-      if (!(morphs && MORPH.closeSoft > 0.5) && !grows) settle = SETTLE
+      // A menu its control grew into takes it the same way, the moment the glass is a button again.
+      if (!(morphs && MORPH.closeSoft > 0.5)) settle = SETTLE
       // A morphing control lights up with that swell. A press still lit is topped up, never added to.
       // (Not after a soft close, which ends without a light.)
       if (morphs && MORPH.closeSoft <= 0.5 && glow.x < SETTLE_GLOW) light(undefined, undefined, SETTLE_GLOW - Math.max(glow.x, 0), false, false)

@@ -71,7 +71,7 @@ export function DocsSidebar({ locale }: { locale: Locale }) {
                   <span className="truncate">{p.title[locale]}</span>
                   {badge && p.group === 'components' && (
                     <span className="ml-auto">
-                      <BadgePill locale={locale} />
+                      <BadgePill locale={locale} kind={badge} />
                     </span>
                   )}
                 </DocLink>
@@ -434,7 +434,7 @@ export function DocArticle({ page, locale }: { page: DocPage; locale: Locale }) 
           </div>
           <h1 className="flex flex-wrap items-center gap-3 font-display text-[40px] leading-[1.05] tracking-[-0.01em] text-foreground">
             {page.title[locale]}
-            {badge && <BadgePill locale={locale} />}
+            {badge && <BadgePill locale={locale} kind={badge} />}
           </h1>
           <p className="max-w-[60ch] text-lead text-muted-foreground">{page.description[locale]}</p>
           <div className="flex flex-wrap gap-2 pt-1">

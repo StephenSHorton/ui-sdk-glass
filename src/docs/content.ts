@@ -1658,6 +1658,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.6.11',
+    date: '2026-11-24',
+    title: t('Icons come back with the label.', 'İkonlar yazıyla birlikte geri geliyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, an icon on the control (the three dots of a Button Group, an icon beside a label) now leaves with the label and comes back out of the same blur and dark, instead of popping in at once.',
+          '`over` ile kontroldeki ikon (Button Group\'un üç noktası, yazının yanındaki ikon) artık yazıyla birlikte gidiyor ve aynı bulanıklıktan ve karanlıktan geri geliyor; birden belirmiyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.6.10',
     date: '2026-11-24',
     title: t('Action Button: a whole end after the merge.', 'Action Button: birleşmeden sonra uç tam.'),

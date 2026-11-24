@@ -106,13 +106,13 @@ const CSS = `
 [data-glass-card-shadow]{position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;opacity:0;box-shadow:0 20px 48px oklch(0 0 0 / .105),0 3px 10px oklch(0 0 0 / .045)}
 [data-glass-popup][data-glass-tone=dark]>[data-glass-card-shadow]{box-shadow:0 22px 55px oklch(0 0 0 / .34)}
 [data-glass-popup][data-glass-off]>[data-glass-card-shadow]{opacity:1!important}
-[data-glass-anchor][data-glass-label=in] [data-glass-char]{animation:glass-char ${LETTER.duration}s ease-out both;animation-delay:calc(var(--glass-at,0s) + var(--glass-c,0) * ${LETTER.gap}s)}
-[data-glass-anchor][data-glass-morphing] [data-glass-char]{opacity:0}
+[data-glass-anchor][data-glass-label=in] :is([data-glass-char],svg){animation:glass-char ${LETTER.duration}s ease-out both;animation-delay:calc(var(--glass-at,0s) + var(--glass-c,0) * ${LETTER.gap}s)}
+[data-glass-anchor][data-glass-morphing] :is([data-glass-char],svg){opacity:0}
 @keyframes glass-char{from{opacity:0;filter:blur(${LETTER.blur}px) brightness(0)}to{opacity:1;filter:blur(0) brightness(1)}}
 @keyframes glass-hold{to{opacity:0}}
 [data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{animation:glass-hold 60s linear forwards}
 @media (prefers-reduced-motion:reduce){
-[data-glass-char]{opacity:1!important;animation:none!important}
+[data-glass-char],[data-glass-anchor] svg{opacity:1!important;animation:none!important}
 [data-glass-popup]:not([data-glass-off])[data-ending-style]>[data-glass-hold]{animation:none}
 }
 `

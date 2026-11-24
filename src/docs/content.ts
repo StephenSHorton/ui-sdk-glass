@@ -1845,6 +1845,22 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.7.4',
+    date: '2026-11-24',
+    title: t('No magenta line as a Menu opens in Safari.', 'Safari\'de Menu açılırken mor çizgi yok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'menu',
+        also: ['dropdown-menu'],
+        text: t(
+          'Menu: in Safari on iPhone, a thin magenta line could show down the right side of the list for a frame or two as it came into focus. The list comes out of a blur while the glass, still smaller than the list, cuts it to its own shape, and WebKit draws a blur of under about a pixel and a half on a list cut that way with that line. The blur now ends at two device pixels instead of thinning to nothing. A Dropdown Menu with `over` brings its list in the same way, and its blur ends there too.',
+          'Menu: iPhone\'da Safari\'de liste netleşirken bir iki kare boyunca listenin sağ kenarında ince, mor bir çizgi görünebiliyordu. Liste bir bulanıklıktan çıkıyor; bu sırada listeden henüz küçük olan cam onu kendi şekline kesiyor. WebKit böyle kesilmiş bir listede bir buçuk pikselden küçük bir bulanıklığı o çizgiyle çiziyor. Bulanıklık artık hiçe incelmek yerine iki cihaz pikselinde bitiyor. `over` ile açılan Dropdown Menu da listesini aynı yolla getiriyor; onun bulanıklığı da artık orada bitiyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.7.3',
     date: '2026-11-24',
     title: t('A Menu out of a button group, and no line where the glass leaves its control.', 'Buton grubundan açılan Menu ve camın kontrolünden ayrıldığı yerde çizgi yok.'),

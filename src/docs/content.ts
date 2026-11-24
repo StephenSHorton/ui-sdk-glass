@@ -1725,6 +1725,14 @@ export const RELEASES: Release[] = [
       {
         kind: 'improved',
         text: t(
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'The soft close now ends still: once the surface is back in, the button no longer swells and settles for a moment. It showed most on a small button, such as the three dots of a Button Group. Popover closes the same way.',
+          'Yumuşak kapanış artık durarak bitiyor: yüzey geri girdikten sonra buton bir anlığına şişip inmiyor. En çok küçük butonda görünüyordu, örneğin bir Button Group\'un üç noktasında. Popover da aynı şekilde kapanıyor.',
+        ),
+      },
           'The header, the phone menu and the footer now carry the new logo in place of the written name, and the browser tab shows its hand.',
           'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor, tarayıcı sekmesinde de logonun eli görünüyor.',
         ),
@@ -1734,6 +1742,35 @@ export const RELEASES: Release[] = [
   {
     version: '1.6.3',
     date: '2026-11-23',
+  {
+    version: '1.6.7',
+    date: '2026-11-23',
+    title: t('Action Button: no twitch after the merge.', 'Action Button: birleşmeden sonra seğirme yok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'With the pointer still on the button, its end no longer jumps out and back for a moment just after the droplet has melted in.',
+          'İmleç butonun üstündeyken, damla gövdeye karıştıktan hemen sonra butonun ucu artık bir anlığına dışarı çıkıp geri dönmüyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.6',
+    date: '2026-11-23',
+    title: t('A brand page.', 'Marka sayfası.'),
+    changes: [
+      {
+        kind: 'new',
+        text: t(
+          'The new Brand page (linked in the footer) holds the logo and its symbol as SVG and PNG, the clear space and smallest sizes, the logo on the site\'s colours, the palette, the type and what not to do with the logo.',
+          'Yeni Marka sayfası (alt bilgide) logoyu ve sembolünü SVG ve PNG olarak, güvenli alanı ve en küçük boyutları, logonun sitenin renkleri üstündeki hâlini, paleti, yazı tiplerini ve logoyla yapılmaması gerekenleri bir arada sunuyor.',
+        ),
+      },
+    ],
+  },
     title: t('Dropdown Menu: it can open around its button.', 'Dropdown Menu: butonunun çevresinde açılabiliyor.'),
     changes: [
       {

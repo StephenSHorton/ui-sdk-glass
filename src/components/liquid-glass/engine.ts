@@ -595,7 +595,7 @@ export const MORPH = {
    */
   closeSoft: 1,
   closeSpeed: 14,
-  closeFade: 0.24,
+  closeFade: 0.12,
   closeGlowReach: 1,
   closeKick: 1,
   /** The control's own glass (clear, lit) gives way to the card's between these two points of the calm follow (0–1). */
@@ -642,6 +642,8 @@ export const MENU = {
   /** The menu's content shows between these two points, coming out of a blur of `contentBlur` CSS px (0 = none: the cheapest). */
   contentFrom: 0.4,
   contentTo: 0.9,
+  /** Closing, the content does not wait for the glass: it is gone this long (seconds) after the close begins. */
+  closeFade: 0.12,
   contentBlur: 6,
   /** The control's glass (clear, lit) gives way to the card's between these two points. Done by `labelTo`, so the label is gone before the menu's layer takes the glass over. */
   frostFrom: 0,

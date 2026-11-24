@@ -1652,7 +1652,7 @@ const popup = useGlassPopup({ opening: 'morph' })
     ),
     verb: t('Grow', 'Büyü'),
     signature: t('The button\'s glass grows into a full menu, on whichever side the menu lies.', 'Butonun camı, menü hangi yanda duruyorsa oraya doğru büyüyüp tam bir menüye dönüşür.'),
-    hero: 'glass-menu-sides',
+    hero: 'glass-menu-basic',
     blocks: [
       {
         type: 'when',
@@ -1712,6 +1712,7 @@ const popup = useGlassPopup({ opening: 'morph' })
           '`GlassMenuContent` üzerindeki `side` menünün nerede durduğunu (`bottom`, `top`, `left`, `right`), `align` ise butonla nasıl hizalandığını (`start`, `center`, `end`) söyler. Cam oraya kendi yolunu bulur; yer yoksa menü öbür tarafa döner.',
         ),
       },
+      { type: 'demo', id: 'glass-menu-sides', title: t('Four buttons, four sides', 'Dört buton, dört yan') },
       h('Options, groups and shortcuts', 'Seçenekler, gruplar ve kısayollar'),
       {
         type: 'p',
@@ -1725,8 +1726,8 @@ const popup = useGlassPopup({ opening: 'morph' })
       {
         type: 'p',
         text: t(
-          'Put a `GlassMenuSub` among the items, with a `GlassMenuSubTrigger` and a `GlassMenuSubContent` inside. The row opens its submenu on hover, on a press and with the arrow key; the submenu is a card of the same glass that fades in beside its row. The example below has one.',
-          'Öğelerin arasına, içinde bir `GlassMenuSubTrigger` ve bir `GlassMenuSubContent` olan bir `GlassMenuSub` koy. Satır, alt menüsünü üzerine gelince, basınca ve ok tuşuyla açar; alt menü, satırının yanında belirerek açılan aynı camdan bir karttır. Aşağıdaki örnekte bir tane var.',
+          'Put a `GlassMenuSub` among the items, with a `GlassMenuSubTrigger` and a `GlassMenuSubContent` inside. The row opens its submenu on hover, on a press and with the arrow key; the submenu is a card of the same glass that fades in beside its row. The menu at the top of the page has one.',
+          'Öğelerin arasına, içinde bir `GlassMenuSubTrigger` ve bir `GlassMenuSubContent` olan bir `GlassMenuSub` koy. Satır, alt menüsünü üzerine gelince, basınca ve ok tuşuyla açar; alt menü, satırının yanında belirerek açılan aynı camdan bir karttır. Sayfanın başındaki menüde bir tane var.',
         ),
       },
       {
@@ -1743,7 +1744,6 @@ const popup = useGlassPopup({ opening: 'morph' })
   </GlassMenuSub>
 </GlassMenuContent>`,
       },
-      { type: 'demo', id: 'glass-menu-basic', title: t('A menu with a submenu', 'Alt menülü bir menü') },
       h('Out of a button group', 'Bir buton grubundan'),
       {
         type: 'p',
@@ -1853,6 +1853,14 @@ export const RELEASES: Release[] = [
         text: t(
           'Menu opens out of a button group: `GlassMenuTrigger asChild` puts the trigger on an item of a GlassButtonGroup, and the whole group\'s glass grows into the menu. The three dots of the Button Group example are now a Menu.',
           'Menu artık bir buton grubundan açılabiliyor: `GlassMenuTrigger asChild` tetikleyiciyi bir GlassButtonGroup öğesine koyar ve menüye doğru bütün grubun camı büyür. Button Group örneğindeki üç nokta artık bir Menu.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'menu',
+        text: t(
+          'The Menu page and its tile on the landing page now open with the menu button itself: the three dots that grow into a menu with a submenu. The four buttons that open to four sides moved down to "On any side".',
+          'Menu sayfası ve açılış sayfasındaki karosu artık doğrudan menü butonuyla açılıyor: alt menülü bir menüye doğru büyüyen üç nokta. Dört yana açılan dört buton aşağıya, "Her yana" bölümüne taşındı.',
         ),
       },
       {

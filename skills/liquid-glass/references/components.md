@@ -212,6 +212,48 @@ export default function Demo() {
 
 The glass takes the corners of the element it sits on. Add a `rounded-*` class and the lens, its rim and its shadow follow; the bend stays as deep as on a pill.
 
+### Hold and drag (pull)
+
+```tsx
+import { Mic, Plus } from 'lucide-react'
+
+import { GlassButton } from '@/components/liquid-glass'
+
+const TICKS = 61
+
+// Hold a button and drag away (`pull`, on by default). It comes after the pointer a little way through a rubber
+// band, stretches along the pull and thins across it, and swings back like gel when you let go.
+// The round ones are small, so they follow from the very point you pressed; the wide one waits
+// until the pointer is past its edge. Behind them a ruler to read the stretch against: plain
+// DOM, one thin line per tick, fainter towards the ends.
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-72 w-full max-w-xl items-center justify-center gap-4 overflow-hidden">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-[7px]">
+        {Array.from({ length: TICKS }, (_, i) => (
+          <span
+            key={i}
+            className={`w-px bg-black/15 dark:bg-white/15 ${i % 10 === 0 ? 'h-28' : i % 5 === 0 ? 'h-20' : 'h-10'}`}
+            style={{ opacity: Math.min(1, (1 - Math.abs(i - (TICKS - 1) / 2) / ((TICKS - 1) / 2)) / 0.4) }}
+          />
+        ))}
+      </div>
+      <GlassButton size="lg" tint={0.2} aria-label="Add" className="w-12 !px-0">
+        <Plus />
+      </GlassButton>
+      <GlassButton size="lg" tint={0.2}>
+        Hold and drag
+      </GlassButton>
+      <GlassButton size="lg" material="tinted" aria-label="Record" className="w-12 bg-neutral-900 !px-0 text-white dark:bg-white dark:text-neutral-900">
+        <Mic />
+      </GlassButton>
+    </div>
+  )
+}
+```
+
+A pointer that holds the button and drags away pulls it after itself. The button follows a little way through a rubber band (10 px at most on a wide button), stretches along the pull and thins across it, and swings back like gel when you let go. A button up to 72 px follows from the point it was pressed at; a wider one moves only once the pointer is past its edge. On by default (`pull={false}` keeps the button in its place), and still under reduced motion. Let go outside the button and nothing is clicked, as with any button.
+
 ## API reference
 
 | Prop | Type | Default | Description |
@@ -222,6 +264,7 @@ The glass takes the corners of the element it sits on. Add a `rounded-*` class a
 | `iconPosition` | `'start' \| 'end'` | `'end'` | Which side the icon sits on. |
 | `tint` | `number` | `0.6` | Clear glass only: how much tint covers the backdrop (0–1). |
 | `asChild` | `boolean` | `false` | Put the glass on the single child element instead of a `<button>`. |
+| `pull` | `boolean` | `true` | Hold and drag: the button follows the pointer a little way, stretches along the pull and swings back when let go. |
 | `…rest` | `button attributes` | — | Passed to the button: `onClick`, `disabled`, `type`, and UI SDK's `pendingAnnouncement` and `focusableWhenDisabled`. |
 
 ## Accessibility
@@ -2152,7 +2195,7 @@ const fade = (col: number, row: number) => {
 // snaps, and the actions arrive one by one. Close it and the same motion plays backwards.
 export default function Demo() {
   return (
-    <div className="relative isolate flex h-96 w-full max-w-xl items-start justify-center pt-16">
+    <div className="relative isolate flex h-96 w-full max-w-xl items-center justify-center">
       <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
         {Array.from({ length: COLS * ROWS }, (_, i) => (
           <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
@@ -2484,3 +2527,324 @@ const popup = useGlassPopup({ opening: 'morph' })
 - With reduced motion the popover opens and closes at once. Without WebGL2 it is a plain frosted panel.
 
 Source: https://onemorethink.dev/docs/popover
+
+# GlassMenu
+
+> A menu its button grows into: the button's own glass pours towards where the menu lies, below, above or beside it, and runs the same way back. With submenus, checkbox and radio items, groups and shortcuts.
+
+```tsx
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react'
+
+import { GlassMenu, GlassMenuContent, GlassMenuItem, GlassMenuTrigger } from '@/components/liquid-glass/glass-menu'
+
+const COLS = 13
+const ROWS = 11
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+const sides = [
+  { side: 'top', label: 'Open above', icon: ArrowUp, place: 'col-start-2 row-start-1' },
+  { side: 'left', label: 'Open to the left', icon: ArrowLeft, place: 'col-start-1 row-start-2' },
+  { side: 'right', label: 'Open to the right', icon: ArrowRight, place: 'col-start-3 row-start-2' },
+  { side: 'bottom', label: 'Open below', icon: ArrowDown, place: 'col-start-2 row-start-3' },
+] as const
+
+// Four buttons, four sides. `side` says where the menu lies and the glass finds its own way
+// there: the edge that faces the menu runs ahead, the rest of the outline follows.
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-[34rem] w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 grid-rows-3 gap-2">
+        {sides.map(({ side, label, icon: Icon, place }) => (
+          <div key={side} className={place}>
+            <GlassMenu>
+              <GlassMenuTrigger aria-label={label} className="w-12 px-0">
+                <Icon />
+              </GlassMenuTrigger>
+              <GlassMenuContent side={side} align="center">
+                <GlassMenuItem>Rename</GlassMenuItem>
+                <GlassMenuItem>Duplicate</GlassMenuItem>
+                <GlassMenuItem>Archive</GlassMenuItem>
+              </GlassMenuContent>
+            </GlassMenu>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- A menu with structure: options that stay checked, one choice among a few, groups with a label, a submenu.
+- A menu that must open to one side: above a bottom bar, beside a sidebar row.
+- The three dots of a card or a row: a small round button that becomes its menu.
+
+**Not for**
+
+- A few plain actions out of a button or a Button Group: use Dropdown Menu.
+- Picking a value that stays shown on the control: use Select.
+- A short form or a note about one control: use Popover.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/menu.json
+```
+
+> The behaviour (keyboard, typeahead, focus, submenus, positioning, ARIA) comes from UI SDK, so Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import {
+  GlassMenu,
+  GlassMenuContent,
+  GlassMenuItem,
+  GlassMenuSeparator,
+  GlassMenuTrigger,
+} from '@/components/liquid-glass/glass-menu'
+
+<GlassMenu>
+  <GlassMenuTrigger aria-label="More" className="w-12 px-0"><Ellipsis /></GlassMenuTrigger>
+  <GlassMenuContent align="end">
+    <GlassMenuItem onSelect={save}>Save to library</GlassMenuItem>
+    <GlassMenuItem onSelect={share}>Share</GlassMenuItem>
+    <GlassMenuSeparator />
+    <GlassMenuItem destructive onSelect={remove}>Delete</GlassMenuItem>
+  </GlassMenuContent>
+</GlassMenu>
+```
+
+The button's glass is the menu. Pressed, its outline grows into the menu's on one spring: the edge that faces the menu runs ahead and the rest follows, so the glass pours towards its place instead of scaling up. The button's label softens and goes as the glass leaves it, and the items stay where they are while the glass opens over them. While the menu is out the button is not there: it has become the menu. Closing runs the same path back, and a close turned round half way carries on from where it is, at the speed it has. The trigger wears Button's clear glass, so it needs something behind it to bend.
+
+## On any side
+
+`side` on `GlassMenuContent` says where the menu lies (`bottom`, `top`, `left`, `right`) and `align` how it lines up with the button (`start`, `center`, `end`). The glass finds its own way there, and the menu flips to the other side when there is no room.
+
+## Options, groups and shortcuts
+
+`GlassMenuCheckboxItem` is an option that stays on or off, and `GlassMenuRadioItem`s in a `GlassMenuRadioGroup` share one value. Both keep the menu open, so several can be set in one visit. `GlassMenuGroup` with a `GlassMenuLabel` names a set of items. An item with a `shortcut` shows its keys through `GlassMenuShortcut`.
+
+### A view menu
+
+```tsx
+import { SlidersHorizontal } from 'lucide-react'
+import { useState } from 'react'
+
+import {
+  GlassMenu,
+  GlassMenuCheckboxItem,
+  GlassMenuContent,
+  GlassMenuGroup,
+  GlassMenuItem,
+  GlassMenuLabel,
+  GlassMenuRadioGroup,
+  GlassMenuRadioItem,
+  GlassMenuSeparator,
+  GlassMenuShortcut,
+  GlassMenuTrigger,
+} from '@/components/liquid-glass/glass-menu'
+
+const COLS = 13
+const ROWS = 11
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// A view menu: options that stay on (checkbox items), one choice among a few (radio items),
+// a label over each group and a shortcut at the end of an action. Checking an option keeps the
+// menu open; the action closes it.
+export default function Demo() {
+  const [sidebar, setSidebar] = useState(true)
+  const [preview, setPreview] = useState(false)
+  const [sort, setSort] = useState('name')
+  return (
+    <div className="relative isolate flex h-[32rem] w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassMenu>
+        <GlassMenuTrigger>
+          <SlidersHorizontal />
+          View
+        </GlassMenuTrigger>
+        <GlassMenuContent align="center" className="min-w-56">
+          <GlassMenuGroup>
+            <GlassMenuLabel>Show</GlassMenuLabel>
+            <GlassMenuCheckboxItem value="sidebar" checked={sidebar} onCheckedChange={setSidebar}>
+              Sidebar
+            </GlassMenuCheckboxItem>
+            <GlassMenuCheckboxItem value="preview" checked={preview} onCheckedChange={setPreview}>
+              Preview
+            </GlassMenuCheckboxItem>
+          </GlassMenuGroup>
+          <GlassMenuSeparator />
+          <GlassMenuGroup>
+            <GlassMenuLabel>Sort by</GlassMenuLabel>
+            <GlassMenuRadioGroup value={sort} onValueChange={setSort}>
+              <GlassMenuRadioItem value="name">Name</GlassMenuRadioItem>
+              <GlassMenuRadioItem value="date">Date modified</GlassMenuRadioItem>
+              <GlassMenuRadioItem value="size">Size</GlassMenuRadioItem>
+            </GlassMenuRadioGroup>
+          </GlassMenuGroup>
+          <GlassMenuSeparator />
+          <GlassMenuItem shortcut="Mod+R">
+            Refresh
+            <GlassMenuShortcut />
+          </GlassMenuItem>
+        </GlassMenuContent>
+      </GlassMenu>
+    </div>
+  )
+}
+```
+
+## Submenus
+
+Put a `GlassMenuSub` among the items, with a `GlassMenuSubTrigger` and a `GlassMenuSubContent` inside. The row opens its submenu on hover, on a press and with the arrow key; the submenu is a card of the same glass that fades in beside its row. The example below has one.
+
+```tsx
+<GlassMenuContent>
+  <GlassMenuItem>Share</GlassMenuItem>
+  <GlassMenuSub>
+    <GlassMenuSubTrigger>Move to</GlassMenuSubTrigger>
+    <GlassMenuSubContent>
+      <GlassMenuItem>Favourites</GlassMenuItem>
+      <GlassMenuItem>Archive</GlassMenuItem>
+    </GlassMenuSubContent>
+  </GlassMenuSub>
+</GlassMenuContent>
+```
+
+### A menu with a submenu
+
+```tsx
+import { Download, Ellipsis, FolderInput, Heart, Share2, Trash2 } from 'lucide-react'
+
+import {
+  GlassMenu,
+  GlassMenuContent,
+  GlassMenuItem,
+  GlassMenuSeparator,
+  GlassMenuSub,
+  GlassMenuSubContent,
+  GlassMenuSubTrigger,
+  GlassMenuTrigger,
+} from '@/components/liquid-glass/glass-menu'
+
+const COLS = 13
+const ROWS = 9
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// Press the three dots: the round button's own glass pours down into the menu and the dots go.
+// Press outside, pick an item or press Escape and it runs the same way back into the button.
+// Behind it, only the Press demo's fine grid on the page's own colour, centred on the button:
+// plain DOM, every cell draws its own top and left line, fainter towards the edge.
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-[26rem] w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassMenu>
+        <GlassMenuTrigger aria-label="More" className="w-12 px-0">
+          <Ellipsis />
+        </GlassMenuTrigger>
+        <GlassMenuContent align="center">
+          <GlassMenuItem>
+            <Heart />
+            Save to library
+          </GlassMenuItem>
+          <GlassMenuItem>
+            <Share2 />
+            Share
+          </GlassMenuItem>
+          <GlassMenuItem>
+            <Download />
+            Download
+          </GlassMenuItem>
+          <GlassMenuSub>
+            <GlassMenuSubTrigger>
+              <FolderInput />
+              Move to
+            </GlassMenuSubTrigger>
+            <GlassMenuSubContent>
+              <GlassMenuItem>Favourites</GlassMenuItem>
+              <GlassMenuItem>Archive</GlassMenuItem>
+              <GlassMenuItem>New folder…</GlassMenuItem>
+            </GlassMenuSubContent>
+          </GlassMenuSub>
+          <GlassMenuSeparator />
+          <GlassMenuItem destructive>
+            <Trash2 />
+            Delete
+          </GlassMenuItem>
+        </GlassMenuContent>
+      </GlassMenu>
+    </div>
+  )
+}
+```
+
+## The motion on your own popup
+
+Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any control that opens a surface the same motion, with `GlassPopupAnchor` as the control's first child and `GlassPopupSurface` as the content's. Wrap the content's children in an element with `data-glass-list`. The numbers (the spring, which side leads, when the label goes and the content shows) are `MENU` in `engine.ts`.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassMenu`: control the menu yourself, or let it keep its own state. |
+| `GlassMenuTrigger className` | `string` | — | The button is a pill 48px tall. `w-12 px-0` makes it round for a single icon (give it an `aria-label`). |
+| `GlassMenuContent side` | `'bottom' \| 'top' \| 'left' \| 'right'` | `'bottom'` | Where the menu lies against its button. It flips when there is no room. |
+| `GlassMenuContent align` | `'start' \| 'center' \| 'end'` | `'start'` | How the menu lines up with the button along that side. |
+| `GlassMenuContent sideOffset` | `number` | `8` | The gap between the button and the menu, in px. |
+| `GlassMenuItem onSelect` | `() => void` | — | Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open). |
+| `GlassMenuItem destructive / disabled` | `boolean` | `false` | `destructive` paints the item red, for Delete. `disabled` dims it and the keyboard skips it. |
+| `GlassMenuItem shortcut` | `string` | — | The item's keys, as `Mod+R`. Put a `GlassMenuShortcut` inside the item to show them. |
+| `GlassMenuCheckboxItem value` | `string` | — | Names the option (required). |
+| `GlassMenuCheckboxItem checked / defaultChecked / onCheckedChange` | `boolean / boolean / (checked: boolean) => void` | — | The option's state, yours or its own. A check shows at its end while it is on. |
+| `GlassMenuRadioGroup value / defaultValue / onValueChange` | `string / string / (value: string) => void` | — | The one value its `GlassMenuRadioItem`s share; each item carries its own `value`. |
+| `GlassMenuGroup / GlassMenuLabel` | `children` | — | A set of items and its quiet heading. |
+| `GlassMenuSeparator` | `className` | — | A hairline between items. |
+| `GlassMenuSub / GlassMenuSubTrigger / GlassMenuSubContent` | `children` | — | A submenu, the row that opens it and its card. `GlassMenuSubContent` takes `side`, `align` and `sideOffset` too. |
+
+## Accessibility
+
+- A button with `aria-haspopup` that opens a `menu` of `menuitem`, `menuitemcheckbox` and `menuitemradio` rows (the WAI-ARIA menu button pattern).
+- Arrow keys, Home and End move through the items, typing a letter jumps to a match, Enter or Space runs the item. The right arrow opens a submenu and the left arrow closes it. Escape closes the menu and returns focus to the button.
+- The button is hidden while the menu is out, and still there for the keyboard and for screen readers: focus returns to it on close.
+- An icon-only button needs an `aria-label`.
+- With reduced motion the menu opens and closes at once. Without WebGL2 it is a plain frosted list.
+
+Source: https://onemorethink.dev/docs/menu

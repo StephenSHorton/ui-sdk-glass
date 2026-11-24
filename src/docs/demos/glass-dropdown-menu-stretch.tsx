@@ -21,7 +21,7 @@ const fade = (col: number, row: number) => {
 // snaps, and the actions arrive one by one. Close it and the same motion plays backwards.
 export default function Demo() {
   return (
-    <div className="relative isolate flex h-96 w-full max-w-xl items-start justify-center pt-16">
+    <div className="relative isolate flex h-96 w-full max-w-xl items-center justify-center">
       <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
         {Array.from({ length: COLS * ROWS }, (_, i) => (
           <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>

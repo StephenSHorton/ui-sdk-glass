@@ -148,6 +148,8 @@ export type GlassLens = {
    * it brightens the page's colour the same way. Without it nothing shows outside the glass.
    */
   glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number } }
+  /** `false`: this glass does not take the light under the pointer (see LIGHT). Every other glass does, unless that light is turned off. */
+  pointerLight?: boolean
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -171,6 +173,39 @@ export type GlassView = {
   drawn?: () => void
   /** The GPU context is gone: return to the plain CSS look. */
   lost: () => void
+  /**
+   * `true`: a pointer that holds this glass pulls it after itself (see PULL). Buttons ask for it;
+   * no other glass is pulled. A view may change it at any time: set back to `false`, held glass is let go.
+   */
+  pull?: boolean
+  /** Set by the engine: a pointer holds this glass and may be pulling it. The press lasts as long, outside the glass too. */
+  held?: boolean
+  /**
+   * The CSS scale this view wants on its host (1 = none), when it swells its host itself. The
+   * engine writes the host's `scale`: this, times the stretch of a pull. A view that sets it
+   * never writes `host.style.scale` itself.
+   */
+  grow?: number
+  /**
+   * `true`: this glass is a button (see "The light of a press", above GLOW). A press on it lets
+   * light in where it lands (GLOW), on top of the light every glass takes under a press (LIGHT).
+   * Left out, the glass is a surface (a card, a menu, a lens) and takes LIGHT alone. The engine
+   * hears the press and the keys itself: a view only says what it is.
+   */
+  button?: boolean
+  /** With `button`: the element a press must land in, when it is not the glass's host. */
+  pressArea?: Element
+  /**
+   * `false`: this surface does not take the engine's light around a choice pressed in it (see the
+   * rule above GLOW), because it brings that light itself (GlassPopup's lists do) or wants none.
+   */
+  choices?: boolean
+  /**
+   * Set by the engine: where a pull has this glass (px from its rest) and how it stretches its
+   * host (1 = not at all), as written on the host this frame. A view reads it to undo the stretch
+   * on its canvas and draw it in the glass instead (GlassLayer and GlassPopup do).
+   */
+  pulled?: { x: number; y: number; sx: number; sy: number }
 }
 
 export type GlassEngine = {
@@ -212,9 +247,30 @@ export function stepSpring(s: Spring, target: number, { omega, zeta }: { omega: 
 }
 
 /**
- * A press lets light into the glass where it lands. The light paints nothing: it brightens what
+ * The light of a press. The rule, kept here and applied by the engine:
+ *
+ * - A button is lit by GLOW: a press lets light in where it lands, the light holds a moment and
+ *   fades as it spreads. A view says `button: true` and the engine does the rest (Button, Action
+ *   Button and Button Group, through GlassLayer). The control of a surface that opens (GlassPopup)
+ *   is a button too and brings the same light itself (`glow` on its lens), because there it goes
+ *   on to open the surface.
+ * - A surface is lit by LIGHT alone: a soft white light where the press lands, for as long as it
+ *   is held. Every glass that is not a button is a surface: a card, a menu or a list that has
+ *   opened, a lens, a thumb, a badge. Nothing asks for it; `pointerLight: false` on a lens opts out.
+ * - A surface that holds choices also lights up around a choice pressed in it, with GLOW's
+ *   `select` values: a wide, soft light that stays inside the glass. A choice is an option, a
+ *   menu item, or anything marked `data-glass-item` or `data-glass-pick`. The engine does it for
+ *   every surface (a menu, a submenu, a card with rows); the lists of a Select, a Dropdown Menu
+ *   and a Popover bring the same light themselves (theirs leaves with the surface) and say
+ *   `choices: false`.
+ * - A button takes LIGHT too, beneath its GLOW. No light follows the pointer, and a pointer that
+ *   only rests on the glass lights nothing.
+ *
+ * A new component follows the rule by saying what it is: it never draws a light of its own.
+ *
+ * GLOW: a press lets light into the glass where it lands. The light paints nothing: it brightens what
  * is already there, keeping its colour (luminance L becomes L^(1 / (1 + amount)) at the centre,
- * so black stays black and white stays white). Used by GlassPopup (`glass-popup.tsx`). These are
+ * so black stays black and white stays white). These are
  * the values for wider controls; GLOW_SMALL, below, holds the same set for small ones.
  */
 export const GLOW = {
@@ -263,24 +319,24 @@ export const MIRROR = {
    * as thin as the one that leans towards the cursor), and in the band that begins inside it.
    */
   line: 1,
-  band: 0.45,
+  band: 0.7,
   /**
    * How deep that band goes: this × the glass's shorter half (or its reach, on taller glass).
    * The rim's edge looks `reach` far; the look shortens with depth and ends here, so a
    * neighbour's picture fills the band where it is near and thins out where the rim turns
    * away from it: a crescent on a round glass.
    */
-  depth: 1.1,
+  depth: 0.58,
   /** How fast the picture fades from the rim inwards, an exponent (1 = evenly, higher = it keeps closer to the rim). */
-  fall: 2,
+  fall: 1,
   /** How soft the picture is: the patch each point gathers, × the reach (0 = a sharp mirror). */
-  soft: 0.3,
+  soft: 1,
   /** How much more than its plain difference from the surface a neighbour counts. */
-  gain: 1.2,
+  gain: 1.8,
   /** How much a darker neighbour dims the rim (× the above; 0 = not at all). */
-  dim: 0.6,
+  dim: 0.65,
   /** How far the rim's edge looks: this × the glass's height, between `reachMin` and `reachMax` px. */
-  reach: 0.75,
+  reach: 0.55,
   reachMin: 24,
   reachMax: 96,
   /** What a point gathers along its look: shares from its near part, from further out and from its far end. */
@@ -303,6 +359,35 @@ export const GLOW_SMALL: typeof GLOW = { ...GLOW, reach: 0.7, spread: 0.7, riseS
 export const MORPH_GLOW: typeof GLOW = { ...GLOW, stack: 3.5, hold: 0.5 }
 export const MORPH_GLOW_SMALL: typeof GLOW = { ...GLOW_SMALL, stack: MORPH_GLOW.stack, hold: MORPH_GLOW.hold }
 
+/**
+ * LIGHT, the light every glass takes under a press and the only one a surface takes (the rule is
+ * above GLOW): glass lit from within, beginning where the press landed. A press (any
+ * pointer, or Space / Enter on the focused control) brings it up, and it stays at that point of
+ * the glass for as long as the press is held, wherever the pointer goes; let go, it sinks back.
+ * It follows nothing, and a pointer that only rests on the glass lights nothing. It is white laid over the
+ * glass: strongest at that point, falling off evenly to nothing at its radius, and it never
+ * leaves the glass. Every glass takes it: the kit's controls, and a surface that opens
+ * (GlassPopup), on top of its own light (GLOW). A lens that says `pointerLight: false` does not,
+ * and `on: false` turns it off everywhere. The light and its numbers are those of Glass HQ's liquid-glass 0.0.2 (MIT,
+ * https://github.com/Glass-HQ/liquid-glass). Read on every frame: do not tune them casually.
+ */
+export const LIGHT = {
+  on: true,
+  /** How white the glass is under the pointer at full light (0–1): on a light page, and on a dark one. */
+  strength: 0.3,
+  strengthDark: 0.16,
+  /** How much of the full light a press brings. */
+  press: 1,
+  /** The light's radius: `size ×` the glass's longer side, between `sizeMin` and `sizeMax` px. */
+  size: 0.9,
+  sizeMin: 36,
+  sizeMax: 180,
+  /** A press comes up in about `rise` seconds, overshooting a little (`riseBounce`: 0 = none), and sinks back in `fade` seconds, without bounce. */
+  rise: 0.24,
+  riseBounce: 0.2,
+  fade: 0.42,
+}
+
 /** Every spring the kit uses. Hover width/height bounce out of phase: the glass wobbles like a drop. */
 export const SPRINGS = {
   press: { omega: 16, zeta: 0.6 },
@@ -317,6 +402,68 @@ export const SPRINGS = {
   /** A dragged lens following the finger. */
   drag: { omega: 40, zeta: 0.999 },
 } as const
+
+/**
+ * Glass that a held pointer pulls after itself: press it, drag away, and it follows a little way
+ * through a rubber band, stretches along the pull and thins across it, then swings back like gel
+ * when let go. It is for buttons: the engine does it for glass whose view says `pull: true`
+ * (GlassLayer does, so Button, Action Button and Button Group; `pull={false}` there keeps one in
+ * its place), the innermost one under the press, by moving and stretching its host (CSS
+ * `translate` and `scale`, content included). The control of a surface that opens (GlassPopup:
+ * Select, Dropdown Menu, Popover, Menu) is a button too while it is shut, and opens when the press
+ * is let go on it. No other glass is pulled, and `on: false` here turns it off everywhere. The motion and its numbers are those of Glass HQ's liquid-glass 0.0.2 (MIT,
+ * https://github.com/Glass-HQ/liquid-glass). Read on every frame: do not tune them casually.
+ */
+export const PULL = {
+  on: true,
+  /**
+   * Glass whose longer side is at most this (px) is small: it follows the pointer from the point
+   * it was pressed at. Larger glass moves only once the pointer is past its edge, by how far past.
+   */
+  smallUntil: 72,
+  /** The furthest the pull moves small glass, px: `smallReach + smallReachPerPx × its longer side`. */
+  smallReach: 4,
+  smallReachPerPx: 0.15,
+  /** The same for larger glass, `reachMax` at most. */
+  reach: 3,
+  reachPerPx: 0.04,
+  reachMax: 10,
+  /** How fast the band stiffens: 0.55 is a scroll view's. */
+  resistance: 0.55,
+  /** Following the pointer takes `follow + followPerPx × the longer side` seconds, without bounce (larger glass is heavier). */
+  follow: 0.18,
+  followPerPx: 5e-4,
+  /** Let go: back to rest in about `release` seconds, overshooting like gel (`releaseBounce`: 0 = none, towards 1 = more). */
+  release: 0.5,
+  releaseBounce: 0.42,
+  /**
+   * The stretch along one axis: `stretch × the pull ÷ the glass's size that way`, plus
+   * `stretchPerSpeed ×` the pull's own speed and `stretchPerDrift ×` the speed the glass's place
+   * on the page moves at (px/s). Small glass stretches by `smallStretchMax` at most, larger by
+   * `stretchMax`. Across, the glass thins by the square root of the stretch.
+   */
+  stretch: 0.5,
+  stretchPerSpeed: 7e-5,
+  stretchPerDrift: 5e-5,
+  smallStretchMax: 0.2,
+  stretchMax: 0.12,
+  /** The drift speed is smoothed in at this rate while held, and dies out at `driftOut` (per second). */
+  driftIn: 12,
+  driftOut: 10,
+}
+
+/**
+ * Presses the kit sends itself: GlassPopup keeps a press that would open its surface and hands it
+ * on when it is let go. Such a press is no pointer holding the glass: nothing is pulled or lit by
+ * it, and no release follows it. Whoever dispatches one adds it here first.
+ */
+export const HANDED_ON = new WeakSet<Event>()
+
+/** A rubber band: a short pull follows almost one to one, a long one nears `limit` and never reaches it. */
+export function rubberBand(offset: number, limit: number, resistance = 0.55) {
+  if (!(limit > 0)) return 0
+  return Math.sign(offset) * limit * (1 - 1 / ((Math.abs(offset) * resistance) / limit + 1))
+}
 
 /**
  * The gooey popup: a surface (a list, a menu, a popover) that swells out of its anchor as one
@@ -450,7 +597,52 @@ export const MORPH = {
   frostTo: 0.05,
 }
 
-export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+/**
+ * The growing popup: a control whose glass becomes its menu. One shape on one spring: the
+ * control's own outline grows into the menu's, wherever the menu lies (below, above or beside
+ * it), and shrinks back along the same path to close. The side the menu lies on runs ahead and
+ * the other follows, so the glass pours towards its place instead of scaling up. The control's
+ * label goes as the glass leaves it; the menu's content stays where it is and the glass opens
+ * over it. A close that is interrupted carries on from where it is, at the speed it has. It takes
+ * no light from a press (GLOW is not used here). Used by
+ * GlassPopup with `opening: 'grow'` (`glass-popup.tsx`). The motion and its numbers are those of
+ * Glass HQ's liquid-glass 0.0.2 (MIT, https://github.com/Glass-HQ/liquid-glass). These values
+ * are the look: do not tune them casually.
+ */
+export const MENU = {
+  /** Opening takes about `open` seconds and lands a little past the menu (`openBounce`: 0 = not at all, towards 1 = more). */
+  open: 0.42,
+  openBounce: 0.18,
+  /** Closing: the same, on its own spring. */
+  close: 0.32,
+  closeBounce: 0.1,
+  /**
+   * The side the menu lies on leads and the other follows, both as exponents: the leading side
+   * goes as 1 − (1 − p)^lead, the other as p^follow (1 and 1: both sides grow evenly).
+   */
+  lead: 1.6,
+  follow: 1.4,
+  /**
+   * On the way the corners stay round: no tighter than `round` × the shape's shorter side, until
+   * the motion is `roundFrom` of the way (0–1), easing to the menu's own corners by `roundUntil`.
+   */
+  round: 0.34,
+  roundFrom: 0.35,
+  roundUntil: 0.8,
+  /** The control's label goes between these two points of the way (0–1), softening by `labelBlur` CSS px. */
+  labelFrom: 0.02,
+  labelTo: 0.3,
+  labelBlur: 3,
+  /** The menu's content shows between these two points, coming out of a blur of `contentBlur` CSS px (0 = none: the cheapest). */
+  contentFrom: 0.4,
+  contentTo: 0.9,
+  contentBlur: 6,
+  /** The control's glass (clear, lit) gives way to the card's between these two points. Done by `labelTo`, so the label is gone before the menu's layer takes the glass over. */
+  frostFrom: 0,
+  frostTo: 0.3,
+}
+
+export const lerp =(a: number, b: number, t: number) => a + (b - a) * t
 export const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 export const smooth = (a: number, b: number, v: number) => {
   const t = clamp((v - a) / (b - a))
@@ -497,6 +689,7 @@ uniform vec2 uRadial;
 uniform vec4 uGlow;
 uniform vec2 uGlowHalo;
 uniform float uGlowBlob;
+uniform vec4 uLight;
 uniform vec4 uBlobMat;
 uniform vec3 uBlobLine;
 uniform float uCssPx;
@@ -821,6 +1014,10 @@ void main() {
   float glassL = max(dot(glass, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
   glass *= pow(glassL, 1.0 / (1.0 + glowAt * mix(uGlowBlob, 1.0, lit))) / glassL;
 
+  // Pointer light (LIGHT): white laid over the glass, strongest where the press landed and falling
+  // off evenly to nothing at its radius. (uLight: its centre, its radius, how white.)
+  if (uLight.w > 0.0) glass = mix(glass, vec3(1.0), uLight.w * max(1.0 - length(local - uLight.xy) / max(uLight.z, 1e-3), 0.0));
+
   // Caustic: warm light gathering inside the bottom edge.
   glass += vec3(1.0, 0.92, 0.86) * smoothstep(0.72, 0.98, depth) * down * uCaustic * lit;
 
@@ -959,6 +1156,240 @@ function createEngine(): GlassEngine | null {
 
   // Cursor light: shared, fades in on the first mouse move, out when the pointer leaves.
   const pointer = { x: 0, y: 0, active: false, moved: false, mix: 0 }
+
+  // Pointer light (LIGHT). `beam` is the pointer that lights: where it is, what it is over
+  // and which pointer is held (`id`, -1 = none).
+  // Each lit view keeps its own light: how bright (a spring), where on the glass, and why.
+  const beam = { x: 0, y: 0, over: null as EventTarget | null, id: -1 }
+  type Lit = {
+    glow: Spring
+    /** The light's centre, relative to the lens centre (CSS px). */
+    x: number
+    y: number
+    press: boolean
+    key: boolean
+    /** The glass's host takes no pointer events (a badge): the pointer only has to be over the glass. */
+    free: boolean
+    /** The body on screen, as last drawn: centre, half size and its shift from the lens centre. */
+    sx: number
+    sy: number
+    hx: number
+    hy: number
+    bodyX: number
+    /** A second box melted into the body (a surface that has opened), as last drawn: its centre from the lens centre, and its half size. */
+    blob: { x: number; y: number; hx: number; hy: number } | null
+    /** The press landed on that box: the light takes its size from it. */
+    onBlob: boolean
+  }
+  const lights = new Map<GlassView, Lit>()
+  let relit = false
+  const hostOf = (v: GlassView) => v.canvas.parentElement
+  /** The pointer is on this glass: inside its body, and on its host (not on something lying over it). */
+  const onBlob = (s: Lit) => !!s.blob && Math.abs(beam.x - (s.sx - s.bodyX + s.blob.x)) <= s.blob.hx && Math.abs(beam.y - (s.sy + s.blob.y)) <= s.blob.hy
+  const under = (v: GlassView, s: Lit) => {
+    if ((Math.abs(beam.x - s.sx) > s.hx || Math.abs(beam.y - s.sy) > s.hy) && !onBlob(s)) return false
+    if (s.free) return true
+    const host = hostOf(v)
+    return !!host && beam.over instanceof Node && host.contains(beam.over) && !host.matches(':disabled, [data-disabled], [aria-disabled="true"]')
+  }
+  /** A press belongs to the innermost glass under it: a button on a card lights up, the card does not. */
+  const innermost = (v: GlassView) => {
+    const host = hostOf(v)
+    for (const [other, s] of lights) {
+      const inner = hostOf(other)
+      if (other !== v && !s.free && other.visible && host && inner && inner !== host && host.contains(inner) && under(other, s)) return false
+    }
+    return true
+  }
+  /** Advances a view's light; true while it still changes. */
+  const stepLight = (v: GlassView, dt: number, still: boolean) => {
+    const s = lights.get(v)
+    if (!s) return false
+    const held = s.press || s.key
+    const target = LIGHT.on && held ? LIGHT.press : 0
+    if (still) {
+      const changed = s.glow.x !== target
+      s.glow.x = target
+      s.glow.v = 0
+      return changed
+    }
+    return stepSpring(s.glow, target, held ? { omega: (2 * Math.PI) / Math.max(LIGHT.rise, 0.01), zeta: clamp(1 - LIGHT.riseBounce, 0.05, 1) } : { omega: (2 * Math.PI) / Math.max(LIGHT.fade, 0.01), zeta: 1 }, dt)
+  }
+
+  // The flash of a press on a button (GLOW): the rule above GLOW, applied. A view that says
+  // `button: true` is lit where a press lands on it (or at its centre, by Space / Enter): the
+  // light comes up, holds for as long as the press does (`hold` at least) and fades as it
+  // spreads. Each button keeps its own: how bright, how far it has spread, where it landed (from
+  // the host's centre, px), how long it still holds, how many presses' worth is asked for, how
+  // small the glass is (which set of values it takes), its height, and what holds it.
+  // A surface keeps one too, for a choice pressed in it (`choice`): the same light with GLOW's
+  // `select` values, measured in the choice's own height.
+  type Flash = { glow: Spring; spread: Spring; x: number; y: number; hold: number; level: number; small: number; height: number; by: number; key: boolean; choice: boolean }
+  /** What counts as a choice inside a surface. */
+  const CHOICES = ':is([role=option],[role=menuitem],[data-glass-item],[data-glass-pick])'
+  const flashes = new Map<GlassView, Flash>()
+  const flashTune = (small: number): typeof GLOW => {
+    if (small <= 0) return GLOW
+    if (small >= 1) return GLOW_SMALL
+    const mixed = { ...GLOW }
+    for (const name of Object.keys(mixed) as (keyof typeof GLOW)[]) mixed[name] = lerp(GLOW[name], GLOW_SMALL[name], small)
+    return mixed
+  }
+  /**
+   * Light on this glass at this point (viewport px), or at its centre. Presses that land before
+   * the last has faded add up. `choice`: the element chosen inside a surface, whose light it is.
+   */
+  const flash = (v: GlassView, x?: number, y?: number, choice?: HTMLElement) => {
+    const host = hostOf(v)
+    if (!host) return null
+    let f = flashes.get(v)
+    if (!f) flashes.set(v, (f = { glow: { x: 0, v: 0 }, spread: { x: 0, v: 0 }, x: 0, y: 0, hold: 0, level: 0, small: 0, height: 0, by: -1, key: false, choice: false }))
+    const r = host.getBoundingClientRect()
+    // A light that is still bright keeps spreading from where it is: only a fresh one starts small.
+    if (f.glow.x < 0.08) f.spread.x = f.spread.v = 0
+    f.x = x === undefined ? 0 : clamp(x - (r.left + r.width / 2), -r.width / 2, r.width / 2)
+    f.y = y === undefined ? 0 : clamp(y - (r.top + r.height / 2), -r.height / 2, r.height / 2)
+    f.choice = !!choice
+    f.height = (choice ?? host).offsetHeight
+    // (A surface takes the wide set of values, whatever its own shape.)
+    f.small = choice ? 0 : 1 - smooth(2, 2.4, host.offsetWidth / Math.max(f.height, 1))
+    const tune = flashTune(f.small)
+    f.level = Math.min(Math.max(f.glow.x, 0) + (choice ? tune.select : 1), tune.stack)
+    f.hold = tune.hold
+    wake()
+    return f
+  }
+  /** Advances a button's flash; true while it still changes. */
+  const stepFlash = (v: GlassView, dt: number, still: boolean) => {
+    const f = flashes.get(v)
+    if (!f) return false
+    if (still) {
+      const changed = f.glow.x !== 0
+      f.glow.x = f.glow.v = f.spread.x = f.spread.v = f.hold = 0
+      return changed
+    }
+    const lit = f.by !== -1 || f.key || f.hold > 0
+    const holding = f.hold > 0
+    f.hold = Math.max(0, f.hold - dt)
+    const tune = flashTune(f.small)
+    const a = stepSpring(f.glow, lit ? f.level : 0, { omega: lit ? tune.riseSpeed : tune.fadeSpeed, zeta: 1 }, dt)
+    const b = stepSpring(f.spread, lit || f.glow.x > 0.004 ? 1 : 0, { omega: tune.spreadSpeed, zeta: 1 }, dt)
+    // A press held still changes nothing: the loop rests until the hold runs out or the press ends.
+    return holding || a || (b && f.glow.x > 0.004)
+  }
+  /** The flash as a lens's `glow`, for a lens that brings none of its own. (The canvas is scaled with the host: the light is measured on the page, so it is divided by that scale.) */
+  const flashOf = (v: GlassView): GlassLens['glow'] => {
+    const f = flashes.get(v)
+    if (!f || f.glow.x <= 0.004) return undefined
+    const tune = flashTune(f.small)
+    const k = Math.max(0.5, v.grow ?? 1)
+    const far = clamp(f.spread.x)
+    const reach = f.choice ? tune.selectReach + tune.selectSpread * far : tune.reach + tune.spread * far
+    return { x: f.x / k, y: f.y / k, r: f.height * reach, amount: Math.max(0, f.glow.x) * tune.amount, blob: 1 }
+  }
+
+  // Pull (PULL): glass a held pointer drags after itself, where the view asks for it (buttons).
+  // One pointer holds one glass, the innermost under the press. The engine moves its host (CSS `translate`) and stretches it (CSS
+  // `scale`, times the view's own `grow`), and lets go when the pointer does.
+  type Pulled = {
+    /** How far the glass has come after the pointer, each way (px). */
+    x: Spring
+    y: Spring
+    /** The pointer that holds it: where it pressed, where it is, and where the glass rested then. */
+    by: { id: number; x: number; y: number; nowX: number; nowY: number; cx: number; cy: number; lastX: number; lastY: number; size: number } | null
+    /** How fast the glass's own place on the page moves while held (px/s, smoothed). */
+    driftX: number
+    driftY: number
+    /** The host's own CSS `translate` (a centring class), which the pull adds to. */
+    own: string[] | null
+    /** What the engine last wrote on the host. */
+    moved: string
+    scaled: string
+  }
+  const pulls = new Map<GlassView, Pulled>()
+  const pulledOf = (v: GlassView) => {
+    let p = pulls.get(v)
+    if (!p) pulls.set(v, (p = { x: { x: 0, v: 0 }, y: { x: 0, v: 0 }, by: null, driftX: 0, driftY: 0, own: null, moved: '', scaled: '' }))
+    return p
+  }
+  /** The centre of the glass on screen where it rests, without the pull. */
+  const restOf = (host: HTMLElement, p: Pulled) => {
+    const r = host.getBoundingClientRect()
+    return { x: r.left + r.width / 2 - p.x.x, y: r.top + r.height / 2 - p.y.x }
+  }
+  const letGo = (v: GlassView, p: Pulled) => {
+    p.by = null
+    v.held = false
+  }
+  /** Advances a view's pull and writes its host's `translate` and `scale`; true while it still moves. */
+  const stepPull = (v: GlassView, dt: number, still: boolean) => {
+    const p = pulls.get(v)
+    if (!p && v.grow === undefined) return false
+    const host = hostOf(v)
+    if (!host) return false
+    const s = p ?? pulledOf(v)
+    if (s.by && (v.pull !== true || !PULL.on)) letGo(v, s)
+    let sx = 1
+    let sy = 1
+    let moving = false
+    if (still) {
+      s.x.x = s.x.v = s.y.x = s.y.v = s.driftX = s.driftY = 0
+    } else if (s.by || s.x.x !== 0 || s.y.x !== 0 || s.x.v !== 0 || s.y.v !== 0 || s.driftX !== 0 || s.driftY !== 0) {
+      const w = Math.max(host.offsetWidth, 1)
+      const h = Math.max(host.offsetHeight, 1)
+      const size = Math.max(w, h)
+      const small = size <= PULL.smallUntil
+      let tx = 0
+      let ty = 0
+      const by = s.by
+      if (by) {
+        const at = restOf(host, s)
+        // Small glass: how far the pointer has gone since the press. Larger: how far past the edge it is.
+        const dx = small ? by.nowX - by.x - (at.x - by.cx) : by.nowX - clamp(by.nowX, at.x - w / 2, at.x + w / 2)
+        const dy = small ? by.nowY - by.y - (at.y - by.cy) : by.nowY - clamp(by.nowY, at.y - h / 2, at.y + h / 2)
+        const limit = small ? PULL.smallReach + PULL.smallReachPerPx * size : Math.min(PULL.reachMax, PULL.reach + PULL.reachPerPx * size)
+        tx = rubberBand(dx, limit, PULL.resistance)
+        ty = rubberBand(dy, limit, PULL.resistance)
+        if (dt > 0) {
+          s.driftX += ((at.x - by.lastX) / dt - s.driftX) * Math.min(1, dt * PULL.driftIn)
+          s.driftY += ((at.y - by.lastY) / dt - s.driftY) * Math.min(1, dt * PULL.driftIn)
+        }
+        by.lastX = at.x
+        by.lastY = at.y
+      } else {
+        s.driftX = Math.abs(s.driftX) < 1 ? 0 : s.driftX * Math.exp(-dt * PULL.driftOut)
+        s.driftY = Math.abs(s.driftY) < 1 ? 0 : s.driftY * Math.exp(-dt * PULL.driftOut)
+      }
+      const spring = by ? { omega: (2 * Math.PI) / (PULL.follow + PULL.followPerPx * by.size), zeta: 1 } : { omega: (2 * Math.PI) / PULL.release, zeta: 1 - PULL.releaseBounce }
+      const mx = stepSpring(s.x, tx, spring, dt)
+      const my = stepSpring(s.y, ty, spring, dt)
+      const most = small ? PULL.smallStretchMax : PULL.stretchMax
+      const along = (pull: Spring, length: number, drift: number) =>
+        Math.min(most, (PULL.stretch * Math.abs(pull.x)) / length + PULL.stretchPerSpeed * Math.abs(pull.v) + PULL.stretchPerDrift * Math.abs(drift))
+      const kx = along(s.x, w, s.driftX)
+      const ky = along(s.y, h, s.driftY)
+      sx = (1 + kx) / Math.sqrt(1 + ky)
+      sy = (1 + ky) / Math.sqrt(1 + kx)
+      moving = !!by || mx || my || s.driftX !== 0 || s.driftY !== 0
+    }
+    const on = Math.abs(s.x.x) > 0.01 || Math.abs(s.y.x) > 0.01
+    const px = `${s.x.x.toFixed(3)}px`
+    const py = `${s.y.x.toFixed(3)}px`
+    const moved = !on ? '' : s.own ? `calc(${s.own[0]} + ${px}) calc(${s.own[1] ?? '0px'} + ${py})` : `${px} ${py}`
+    const grow = v.grow ?? 1
+    const even = Math.abs(sx - 1) < 1e-4 && Math.abs(sy - 1) < 1e-4
+    const scaled = even ? (grow === 1 ? '' : grow.toFixed(4)) : `${(grow * sx).toFixed(5)} ${(grow * sy).toFixed(5)}`
+    // The frame that brings the host to rest is still drawn: a view that draws the pull itself (see `pulled`) must see it end.
+    if (moved !== s.moved || scaled !== s.scaled) moving = true
+    if (moved !== s.moved) host.style.translate = s.moved = moved
+    if (scaled !== s.scaled) host.style.scale = s.scaled = scaled
+    const at = v.pulled ?? (v.pulled = { x: 0, y: 0, sx: 1, sy: 1 })
+    at.x = on ? s.x.x : 0
+    at.y = on ? s.y.x : 0
+    at.sx = even ? 1 : sx
+    at.sy = even ? 1 : sy
+    return moving
+  }
 
   const draw = (v: GlassView, refresh: boolean, repaint: boolean) => {
     const m = v.lens(refresh)
@@ -1185,10 +1616,48 @@ function createEngine(): GlassEngine | null {
     const aim = lightMix > 0 && d > 0.5 ? (Math.round(Math.atan2(dy, dx) * (360 / Math.PI)) * Math.PI) / 360 : -Math.PI / 2
     set('uLightDir', Math.cos(aim), Math.sin(aim))
     set('uLightMix', lightMix)
-    const glow = m.glow
+    const glow = m.glow ?? flashOf(v)
     set('uGlow', (glow?.x ?? 0) / unit, (glow?.y ?? 0) / unit, (glow?.r ?? 0) / unit, Math.max(0, glow?.amount ?? 0))
     set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0))
     set('uGlowBlob', clamp(glow?.blob ?? 1))
+    // Pointer light: what the pointer is doing to this glass is worked out here, where the
+    // glass's place on screen is fresh; the light itself is advanced once a frame (stepLight).
+    let lit = lights.get(v)
+    if (LIGHT.on && m.pointerLight !== false) {
+      if (!lit) {
+        const host = hostOf(v)
+        lit = { glow: { x: 0, v: 0 }, x: 0, y: 0, press: false, key: false, free: !!host && getComputedStyle(host).pointerEvents === 'none', sx: 0, sy: 0, hx: 0, hy: 0, bodyX: 0, blob: null, onBlob: false }
+        lights.set(v, lit)
+      }
+      lit.sx = m.screenX + m.bodyX
+      lit.sy = m.screenY
+      lit.hx = m.hx
+      lit.hy = m.hy
+      lit.bodyX = m.bodyX
+      lit.blob = blob ? { x: blob.x, y: blob.y, hx: blob.hx, hy: blob.hy } : null
+      // A held pointer lights the glass it is on, or comes onto (a lens arriving under it), until it lets go.
+      // The light stays at the point of the glass it began at: it does not follow the pointer.
+      const press = lit.press || (beam.id !== -1 && under(v, lit) && innermost(v))
+      if (press !== lit.press) {
+        relit = true
+        if (press) {
+          lit.x = beam.x - m.screenX
+          lit.y = beam.y - m.screenY
+          lit.onBlob = onBlob(lit) && (Math.abs(beam.x - lit.sx) > lit.hx || Math.abs(beam.y - lit.sy) > lit.hy)
+        }
+      }
+      lit.press = press
+    }
+    const shine = lit && LIGHT.on && m.pointerLight !== false ? clamp(lit.glow.x) : 0
+    if (lit && shine > 0) {
+      const pageL = 0.2126 * m.surface[0] + 0.7152 * m.surface[1] + 0.0722 * m.surface[2]
+      // (A press on a surface beside the control takes the surface's size, not the control's.)
+      const side = lit.onBlob && lit.blob ? Math.max(lit.blob.hx, lit.blob.hy) : Math.max(m.hx, m.hy)
+      const span = clamp(LIGHT.size * 2 * side, LIGHT.sizeMin, Math.max(LIGHT.sizeMin, LIGHT.sizeMax))
+      set('uLight', lit.x / unit, lit.y / unit, span / unit, shine * clamp(lerp(LIGHT.strengthDark, LIGHT.strength, smooth(0.25, 0.6, pageL))))
+    } else {
+      set('uLight', 0, 0, 1, 0)
+    }
     // The same layers and the same uniforms as the frame on the canvas: nothing to draw.
     if (fresh && on.sent.length === sent.length && sent.every((value, i) => value === on.sent[i])) return
     on.sent = sent.slice()
@@ -1214,11 +1683,18 @@ function createEngine(): GlassEngine | null {
     pointer.moved = false
     let running = pointer.mix !== target
     for (const v of views) {
-      const moving = v.step(dt, still)
-      if (moving) running = true
+      const stepped = v.step(dt, still)
+      // After the view's own springs: its `grow` is this frame's.
+      const pulled = stepPull(v, dt, still)
+      const moving = stepped || pulled
+      // (Both lights of a press: what a surface takes, and a button's flash.)
+      const lit = stepLight(v, dt, still)
+      const flashing = stepFlash(v, dt, still)
+      const glowing = lit || flashing
+      if (moving || glowing) running = true
       if (!v.visible) continue
       const again = v.repaint === true
-      if (moving || v.dirty || again || relight) {
+      if (moving || glowing || v.dirty || again || relight) {
         const refresh = v.dirty
         v.dirty = false
         v.repaint = false
@@ -1229,6 +1705,9 @@ function createEngine(): GlassEngine | null {
     // A view may have woken the engine during this frame (a popup that has just gone back in
     // does): the next frame is then already asked for, and asking again would start a second
     // loop beside this one, for as long as anything on the page moves.
+    // A draw found the pointer on (or off) some glass: its light starts on the next frame.
+    if (relit) running = true
+    relit = false
     if (running) wake()
     else if (!raf) last = 0
   }
@@ -1257,6 +1736,201 @@ function createEngine(): GlassEngine | null {
     pointer.moved = true
     wake()
   })
+  // Pull (PULL): a press holds the innermost glass under it that asks to be pulled, and it is
+  // followed over the whole window until it lets go.
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!PULL.on || e.button !== 0 || reduced.matches || !(e.target instanceof Node) || HANDED_ON.has(e)) return
+      let held: GlassView | null = null
+      let heldHost: HTMLElement | null = null
+      for (const v of views) {
+        const host = hostOf(v)
+        if (v.pull !== true || !host || !host.contains(e.target) || host.matches(':disabled, [data-disabled], [aria-disabled="true"]')) continue
+        if (pulls.get(v)?.by) return
+        if (!heldHost || heldHost.contains(host)) {
+          held = v
+          heldHost = host
+        }
+      }
+      if (!held || !heldHost) return
+      const p = pulledOf(held)
+      // The host's own translate is read while the pull's is off it.
+      if (!p.moved) {
+        const own = getComputedStyle(heldHost).translate
+        p.own = !own || own === 'none' ? null : own.split(' ')
+      }
+      const at = restOf(heldHost, p)
+      p.by = { id: e.pointerId, x: e.clientX, y: e.clientY, nowX: e.clientX, nowY: e.clientY, cx: at.x, cy: at.y, lastX: at.x, lastY: at.y, size: Math.max(heldHost.offsetWidth, heldHost.offsetHeight) }
+      p.driftX = p.driftY = 0
+      held.held = true
+      wake()
+    },
+    { passive: true, capture: true },
+  )
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      for (const p of pulls.values()) {
+        if (p.by?.id !== e.pointerId) continue
+        p.by.nowX = e.clientX
+        p.by.nowY = e.clientY
+        wake()
+      }
+    },
+    { passive: true, capture: true },
+  )
+  const unhold = (e: PointerEvent) => {
+    for (const [v, p] of pulls) {
+      if (p.by?.id !== e.pointerId) continue
+      letGo(v, p)
+      wake()
+    }
+  }
+  window.addEventListener('pointerup', unhold, { passive: true, capture: true })
+  window.addEventListener('pointercancel', unhold, { passive: true, capture: true })
+  // Pointer light (LIGHT): where the lighting pointer is, what it is over and whether it is held.
+  // Which glass that lights is decided when each glass is drawn, so every change asks for a frame.
+  const lightMoved = () => {
+    pointer.moved = true
+    wake()
+  }
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      // Only the held pointer counts (a lens may come under it): one that moves over the page without pressing asks for nothing.
+      if (!LIGHT.on || e.pointerId !== beam.id) return
+      beam.x = e.clientX
+      beam.y = e.clientY
+      beam.over = e.target
+      lightMoved()
+    },
+    { passive: true, capture: true },
+  )
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!LIGHT.on || e.button !== 0 || HANDED_ON.has(e)) return
+      beam.x = e.clientX
+      beam.y = e.clientY
+      beam.over = e.target
+      beam.id = e.pointerId
+      lightMoved()
+    },
+    { passive: true, capture: true },
+  )
+  const lift = (e: PointerEvent) => {
+    if (e.pointerId !== beam.id) return
+    beam.id = -1
+    for (const s of lights.values()) s.press = false
+    lightMoved()
+  }
+  window.addEventListener('pointerup', lift, { passive: true, capture: true })
+  window.addEventListener('pointercancel', lift, { passive: true, capture: true })
+  // A button's flash (GLOW): a press lights the innermost button under it where it lands, and
+  // holds it until that pointer lets go; Space or Enter lights the focused button's centre.
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (e.button !== 0 || HANDED_ON.has(e) || !(e.target instanceof Node)) return
+      // A choice pressed inside a surface lights that surface around it.
+      const choice = e.target instanceof Element ? e.target.closest<HTMLElement>(CHOICES) : null
+      const chosen = choice && !choice.matches('[data-disabled], [aria-disabled="true"]') ? choice : null
+      let hit: GlassView | null = null
+      let hitHost: HTMLElement | null = null
+      for (const v of views) {
+        const host = hostOf(v)
+        if (!host || host.matches(':disabled, [data-disabled], [aria-disabled="true"]')) continue
+        if (v.button === true ? !(v.pressArea ?? host).contains(e.target) : !chosen || v.choices === false || !v.visible || !host.contains(chosen)) continue
+        if (!hitHost || hitHost.contains(host)) {
+          hit = v
+          hitHost = host
+        }
+      }
+      const f = hit && flash(hit, e.clientX, e.clientY, hit.button === true ? undefined : (chosen ?? undefined))
+      if (f) f.by = e.pointerId
+    },
+    { passive: true, capture: true },
+  )
+  const unflash = (e: PointerEvent) => {
+    for (const f of flashes.values()) {
+      if (f.by !== e.pointerId) continue
+      f.by = -1
+      wake()
+    }
+  }
+  window.addEventListener('pointerup', unflash, { passive: true, capture: true })
+  window.addEventListener('pointercancel', unflash, { passive: true, capture: true })
+  const flashKey = (e: KeyboardEvent) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return
+    const down = e.type === 'keydown'
+    if (down && e.repeat) return
+    if (!down) {
+      for (const f of flashes.values()) f.key = false
+      return wake()
+    }
+    const focused = document.activeElement
+    if (!focused) return
+    // On a surface, the key chooses the focused choice: the light starts at its middle.
+    const choice = focused.closest<HTMLElement>(CHOICES)
+    const chosen = choice && !choice.matches('[data-disabled], [aria-disabled="true"]') ? choice : null
+    let surface: GlassView | null = null
+    let surfaceHost: HTMLElement | null = null
+    for (const v of views) {
+      const host = hostOf(v)
+      if (!host || host.matches(':disabled, [data-disabled], [aria-disabled="true"]')) continue
+      if (v.button === true) {
+        if (!focused.contains(v.canvas)) continue
+        const f = flash(v)
+        if (f) f.key = true
+      } else if (chosen && v.choices !== false && v.visible && host.contains(chosen) && (!surfaceHost || surfaceHost.contains(host))) {
+        surface = v
+        surfaceHost = host
+      }
+    }
+    if (surface && chosen) {
+      const r = chosen.getBoundingClientRect()
+      const f = flash(surface, r.left + r.width / 2, r.top + r.height / 2, chosen)
+      if (f) f.key = true
+    }
+    wake()
+  }
+  window.addEventListener('keydown', flashKey, true)
+  window.addEventListener('keyup', flashKey, true)
+  window.addEventListener(
+    'focusout',
+    () => {
+      for (const f of flashes.values()) f.key = false
+      wake()
+    },
+    true,
+  )
+  // Space or Enter on the focused control lights the middle of its glass while the key is down.
+  const key = (e: KeyboardEvent) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return
+    const down = e.type === 'keydown'
+    if (down && (!LIGHT.on || e.repeat)) return
+    const focused = document.activeElement
+    for (const [v, s] of lights) {
+      const held = down && !s.free && !!focused && focused.contains(v.canvas)
+      if (held && !s.key && !s.press) {
+        s.x = s.bodyX
+        s.y = 0
+      }
+      s.key = held
+    }
+    wake()
+  }
+  window.addEventListener('keydown', key, true)
+  window.addEventListener('keyup', key, true)
+  window.addEventListener(
+    'focusout',
+    () => {
+      for (const s of lights.values()) s.key = false
+      wake()
+    },
+    true,
+  )
   // Theme switches (class="dark", data-theme, color-scheme) re-read every colour.
   new MutationObserver(invalidateAll).observe(document.documentElement, {
     attributes: true,
@@ -1272,6 +1946,14 @@ function createEngine(): GlassEngine | null {
       v.lost()
       v.ctx.clearRect(0, 0, v.canvas.width, v.canvas.height)
     }
+    // No frame comes after this: the hosts get back what the engine wrote on them.
+    for (const [v, p] of pulls) {
+      const host = hostOf(v)
+      v.held = false
+      if (host && p.moved) host.style.translate = ''
+      if (host && p.scaled) host.style.scale = ''
+    }
+    pulls.clear()
     engine = undefined
   })
 
@@ -1282,6 +1964,16 @@ function createEngine(): GlassEngine | null {
     },
     remove: (v) => {
       views.delete(v)
+      lights.delete(v)
+      flashes.delete(v)
+      const pulled = pulls.get(v)
+      if (pulled) {
+        pulls.delete(v)
+        v.held = false
+        const host = hostOf(v)
+        if (host && pulled.moved) host.style.translate = ''
+        if (host && pulled.scaled) host.style.scale = ''
+      }
       const a = mirrored.get(v)
       if (a) {
         mirrored.delete(v)

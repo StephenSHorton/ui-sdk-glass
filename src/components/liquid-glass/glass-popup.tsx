@@ -34,6 +34,22 @@
 // lies over the control then: give the content `sideOffset={-<the control's height>}`. One
 // canvas, the surface's, draws both glasses while it is out. It closes by a calmer motion of its
 // own: the content goes first, the surface slides back into the control and slows as it lands.
+// `useGlassPopup({ opening: 'grow' })` is the third way: the control's glass is the surface.
+// One shape on one spring: the control's outline grows into the surface's, wherever the surface
+// lies (below, above or beside the control: no negative `sideOffset`), and shrinks back along the
+// same path. The side the surface lies on runs ahead, the other follows. The control's label
+// goes as the glass leaves it, and the surface's content stays in place while the glass opens
+// over it. Reversed half way, it carries on from where it is. The press that opens it lights the
+// glass where it landed, and that light fades in its place: it does not widen with the glass as
+// the others' does, and nothing spills past its edge.
+// GlassMenu is built on it.
+// The light of a press follows the kit's rule (above GLOW in engine.ts): the control is a button
+// and takes the flash of a press, which here goes on to open the surface; the surface is a
+// surface, and a press in it is lit by the engine's own light (LIGHT), where it lands. The list
+// of a stretching or a morphing surface keeps its choice light on top of that.
+// Shut, the control is a button: held, it stays shut, swells and is pulled after the pointer
+// (PULL in engine.ts), and the surface opens when the press is let go on it, from wherever the
+// pull has the glass. Let go away from the control, nothing opens.
 // A label that comes back letter by letter: the label of a morphing control goes in
 // <GlassPopupText> (GlassPopover and GlassDropdownMenu do it for their own triggers). The moment
 // its surface is back in, the label returns letter by letter,
@@ -44,7 +60,7 @@
 import { Children, createContext, useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 
 import { drawAround, drawDom } from './dom-snapshot'
-import { GLOW, GLOW_SMALL, GOOEY, MORPH, MORPH_GLOW, MORPH_GLOW_SMALL, SPRINGS, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
+import { GLOW, GLOW_SMALL, GOOEY, HANDED_ON, MENU, MORPH, MORPH_GLOW, MORPH_GLOW_SMALL, SPRINGS, clamp, getGlassEngine, lerp, rgbCss, smooth, stepSpring, surfaceColorOf, type GlassEngine, type GlassLens, type GlassView, type Rgb, type Spring } from './engine'
 import { GlassStyles } from './glass-layer'
 
 const DESIGN_HEIGHT = 120
@@ -148,7 +164,10 @@ type Page = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null; k
 const newPage = (): Page => ({ canvas: document.createElement('canvas'), ctx: null, key: '', at: 0, stale: true, fill: '' })
 
 /** The shared physics and shape of one popup: the anchor's canvas and the surface's both draw it. */
-function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom) {
+function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: GlassPopupFrom) {
+  const morphs = opening === 'morph'
+  /** `opening: 'grow'`: one shape, the control's outline growing into the surface's, on `open` alone. */
+  const grows = opening === 'grow'
   /** Which way a morphing surface comes into place: 1 from above (the control is thrown down), -1 from below. */
   const way = from === 'bottom' ? -1 : 1
   let engine: GlassEngine | null = null
@@ -246,7 +265,11 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
   let placed = -1
   const stepItems = (goal: number, dt: number, still: boolean, fixed?: number) => {
     if (!content) return false
-    if (morphs) {
+    if (grows) {
+      // The whole list is in its place from the start: it shows as the glass opens over it, and goes as the glass closes.
+      out = still ? goal : smooth(MENU.contentFrom, Math.max(MENU.contentTo, MENU.contentFrom + 0.01), clamp(open.x))
+      reveal = out > 0 ? 99 : 0
+    } else if (morphs) {
       // The whole list is there from the start, inside the growing glass: it fades up as it comes into focus, not in a queue.
       const follows = still ? goal : smooth(0, Math.max(MORPH.contentFade, 0.01), clamp(calm.x))
       // (A soft close lets the content go ahead of the glass, in MORPH.closeFade seconds.)
@@ -286,13 +309,13 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     put('--glass-out', out.toFixed(3))
     put('--glass-gap', String(TUNE.itemsGap))
     put('--glass-fade', String(fade))
-    const arriving = !morphs && (!!goal || fixed !== undefined) && reveal < count * TUNE.itemsGap + TUNE.itemsFade
+    const arriving = !morphs && !grows && (!!goal || fixed !== undefined) && reveal < count * TUNE.itemsGap + TUNE.itemsFade
     // Options rise into place: until they have, their offset must not count as scrollable overflow.
     if (arriving !== 'glassArriving' in content.dataset) {
       if (arriving) content.dataset.glassArriving = ''
       else delete content.dataset.glassArriving
     }
-    return morphs ? false : goal ? arriving : out > 0
+    return morphs || grows ? false : goal ? arriving : out > 0
   }
   // A style is written only when it changes: a write between two measurements makes the
   // browser lay the page out again, on every frame of an opening.
@@ -338,7 +361,15 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
    * the control (the one that closes the surface) lights the control alone.
    */
   const light = (x?: number, y?: number, gain = 1, inList = false, wide = !inList && !isOpen()) => {
-    if (!host) return
+    // The rule (see GLOW in engine.ts): this light is a button's, so it is the control's. The
+    // surface that opens is a surface, lit by the engine's own light (LIGHT) where it is pressed.
+    // A choice in a list lights the list around itself (GLOW.select): a list that stretches or
+    // morphs out does it here, where that light can leave with the surface; a growing one
+    // (a menu) leaves it to the engine, as every other surface does.
+    if (!host || (grows && inList)) return
+    // A growing surface takes no more of this light than the press: it stays at its point and
+    // fades, without widening with the surface.
+    if (grows) wide = false
     const r = host.getBoundingClientRect()
     // A light that is still bright keeps spreading from where it is: only a fresh one starts small.
     if (glow.x < 0.08) glowSpread.x = glowSpread.v = 0
@@ -358,7 +389,7 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     // way out, however long the press is held, and fades faster than a press on its own.
     const opening = glowWide && isOpen()
     const tune = glowTune()
-    const on = opening ? open.x < tune.coverUntil : pressed || glowHold > 0
+    const on = opening ? open.x < tune.coverUntil : pressed || triggerView?.held === true || glowHold > 0
     glowHold = Math.max(0, glowHold - dt)
     const a = stepSpring(glow, on ? glowLevel : 0, { omega: on ? tune.riseSpeed : opening ? tune.coverFadeSpeed : tune.fadeSpeed, zeta: 1 }, dt)
     const b = stepSpring(glowSpread, on || glow.x > 0.004 ? 1 : 0, { omega: tune.spreadSpeed, zeta: 1 }, dt)
@@ -375,7 +406,7 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       swPress.x = swX.x = swY.x = swPress.v = swX.v = swY.v = swScale.v = 0
       swScale.x = 1
       glow.x = glow.v = glowSpread.x = glowSpread.v = glowHold = 0
-      host.style.scale = ''
+      if (triggerView) triggerView.grow = 1
       settle = 0
       wasShut = shut
       setLabel('')
@@ -384,7 +415,7 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     // The popup has just gone back in: the control takes it like a hover, and lets go again.
     // (Not after a soft close, which lands slowing down and ends still.)
     if (shut && !wasShut) {
-      if (!(morphs && MORPH.closeSoft > 0.5)) settle = SETTLE
+      if (!(morphs && MORPH.closeSoft > 0.5) && !grows) settle = SETTLE
       // A morphing control lights up with that swell. A press still lit is topped up, never added to.
       // (Not after a soft close, which ends without a light.)
       if (morphs && MORPH.closeSoft <= 0.5 && glow.x < SETTLE_GLOW) light(undefined, undefined, SETTLE_GLOW - Math.max(glow.x, 0), false, false)
@@ -396,13 +427,17 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     const greeting = settle > 0
     settle = Math.max(0, settle - dt)
     const hov = (hovered || greeting) && shut ? 1 : 0
-    const down = pressed && shut
+    // Shut, the control is a button: a pointer that holds it pulls it (PULL in engine.ts), and
+    // keeps it pressed outside it too. Open, its glass is the surface's, and stays where it is.
+    if (triggerView) triggerView.pull = shut
+    const down = (pressed || triggerView?.held === true) && shut
     const target = down ? Math.min(PRESS_SCALE, maxScale()) : hov ? Math.min(HOVER_SCALE, maxScale()) : 1
     const a = stepSpring(swPress, down ? 1 : 0, SPRINGS.press, dt)
     const b = stepSpring(swX, hov, SPRINGS.hoverX, dt)
     const c = stepSpring(swY, hov, SPRINGS.hoverY, dt)
     const d = stepSpring(swScale, target, SPRINGS.press, dt)
-    host.style.scale = swScale.x === 1 ? '' : swScale.x.toFixed(4)
+    // The engine writes the host's scale: this, times the stretch of a pull.
+    if (triggerView) triggerView.grow = swScale.x
     const e = stepGlow(dt)
     return a || b || c || d || e || greeting
   }
@@ -415,9 +450,13 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     if (!host) return null
     // The control itself is scaled while it swells: measure it unscaled. Its canvas undoes that
     // scale (see the trigger's lens), so both canvases draw in the page's own space.
+    // A pull moves the control (its box comes with it) and stretches it: the stretch is undone on
+    // the canvas with the swell, and drawn here instead, so the glass is still a pill, as long
+    // and as thin as the pull makes it, bending what really lies behind it.
     const r = host.getBoundingClientRect()
     const sc = Math.max(0.5, Number(swScale.x.toFixed(4)))
-    const a = sc === 1 ? r : new DOMRect(r.left + (r.width - host.offsetWidth) / 2, r.top + (r.height - host.offsetHeight) / 2, host.offsetWidth, host.offsetHeight)
+    const stretch = { x: triggerView?.pulled?.sx ?? 1, y: triggerView?.pulled?.sy ?? 1 }
+    const a = sc === 1 && stretch.x === 1 && stretch.y === 1 ? r : new DOMRect(r.left + (r.width - host.offsetWidth) / 2, r.top + (r.height - host.offsetHeight) / 2, host.offsetWidth, host.offsetHeight)
     if (a.width < 2 || a.height < 2) return null
     glowSmall = smallness(a.width, a.height)
     const sk = lerp(1, Math.min(PRESS_SCALE, maxScale()), clamp(swPress.x, -0.12, 1.15))
@@ -438,14 +477,14 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       cx: a.left + a.width / 2,
       // (A morphing control is thrown down by its own weight at the press, before its surface comes out.)
       cy: a.top + a.height / 2 + dir * (TUNE.triggerSag * hold - TUNE.triggerJolt * rc) + (morphs ? way * MORPH.throw * thrown : 0),
-      hx: (a.width / 2) * sk + grow * swX.x - 1.5 * hold + 3.2 * rc,
-      hy: (a.height / 2) * sk + grow * swY.x + hold - 2 * rc,
+      hx: ((a.width / 2) * sk + grow * swX.x) * stretch.x - 1.5 * hold + 3.2 * rc,
+      hy: ((a.height / 2) * sk + grow * swY.x) * stretch.y + hold - 2 * rc,
     }
     let blob: GlassLens['blob']
     /** How far the surface sticks out of the control, 0–1: its shadow comes with it. */
     let out = 0
     joined = false
-    if (c && !morphs) {
+    if (c && !morphs && !grows) {
       const y = clamp(open.x, -0.04, 1.08)
       const t = clamp(y)
       const edge = dir < 0 ? a.top : a.bottom
@@ -526,10 +565,41 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
         list: list && { L: c.left + content.clientLeft + list.offsetLeft, T: c.top + content.clientTop + list.offsetTop, W: list.offsetWidth, H: list.offsetHeight },
       }
     }
+    // `opening: 'grow'`: one shape. The control's outline (as it is right now, swollen under the
+    // pointer or not) grows into the surface's box, the side the surface lies on ahead of the other.
+    let grown: { cx: number; cy: number; hx: number; hy: number; r: number; list: Box | null } | undefined
+    if (c && grows && content) {
+      const p = open.x
+      // Which side leads: the one the surface lies on. Below or above the control, it pours down or up first.
+      const apartY = c.top >= a.bottom - 0.5 || c.bottom <= a.top + 0.5
+      const apartX = c.left >= a.right - 0.5 || c.right <= a.left + 0.5
+      const offX = Math.abs(c.left + c.width / 2 - body.cx) / Math.max(c.width, 1)
+      const offY = Math.abs(c.top + c.height / 2 - body.cy) / Math.max(c.height, 1)
+      const alongY = apartY === apartX ? offY >= offX : apartY
+      // (Past the end the spring is followed as it is: the shape lands a little past its box and comes back.)
+      const ease = (leads: boolean) => (p >= 1 ? p : leads ? 1 - (1 - Math.max(p, 0)) ** MENU.lead : Math.max(p, 0) ** MENU.follow)
+      const px = ease(!alongY)
+      const py = ease(alongY)
+      const hx = Math.max(lerp(body.hx, c.width / 2, px), 0.5)
+      const hy = Math.max(lerp(body.hy, c.height / 2, py), 0.5)
+      const cx = lerp(body.cx, c.left + c.width / 2, px)
+      const cy = lerp(body.cy, c.top + c.height / 2, py)
+      // Corners: from the control's (a pill) to the surface's own, and no tighter than MENU.round of the shorter side on the way.
+      const half = Math.min(hx, hy)
+      const far = clamp(p)
+      const own = lerp(Math.min(body.hx, body.hy), Math.min(panelRadius, half), far)
+      const round = Math.min(half, Math.max(own, 2 * MENU.round * half))
+      const r = Math.min(half, lerp(own, round, 1 - smooth(MENU.roundFrom, Math.max(MENU.roundUntil, MENU.roundFrom + 0.01), far)))
+      const list = listOf()
+      out = smooth(0, 48, 2 * Math.max(hx - body.hx, hy - body.hy))
+      // The same shape as a blob of the control's, for what follows the surface: its light and its CSS shadow.
+      blob = { x: cx - body.cx, y: cy - body.cy, hx, hy, r, k: 0.05, material: surfaceGlass() }
+      grown = { cx, cy, hx, hy, r, list: list && { L: c.left + content.clientLeft + list.offsetLeft, T: c.top + content.clientTop + list.offsetTop, W: list.offsetWidth, H: list.offsetHeight } }
+    }
     const t = clamp(open.x)
     // The surface turns into the card as the neck lets go, and back before it forms again. A
-    // morphing control gives way to the card under it as the surface settles.
-    const card = !c ? 0 : morphs ? smooth(MORPH.frostFrom, Math.max(MORPH.frostTo, MORPH.frostFrom + 0.01), clamp(calm.x)) : (1 - smooth(0, 0.35, clamp(b))) * smooth(0.35, 0.8, t)
+    // morphing control gives way to the card under it as the surface settles. A growing one, early on the way.
+    const card = !c ? 0 : grows ? smooth(MENU.frostFrom, Math.max(MENU.frostTo, MENU.frostFrom + 0.01), t) : morphs ? smooth(MORPH.frostFrom, Math.max(MORPH.frostTo, MORPH.frostFrom + 0.01), clamp(calm.x)) : (1 - smooth(0, 0.35, clamp(b))) * smooth(0.35, 0.8, t)
     // Parted: the control draws itself alone, with its own shadow, whatever the card does.
     // What the control's own content takes of all this: the sag and the throw, and the squash.
     const sway = { y: body.cy - (a.top + a.height / 2), sx: 1 + (3.2 * rc - 1.5 * hold) / (a.width / 2), sy: 1 + (hold - 2 * rc) / (a.height / 2) }
@@ -568,7 +638,11 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     const dpr = window.devicePixelRatio || 1
     const snap = (v: number) => Math.round(v * dpr) / dpr
     const seam = { left: snap(a.left), top: snap(a.top), right: snap(a.right), bottom: snap(a.bottom) }
-    return { a, c, sc, seam, body, blob, t, card, out, sway, ride, lit, edge, morph, onPanel, parted: morphs ? !!blob && card >= 0.999 : card > 0 && !joined }
+    // A growing shape is drawn by both canvases, each on its side of the control's box, while the
+    // label is still there to lie on the glass. Once the label has gone and the glass is the card's,
+    // the surface's canvas draws it whole and the control's rests.
+    const whole = !!grown && card >= 0.999 && t >= MENU.labelTo
+    return { a, c, sc, stretch, seam, body, blob, t, card, out, sway, ride, lit, edge, morph, grow: grown, onPanel, parted: grows ? whole : morphs ? !!blob && card >= 0.999 : card > 0 && !joined }
   }
   // One measurement per frame. Both canvases draw the same shape, and each writes styles as
   // it draws: a second measurement after those writes would lay the page out again.
@@ -593,6 +667,26 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     set(host, '--glass-sway-y', `${s.sway.y.toFixed(2)}px`, '0.00px')
     set(host, '--glass-sway-sx', s.sway.sx.toFixed(4), '1.0000')
     set(host, '--glass-sway-sy', s.sway.sy.toFixed(4), '1.0000')
+    if (grows) {
+      // The control's label goes as the glass leaves it, and is back as the glass lands on it.
+      const away = s.grow ? smooth(MENU.labelFrom, Math.max(MENU.labelTo, MENU.labelFrom + 0.01), s.t) : 0
+      if (host && away > 0 !== 'glassMorphing' in host.dataset) {
+        if (away > 0) host.dataset.glassMorphing = ''
+        else delete host.dataset.glassMorphing
+      }
+      set(host, '--glass-label', (1 - away).toFixed(3), '1.000')
+      set(host, '--glass-label-blur', `${(MENU.labelBlur * away).toFixed(2)}px`, '0.00px')
+      // The content stays in its place: the glass opens over it. It is cut to the glass only while
+      // it shows and the glass is still smaller than it on some side, and softened only while it fades.
+      const g = s.grow
+      const l = g?.list
+      const inset = g && l ? [g.cy - g.hy - l.T, l.L + l.W - (g.cx + g.hx), l.T + l.H - (g.cy + g.hy), g.cx - g.hx - l.L] : null
+      const cut = !!g && !!inset && out > 0 && inset.some((v) => v > 0.5)
+      set(content, '--glass-clip', cut ? `inset(${inset.map((v) => `${v.toFixed(1)}px`).join(' ')} round ${g.r.toFixed(1)}px)` : '', '')
+      const soft = out > 0 && out < 1 ? MENU.contentBlur * (1 - out) : 0
+      set(content, '--glass-soft', soft > 0.05 ? `blur(${soft.toFixed(1)}px)` : '', '')
+      return
+    }
     if (!morphs) return set(content, '--glass-ride-y', `${s.ride.toFixed(2)}px`, '0.00px')
     // The control's label leaves as its glass does: softer, then gone.
     const gone = smooth(0, MORPH.labelOut, s.t)
@@ -725,6 +819,34 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     }
   }
 
+  /** What a rim mirrors of the page around its canvas (`height`: the control's own). */
+  const mirrorOf = (box: Box, height: number): NonNullable<GlassLens['reflection']> => ({
+    height,
+    paint: (around, reach) => {
+      drawAround(around, document.body, { left: box.L, top: box.T, width: box.W, height: box.H }, reach, {
+        skip: (el) => el === host || el === content || el.hasAttribute('data-glass-skip'),
+        onStale: dirty,
+      })
+    },
+  })
+  /** A growing shape is the whole lens, on either canvas: no control beside it, and the light seen from its own centre. */
+  const single = (s: NonNullable<ReturnType<typeof shape>>, box: Box) =>
+    s.grow && s.blob
+      ? {
+          cx: s.grow.cx - box.L,
+          cy: s.grow.cy - box.T,
+          hx: s.grow.hx,
+          hy: s.grow.hy,
+          radius: s.grow.r,
+          blob: undefined,
+          // (Kept inside the glass: a growing surface has no halo.)
+          glow: s.lit && { ...s.lit, x: s.lit.x - s.blob.x, y: s.lit.y - s.blob.y, halo: undefined },
+          // Where this lens is on screen: the engine's light of a press (LIGHT) is measured from here.
+          screenX: s.grow.cx,
+          screenY: s.grow.cy,
+        }
+      : null
+
   const readColours = () => {
     if (!host || !engine) return
     const s = engine.resolveColor(surfaceColorOf(host.parentElement))
@@ -788,6 +910,26 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
         for (const p of [...pages, panelPage]) if (p) p.stale = true
         rec = []
         recT = 0
+      }
+      if (grows) {
+        pushed = !!goal
+        // The surface has no box yet (it is still being placed): the glass waits for it.
+        if (goal && !live) return (moving = true)
+        // One spring, both ways: turned round half way, it carries on from where it is at the speed it has.
+        const spring = goal
+          ? { omega: (2 * Math.PI) / Math.max(MENU.open, 0.05), zeta: 1 - clamp(MENU.openBounce, 0, 0.95) }
+          : { omega: (2 * Math.PI) / Math.max(MENU.close, 0.05), zeta: 1 - clamp(MENU.closeBounce, 0, 0.95) }
+        moving = stepSpring(open, goal, spring, dt)
+        stepItems(goal, dt, false)
+        // Back on the control, as good as still: the popup leaves.
+        if (!goal && open.x <= 0.012 && Math.abs(open.v) <= 0.15) {
+          open.x = open.v = 0
+          stepItems(0, dt, true)
+          release()
+          dirty()
+          moving = false
+        }
+        return moving
       }
       // A morphing surface may stay as it is for a moment before it goes back in (MORPH.closeDelay).
       if (goal) lingered = 0, (rebounding = false)
@@ -942,6 +1084,11 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       ctx,
       dirty: true,
       visible: false,
+      // The light around a choice is the engine's on a growing surface; the others bring their own (see `light`).
+      choices: grows,
+      // Shut, the control is a button, pulled after the pointer that holds it (see stepSwell).
+      pull: true,
+      grow: 1,
       // The one place the springs advance; the popup's view reports the same answer.
       step: (dt, still) => {
         // The popup first: the control's swell reads where it has got to.
@@ -953,20 +1100,26 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
         const s = shape()
         if (!s) return null
         carry(s)
-        if (s.onPanel) return null
+        if (s.onPanel || (s.grow && s.parted && panelDrawn)) return null
         const { a } = s
         // A morphing control is thrown up when its surface comes back (or goes out, thrown the other way): its canvas leaves room for the furthest that throw can go.
         const thrownUp = morphs ? Math.ceil((Math.abs(MORPH.throw) * MORPH.kick) / (Math.sqrt(Math.max(MORPH.weight, 0.1)) * Math.max(MORPH.swingSpeed, 1))) : 0
+        // (And for a pull, which makes the control longer one way.)
+        const longX = Math.ceil(Math.max(0, s.stretch.x - 1) * a.width * 0.5)
+        const longY = Math.ceil(Math.max(0, s.stretch.y - 1) * a.height * 0.5)
         const box = {
-          L: Math.floor(a.left - TRIGGER_PAD),
-          T: Math.floor(a.top - TRIGGER_PAD - thrownUp),
-          W: Math.ceil(a.width + 2 * TRIGGER_PAD) + 1,
-          H: Math.ceil(a.height * 1.8 + 2 * TRIGGER_PAD + thrownUp) + 1,
+          L: Math.floor(a.left - TRIGGER_PAD - longX),
+          T: Math.floor(a.top - TRIGGER_PAD - thrownUp - longY),
+          W: Math.ceil(a.width + 2 * (TRIGGER_PAD + longX)) + 1,
+          H: Math.ceil(a.height * 1.8 + 2 * (TRIGGER_PAD + longY) + thrownUp) + 1,
         }
-        // The control scales under a hover and a press, and this canvas with it: undo that here,
-        // around the control's centre, so it lies on the page exactly as the popup's canvas does.
+        // The control scales under a hover and a press, and stretches under a pull, and this canvas
+        // with it: undo that here, around the control's centre, so it lies on the page exactly as
+        // the popup's canvas does.
+        const kx = s.sc * s.stretch.x
+        const ky = s.sc * s.stretch.y
         write(canvas, 'transform-origin', `${a.left + a.width / 2 - box.L}px ${a.top + a.height / 2 - box.T}px`)
-        write(canvas, 'scale', s.sc === 1 ? '' : (1 / s.sc).toFixed(6))
+        write(canvas, 'scale', kx === 1 && ky === 1 ? '' : kx === ky ? (1 / kx).toFixed(6) : `${(1 / kx).toFixed(6)} ${(1 / ky).toFixed(6)}`)
         // While the popup's canvas draws the rest, this one keeps to the trigger's own box.
         write(
           canvas,
@@ -976,18 +1129,11 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
             : '',
         )
         return {
-          ...lensFor(box, s, page, dirty),
+          ...lensFor(box, s, page, dirty, s.grow ? s.card : 0),
           // What the control's rim mirrors while it is clear glass: the page around it. (Painted in its own fill it mirrors nothing, and neither does the surface: it is unlit.)
-          reflection: {
-            height: a.height,
-            paint: (around, reach) => {
-              drawAround(around, document.body, { left: box.L, top: box.T, width: box.W, height: box.H }, reach, {
-                skip: (el) => el === host || el === content || el.hasAttribute('data-glass-skip'),
-                onStale: dirty,
-              })
-            },
-          },
+          reflection: mirrorOf(box, a.height),
           blob: s.parted ? undefined : s.blob,
+          ...single(s, box),
           left: box.L - a.left - s.edge.hostLeft,
           top: box.T - a.top - s.edge.hostTop,
         }
@@ -1000,7 +1146,7 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       lost: () => {
         ready = false
         delete el.dataset.glassReady
-        el.style.scale = ''
+        view.grow = 1
         delete el.dataset.glassMorphing
         if (content) content.dataset.glassOff = ''
         release()
@@ -1009,13 +1155,66 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     triggerView = view
     const off = () => el.matches(":disabled, [aria-disabled='true']")
     const onDown = (ev: PointerEvent) => {
-      if (off() || ev.button > 0) return
+      if (off() || ev.button > 0 || HANDED_ON.has(ev)) return
       pressed = true
       light(ev.clientX, ev.clientY)
       dirty()
     }
     const onUp = () => {
       pressed = false
+      dirty()
+    }
+    // The surface opens when the press is let go, not when it lands: held, the control is a
+    // button under the pointer, pressed and pulled about, and the opening starts from wherever the
+    // pull has it. The behaviour underneath (UI SDK) opens a menu or a list on the press itself,
+    // so a mouse press that would open one stops here, on its way down to the control, and is
+    // handed on when it is let go on the control: the surface opens then, exactly as a press
+    // opens it. Let go away from the control, nothing opens. A press on an open control (the one
+    // that closes it) goes straight through, and so does a touch, which opens on its tap anyway.
+    let waiting: { id: number; control: Element } | null = null
+    const onGate = (ev: PointerEvent) => {
+      if (HANDED_ON.has(ev) || ev.button !== 0 || ev.pointerType === 'touch' || !(ev.target instanceof Element)) return
+      const control = ev.target.closest('[aria-haspopup]')
+      if (!control || !el.contains(control) || control.matches(":disabled, [data-disabled], [aria-disabled='true']")) return
+      if (control.getAttribute('aria-expanded') === 'true' || isOpen()) return
+      ev.stopPropagation()
+      waiting = { id: ev.pointerId, control }
+      onDown(ev)
+    }
+    const onRelease = (ev: PointerEvent) => {
+      const held = waiting
+      if (!held || ev.pointerId !== held.id) return
+      waiting = null
+      // (Let go anywhere: a pointer that left the control while the pull held it never comes back to say so.)
+      pressed = false
+      dirty()
+      if (ev.type !== 'pointerup' || !(ev.target instanceof Node) || !held.control.contains(ev.target)) return
+      const press = new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        view: window,
+        pointerId: ev.pointerId,
+        pointerType: ev.pointerType,
+        isPrimary: ev.isPrimary,
+        button: 0,
+        buttons: 1,
+        // (As a mouse reports a press: one with no pressure reads as an assistive tool's.)
+        pressure: 0.5,
+        width: ev.width,
+        height: ev.height,
+        clientX: ev.clientX,
+        clientY: ev.clientY,
+        screenX: ev.screenX,
+        screenY: ev.screenY,
+        ctrlKey: ev.ctrlKey,
+        shiftKey: ev.shiftKey,
+        altKey: ev.altKey,
+        metaKey: ev.metaKey,
+      })
+      // (This press holds nothing and lights nothing: the engine is told so.)
+      HANDED_ON.add(press)
+      held.control.dispatchEvent(press)
       dirty()
     }
     const onEnter = (ev: PointerEvent) => {
@@ -1027,6 +1226,9 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       pressed = hovered = false
       dirty()
     }
+    el.addEventListener('pointerdown', onGate, { capture: true })
+    addEventListener('pointerup', onRelease, { capture: true })
+    addEventListener('pointercancel', onRelease, { capture: true })
     el.addEventListener('pointerdown', onDown)
     el.addEventListener('pointerup', onUp)
     el.addEventListener('pointercancel', onUp)
@@ -1048,12 +1250,14 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
     addEventListener('scroll', onScroll, { passive: true, capture: true })
     e.add(view)
     return () => {
+      el.removeEventListener('pointerdown', onGate, { capture: true })
+      removeEventListener('pointerup', onRelease, { capture: true })
+      removeEventListener('pointercancel', onRelease, { capture: true })
       el.removeEventListener('pointerdown', onDown)
       el.removeEventListener('pointerup', onUp)
       el.removeEventListener('pointercancel', onUp)
       el.removeEventListener('pointerenter', onEnter)
       el.removeEventListener('pointerleave', onLeave)
-      el.style.scale = ''
       for (const name of ['--glass-sway-y', '--glass-sway-sx', '--glass-sway-sy', '--glass-label', '--glass-label-blur', '--glass-lit']) el.style.removeProperty(name)
       delete el.dataset.glassAnchor
       delete el.dataset.glassMorphing
@@ -1092,6 +1296,8 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       // An open surface is drawn from its first frame: the observer below answers a frame late,
       // and a morphing surface is the only canvas its control has by then.
       visible: el.hasAttribute('data-open'),
+      // The light around a choice is the engine's on a growing surface; the others bring their own (see `light`).
+      choices: grows,
       step: () => moving,
       lens: (refresh) => {
         if (refresh) readColours()
@@ -1127,7 +1333,7 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
         // Parted, this canvas (above the control) draws the card alone: a control thrown past its
         // own box by the jolt must not show up here, on top of its glass.
         const alone =
-          s.parted && s.blob
+          s.parted && s.blob && !s.grow
             ? {
                 cx: s.body.cx + s.blob.x - box.L,
                 cy: s.body.cy + s.blob.y - box.T,
@@ -1138,10 +1344,16 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
                 // The same light, seen from the surface's own centre.
                 // (A light kept to the control never reaches it.)
                 glow: s.lit && s.lit.blob ? { ...s.lit, x: s.lit.x - s.blob.x, y: s.lit.y - s.blob.y, halo: { around: 'body' as const, amount: s.out * s.lit.spill } } : undefined,
+                // Where this lens is on screen: the engine's light of a press (LIGHT) is measured from here.
+                screenX: s.body.cx + s.blob.x,
+                screenY: s.body.cy + s.blob.y,
               }
             : {}
         // Joined, the engine draws the surface's glass on the blob; alone, the same glass is the
         // whole lens. Nothing changes as the neck lets go.
+        // (A growing shape is one lens from its first frame. While the control's canvas still draws
+        // its share, this one mirrors what that one does, so the rim is the same on both sides of the seam.)
+        if (s.grow) return { ...lensFor(box, s, page, dirty, s.card), ...single(s, box), reflection: s.parted ? undefined : mirrorOf(box, a.height), left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
         return { ...lensFor(box, s, page, dirty, s.parted ? 1 : s.morph ? s.card : 0), ...alone, left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
       },
       drawn: () => {
@@ -1225,9 +1437,10 @@ export type GlassPopup = ReturnType<typeof createMorph>
 /**
  * How the surface comes out. `stretch`: it swells out of the control and holds on by a neck that
  * thins and snaps. `morph`: the control itself becomes the surface, which then lies over it (give
- * the content a negative `sideOffset`, the control's height).
+ * the content a negative `sideOffset`, the control's height). `grow`: the control's glass grows
+ * into the surface wherever it lies (below, above or beside the control) and shrinks back.
  */
-export type GlassPopupOpening = 'stretch' | 'morph'
+export type GlassPopupOpening = 'stretch' | 'morph' | 'grow'
 
 /**
  * With `opening: 'morph'`, which way the surface comes into place. `top`: the control is thrown
@@ -1312,5 +1525,5 @@ export const spellLabel = (children: ReactNode) => Children.map(children, (child
 
 /** One gooey popup: hand the result to its GlassPopupAnchor and GlassPopupSurface. `matchWidth` keeps the surface as wide as the anchor; `opening` picks the motion (see GlassPopupOpening) and `from` the way a morphing surface comes in (see GlassPopupFrom). */
 export function useGlassPopup({ matchWidth = false, opening = 'stretch', from = 'top' }: { matchWidth?: boolean; opening?: GlassPopupOpening; from?: GlassPopupFrom } = {}): GlassPopup {
-  return useMemo(() => createMorph(matchWidth, opening === 'morph', from), [matchWidth, opening, from])
+  return useMemo(() => createMorph(matchWidth, opening, from), [matchWidth, opening, from])
 }

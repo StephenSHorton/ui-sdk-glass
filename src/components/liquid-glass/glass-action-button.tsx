@@ -59,13 +59,19 @@ export type GlassActionButtonProps = {
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className' | 'onClick'>
 
 // The droplet is as tall as the button. Apart, the body keeps 1.625 × that free at its end
-// (droplet + gap); merged, just the droplet's slot. The difference is a spacer that springs
+// (droplet + gap); merged, just the icon's slot (below). The difference is a spacer that springs
 // closed (a child, so the glass re-reading the host's colours never cuts its transition).
 const sizes = {
-  sm: { host: 'h-8 pl-4 text-[13px]', drop: 'size-8 [&_svg]:size-3.5', apart: 52, merged: 38, cap: 32 },
-  md: { host: 'h-10 pl-5 text-sm', drop: 'size-10 [&_svg]:size-4', apart: 65, merged: 46, cap: 40 },
-  lg: { host: 'h-12 pl-6 text-[15px]', drop: 'size-12 [&_svg]:size-[18px]', apart: 78, merged: 55, cap: 48 },
+  sm: { host: 'h-8 pl-4 text-[13px]', drop: 'size-8 [&_svg]:size-3.5', apart: 52, merged: 30, cap: 32 },
+  md: { host: 'h-10 pl-5 text-sm', drop: 'size-10 [&_svg]:size-4', apart: 65, merged: 36, cap: 40 },
+  lg: { host: 'h-12 pl-6 text-[15px]', drop: 'size-12 [&_svg]:size-[18px]', apart: 78, merged: 42, cap: 48 },
 }
+// Merged, the icon is no longer a droplet of its own: it sits by the label as an icon in a
+// button does. What is drawn of it ends 5/6 of the left padding from the edge (16 → 13,
+// 20 → 17, 24 → 20: a round end needs less room beside an icon than beside text) and starts a
+// third of the left padding after the label. `merged` is that slot, measured on the icon's box
+// (what is drawn sits an eighth of it inside); the icon moves this far in from the droplet's centre.
+const MERGED_SHIFT = 3
 
 const fallback: Record<GlassMaterial, string> = {
   // Text follows the glass's own tone once it draws, so it reads on any backdrop.
@@ -249,7 +255,7 @@ export function GlassActionButton({
       {state === 'idle' && (
         <span aria-hidden data-glass-fallback="" className="pointer-events-none absolute inset-y-2 w-px bg-current opacity-20" style={{ right: s.cap }} />
       )}
-      <span aria-hidden data-glass-drop="" className={`pointer-events-none absolute top-0 right-0 flex items-center justify-center [&_svg]:shrink-0 ${s.drop}`} style={BEND}>
+      <span aria-hidden data-glass-drop="" className={`pointer-events-none absolute top-0 right-0 flex items-center justify-center transition-[translate] [&_svg]:shrink-0 ${ease} ${s.drop}`} style={{ ...BEND, translate: state === 'idle' ? undefined : `${-MERGED_SHIFT}px` }}>
         <span key={state} className="flex" {...swap}>
           {state === 'pending' ? <Spinner /> : state === 'success' ? <Check /> : (icon ?? <Arrow />)}
         </span>

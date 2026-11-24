@@ -1679,6 +1679,14 @@ export const RELEASES: Release[] = [
         ),
       },
       {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'Merged, the spinner and the check sit by the label as an icon in a button does: close after the text, with a little less room on their side than on the label\'s (20 px to 24 px on the large size). The merged button is narrower for it.',
+          'Birleşik hâlde döner simge ve onay işareti, bir butondaki ikon gibi etiketin yanında duruyor: yazının hemen ardında, kendi taraflarında etiket tarafındakinden biraz daha az boşlukla (büyük boyda 24 px\'e karşı 20 px). Birleşik buton da bu kadar daralıyor.',
+        ),
+      },
+      {
         kind: 'fixed',
         page: 'action-button',
         text: t(

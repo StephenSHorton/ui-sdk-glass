@@ -1678,6 +1678,14 @@ export const RELEASES: Release[] = [
           '`over` ile yüzey henüz yuvarlakken listenin köşeleri artık kesilmiyor: liste cama sığana dek biraz daha küçük kalıyor.',
         ),
       },
+      {
+        kind: 'improved',
+        page: 'dropdown-menu',
+        text: t(
+          'The light of the press that opens a surface no longer spills past its edge as a white glow: it stays inside the glass, on every popup.',
+          'Yüzeyi açan basışın ışığı artık kenarından beyaz bir parıltı olarak taşmıyor: bütün açılır yüzeylerde camın içinde kalıyor.',
+        ),
+      },
     ],
   },
   {

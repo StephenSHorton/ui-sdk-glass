@@ -38,6 +38,7 @@ import {
   PULL,
   SPRINGS,
   clamp,
+  cohesionSoftness,
   getGlassEngine,
   lerp,
   mixRgb,
@@ -297,6 +298,8 @@ export function GlassLayer({
       sy: 0,
       pinned: [] as Element[],
       rigid: false,
+      /** The glass this one melted into when the picture was taken (COHESION): left out of it. */
+      near: undefined as Element[] | undefined,
     }
     const press: Spring = { x: 0, v: 0 }
     const growX: Spring = { x: 0, v: 0 }
@@ -482,8 +485,10 @@ export function GlassLayer({
         // Room for the longest a pull can make it, taken once: a canvas that changed size on
         // every frame of a pull would be painted from scratch each time.
         const most = px === 1 && py === 1 ? 0 : Math.max(w, h) <= PULL.smallUntil ? PULL.smallStretchMax : PULL.stretchMax
-        const padX = Math.max(8, Math.ceil(reach * (1 + most) - w / 2 + 2))
-        const padTop = Math.max(10, Math.ceil(hy * (1 + most) - h / 2 + 2))
+        // A button also keeps room for its side of a bridge to glass it melts into (COHESION).
+        const melt = swell ? Math.ceil(cohesionSoftness(h) / 4) + 3 : 0
+        const padX = Math.max(8, Math.ceil(reach * (1 + most) - w / 2 + 2), melt)
+        const padTop = Math.max(10, Math.ceil(hy * (1 + most) - h / 2 + 2), melt)
         const padBottom = Math.round(h * 0.8 + 4)
         const origin = `${padX + w / 2}px ${padTop + h / 2}px`
         const undo = px === 1 && py === 1 ? '' : `${(1 / px).toFixed(6)} ${(1 / py).toFixed(6)}`
@@ -600,6 +605,11 @@ export function GlassLayer({
                       const b = el.getBoundingClientRect()
                       return b.width > 0 && b.height > 0 && b.right > region.left && b.left < region.right && b.bottom > region.top && b.top < region.bottom
                     })
+                  // Glass this one melts into (COHESION) is the same body now: the picture leaves it out.
+                  if (page.near !== view.near) {
+                    page.near = view.near
+                    page.stale = true
+                  }
                   // The page is re-painted when the glass moves over it, and at most every 120 ms otherwise.
                   // `live` reads it again every frame at 60 Hz, and every second or third frame on a faster display.
                   const again = !!page.ctx && (page.stale || (key !== page.key && !rides) || now - page.at > (live ? 12 : 120))
@@ -624,7 +634,7 @@ export function GlassLayer({
                     drawDom(pc2, root, {
                       origin: { left: lx, top: ly },
                       region,
-                      skip: (el) => el === host || el.hasAttribute('data-glass-skip'),
+                      skip: (el) => el === host || el.hasAttribute('data-glass-skip') || !!view.near?.includes(el),
                       onStale: () => {
                         page.stale = true
                         view.dirty = true
@@ -655,6 +665,8 @@ export function GlassLayer({
             : undefined,
           screenX: rect.left + rect.width / 2,
           screenY: rect.top + rect.height / 2,
+          // The host's scale on screen (its own and its ancestors'), without a pull's stretch, which the canvas undoes.
+          scale: rect.width / Math.max(w * px, 1e-3),
         }
       },
       drawn: () => {

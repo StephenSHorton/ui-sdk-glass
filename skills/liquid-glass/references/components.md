@@ -254,6 +254,8 @@ export default function Demo() {
 
 A pointer that holds the button and drags away pulls it after itself. The button follows a little way through a rubber band (10 px at most on a wide button), stretches along the pull and thins across it, and swings back like gel when you let go. A button up to 72 px follows from the point it was pressed at; a wider one moves only once the pointer is past its edge. On by default (`pull={false}` keeps the button in its place), and still under reduced motion. Let go outside the button and nothing is clicked, as with any button.
 
+Two buttons that come near each other melt into one body, as two drops of liquid do: pull the round button towards the wide one above. Within reach the sides that face each other lean out, nearer still a bridge forms, and it thins and lets go as they part. They begin to melt once the gap between them is under 6 px, and join under half of that (`COHESION` in `engine.ts`). Joined, hold one and part of its light runs on into the other. Every button of the kit does it, Action Button and Button Group included; a card, a menu or a lens never melts.
+
 ## API reference
 
 | Prop | Type | Default | Description |

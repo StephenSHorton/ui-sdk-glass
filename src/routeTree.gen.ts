@@ -14,6 +14,7 @@ import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$local
 import { Route as Char123LocaleChar125404RouteImport } from './routes/{-$locale}/404'
 import { Route as Char123LocaleChar125BrandRouteImport } from './routes/{-$locale}/brand'
 import { Route as Char123LocaleChar125ChangelogRouteImport } from './routes/{-$locale}/changelog'
+import { Route as Char123LocaleChar125CohesionLabRouteImport } from './routes/{-$locale}/cohesion-lab'
 import { Route as Char123LocaleChar125DocsRouteRouteImport } from './routes/{-$locale}/docs/route'
 import { Route as Char123LocaleChar125LightLabRouteImport } from './routes/{-$locale}/light-lab'
 import { Route as Char123LocaleChar125MenuLabRouteImport } from './routes/{-$locale}/menu-lab'
@@ -53,6 +54,12 @@ const Char123LocaleChar125ChangelogRoute =
   Char123LocaleChar125ChangelogRouteImport.update({
     id: '/changelog',
     path: '/changelog',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CohesionLabRoute =
+  Char123LocaleChar125CohesionLabRouteImport.update({
+    id: '/cohesion-lab',
+    path: '/cohesion-lab',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125DocsRouteRoute =
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
   '/{-$locale}/brand': typeof Char123LocaleChar125BrandRoute
   '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/cohesion-lab': typeof Char123LocaleChar125CohesionLabRoute
   '/{-$locale}/light-lab': typeof Char123LocaleChar125LightLabRoute
   '/{-$locale}/menu-lab': typeof Char123LocaleChar125MenuLabRoute
   '/{-$locale}/mirror-lab': typeof Char123LocaleChar125MirrorLabRoute
@@ -144,6 +152,7 @@ export interface FileRoutesByTo {
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
   '/{-$locale}/brand': typeof Char123LocaleChar125BrandRoute
   '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/cohesion-lab': typeof Char123LocaleChar125CohesionLabRoute
   '/{-$locale}/light-lab': typeof Char123LocaleChar125LightLabRoute
   '/{-$locale}/menu-lab': typeof Char123LocaleChar125MenuLabRoute
   '/{-$locale}/mirror-lab': typeof Char123LocaleChar125MirrorLabRoute
@@ -163,6 +172,7 @@ export interface FileRoutesById {
   '/{-$locale}/404': typeof Char123LocaleChar125404Route
   '/{-$locale}/brand': typeof Char123LocaleChar125BrandRoute
   '/{-$locale}/changelog': typeof Char123LocaleChar125ChangelogRoute
+  '/{-$locale}/cohesion-lab': typeof Char123LocaleChar125CohesionLabRoute
   '/{-$locale}/light-lab': typeof Char123LocaleChar125LightLabRoute
   '/{-$locale}/menu-lab': typeof Char123LocaleChar125MenuLabRoute
   '/{-$locale}/mirror-lab': typeof Char123LocaleChar125MirrorLabRoute
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/404'
     | '/{-$locale}/brand'
     | '/{-$locale}/changelog'
+    | '/{-$locale}/cohesion-lab'
     | '/{-$locale}/light-lab'
     | '/{-$locale}/menu-lab'
     | '/{-$locale}/mirror-lab'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/404'
     | '/{-$locale}/brand'
     | '/{-$locale}/changelog'
+    | '/{-$locale}/cohesion-lab'
     | '/{-$locale}/light-lab'
     | '/{-$locale}/menu-lab'
     | '/{-$locale}/mirror-lab'
@@ -217,6 +229,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/404'
     | '/{-$locale}/brand'
     | '/{-$locale}/changelog'
+    | '/{-$locale}/cohesion-lab'
     | '/{-$locale}/light-lab'
     | '/{-$locale}/menu-lab'
     | '/{-$locale}/mirror-lab'
@@ -269,6 +282,13 @@ declare module '@tanstack/react-router' {
       path: '/changelog'
       fullPath: '/{-$locale}/changelog'
       preLoaderRoute: typeof Char123LocaleChar125ChangelogRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/cohesion-lab': {
+      id: '/{-$locale}/cohesion-lab'
+      path: '/cohesion-lab'
+      fullPath: '/{-$locale}/cohesion-lab'
+      preLoaderRoute: typeof Char123LocaleChar125CohesionLabRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/docs': {
@@ -372,6 +392,7 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125404Route: typeof Char123LocaleChar125404Route
   Char123LocaleChar125BrandRoute: typeof Char123LocaleChar125BrandRoute
   Char123LocaleChar125ChangelogRoute: typeof Char123LocaleChar125ChangelogRoute
+  Char123LocaleChar125CohesionLabRoute: typeof Char123LocaleChar125CohesionLabRoute
   Char123LocaleChar125LightLabRoute: typeof Char123LocaleChar125LightLabRoute
   Char123LocaleChar125MenuLabRoute: typeof Char123LocaleChar125MenuLabRoute
   Char123LocaleChar125MirrorLabRoute: typeof Char123LocaleChar125MirrorLabRoute
@@ -390,6 +411,7 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125404Route: Char123LocaleChar125404Route,
     Char123LocaleChar125BrandRoute: Char123LocaleChar125BrandRoute,
     Char123LocaleChar125ChangelogRoute: Char123LocaleChar125ChangelogRoute,
+    Char123LocaleChar125CohesionLabRoute: Char123LocaleChar125CohesionLabRoute,
     Char123LocaleChar125LightLabRoute: Char123LocaleChar125LightLabRoute,
     Char123LocaleChar125MenuLabRoute: Char123LocaleChar125MenuLabRoute,
     Char123LocaleChar125MirrorLabRoute: Char123LocaleChar125MirrorLabRoute,

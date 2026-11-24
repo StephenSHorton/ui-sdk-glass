@@ -132,7 +132,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'menu',
     title: 'GlassMenu',
-    description: 'Grow: a menu its button grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    description: 'Grow: a menu its button (or a whole GlassButtonGroup) grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-menu.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
@@ -1348,8 +1348,8 @@ const popup = useGlassPopup()
       {
         type: 'p',
         text: t(
-          'For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: with `over="center"` the group unfolds into the menu, which settles around it. See Dropdown Menu.',
-          'Sığmayan eylemler için bir grubu Dropdown Menu ile sar ve tetikleyicisini üç noktaya koy: `over="center"` ile grup menüye dönüşür ve menü çevresine oturur. Dropdown Menu sayfasına bak.',
+          'For the actions that do not fit, wrap one group in a Menu and put its trigger on the three dots with `asChild`: the group\'s glass grows into the menu and the dots go, and it runs back the same way. The example above does it. A Dropdown Menu works the same way. See Menu and Dropdown Menu.',
+          'Sığmayan eylemler için bir grubu Menu ile sar ve tetikleyicisini `asChild` ile üç noktaya koy: grubun camı menüye doğru büyür, noktalar gider; kapanırken aynı yoldan geri döner. Yukarıdaki örnek bunu yapıyor. Dropdown Menu de aynı şekilde çalışır. Menu ve Dropdown Menu sayfalarına bak.',
         ),
       },
       h('Examples', 'Örnekler'),
@@ -1489,7 +1489,7 @@ const popup = useGlassPopup()
   </GlassDropdownMenuContent>
 </GlassDropdownMenu>`,
       },
-      { type: 'demo', id: 'glass-button-group-basic', title: t('The three dots of a toolbar', 'Bir araç çubuğunun üç noktası') },
+      { type: 'demo', id: 'glass-dropdown-menu-group', title: t('The three dots of a toolbar', 'Bir araç çubuğunun üç noktası') },
       h('API reference', 'API referansı'),
       {
         type: 'props',
@@ -1744,6 +1744,30 @@ const popup = useGlassPopup({ opening: 'morph' })
 </GlassMenuContent>`,
       },
       { type: 'demo', id: 'glass-menu-basic', title: t('A menu with a submenu', 'Alt menülü bir menü') },
+      h('Out of a button group', 'Bir buton grubundan'),
+      {
+        type: 'p',
+        text: t(
+          'Wrap a GlassButtonGroup and the content in the menu, and put the trigger on one of the group\'s items with `asChild`. The whole group\'s glass is then the one that grows into the menu, and the menu takes its colour.',
+          'Bir GlassButtonGroup\'u ve içeriği menüyle sar, tetikleyiciyi `asChild` ile grubun öğelerinden birine koy. Böylece menüye doğru büyüyen cam, bütün grubun camı olur ve menü onun rengini alır.',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'toolbar.tsx',
+        code: `<GlassMenu>
+  <GlassButtonGroup>
+    <GlassMenuTrigger asChild>
+      <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
+    </GlassMenuTrigger>
+  </GlassButtonGroup>
+  <GlassMenuContent align="end">
+    <GlassMenuItem>Mark as read</GlassMenuItem>
+    <GlassMenuItem destructive>Delete</GlassMenuItem>
+  </GlassMenuContent>
+</GlassMenu>`,
+      },
+      { type: 'demo', id: 'glass-button-group-basic', title: t('The three dots of a toolbar', 'Bir araç çubuğunun üç noktası') },
       h('The motion on your own popup', 'Hareketi kendi açılır yüzeyinde kullanmak'),
       {
         type: 'p',
@@ -1758,6 +1782,7 @@ const popup = useGlassPopup({ opening: 'morph' })
         rows: [
           { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassMenu`: control the menu yourself, or let it keep its own state.', '`GlassMenu` üzerinde: menüyü kendin yönet ya da kendi durumunu tutsun.') },
           { name: 'GlassMenuTrigger className', type: 'string', description: t('The button is a pill 48px tall. `w-12 px-0` makes it round for a single icon (give it an `aria-label`).', 'Buton 48px yüksekliğinde bir haptır. `w-12 px-0` onu tek bir ikon için yuvarlak yapar (`aria-label` ver).') },
+          { name: 'GlassMenuTrigger asChild', type: 'boolean', default: 'false', description: t('Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own: the group\'s glass grows into the menu.', 'Tetikleyiciyi kendi cam butonu yerine tek çocuğuna (bir `GlassButtonGroupItem`) koyar: menüye doğru büyüyen, grubun camı olur.') },
           { name: 'GlassMenuContent side', type: "'bottom' | 'top' | 'left' | 'right'", default: "'bottom'", description: t('Where the menu lies against its button. It flips when there is no room.', 'Menünün butona göre nerede durduğu. Yer yoksa öbür tarafa döner.') },
           { name: 'GlassMenuContent align', type: "'start' | 'center' | 'end'", default: "'start'", description: t('How the menu lines up with the button along that side.', 'Menünün o kenar boyunca butonla nasıl hizalandığı.') },
           { name: 'GlassMenuContent sideOffset', type: 'number', default: '8', description: t('The gap between the button and the menu, in px.', 'Buton ile menü arasındaki boşluk, px olarak.') },
@@ -1820,8 +1845,16 @@ export const RELEASES: Release[] = [
   {
     version: '1.7.3',
     date: '2026-11-24',
-    title: t('No line where the glass leaves its control.', 'Camın kontrolünden ayrıldığı yerde çizgi yok.'),
+    title: t('A Menu out of a button group, and no line where the glass leaves its control.', 'Buton grubundan açılan Menu ve camın kontrolünden ayrıldığı yerde çizgi yok.'),
     changes: [
+      {
+        kind: 'improved',
+        page: 'menu',
+        text: t(
+          'Menu opens out of a button group: `GlassMenuTrigger asChild` puts the trigger on an item of a GlassButtonGroup, and the whole group\'s glass grows into the menu. The three dots of the Button Group example are now a Menu.',
+          'Menu artık bir buton grubundan açılabiliyor: `GlassMenuTrigger asChild` tetikleyiciyi bir GlassButtonGroup öğesine koyar ve menüye doğru bütün grubun camı büyür. Button Group örneğindeki üç nokta artık bir Menu.',
+        ),
+      },
       {
         kind: 'fixed',
         page: 'menu',

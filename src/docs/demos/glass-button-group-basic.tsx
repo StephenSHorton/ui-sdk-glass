@@ -1,13 +1,7 @@
 import { Archive, ArrowLeft, BellOff, Clock, Ellipsis, Flag, MailOpen, Tag, Trash2 } from 'lucide-react'
 
 import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
-import {
-  GlassDropdownMenu,
-  GlassDropdownMenuContent,
-  GlassDropdownMenuItem,
-  GlassDropdownMenuSeparator,
-  GlassDropdownMenuTrigger,
-} from '@/components/liquid-glass/glass-dropdown-menu'
+import { GlassMenu, GlassMenuContent, GlassMenuItem, GlassMenuSeparator, GlassMenuTrigger } from '@/components/liquid-glass/glass-menu'
 
 const COLS = 13
 const ROWS = 7
@@ -21,8 +15,8 @@ const fade = (col: number, row: number) => {
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
 // as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
-// grid, and its rim mirrors the white glass beside it. The three dots stand apart and unfold
-// into a menu that settles around them.
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and are a
+// Menu: their glass grows down into the menu and the dots go, and it runs back the same way.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -60,34 +54,34 @@ export default function Demo() {
             <span className="@max-[440px]:sr-only">Snooze</span>
           </GlassButtonGroupItem>
         </GlassButtonGroup>
-        <GlassDropdownMenu over="center">
+        <GlassMenu>
           <GlassButtonGroup>
-            <GlassDropdownMenuTrigger asChild>
+            <GlassMenuTrigger asChild>
               <GlassButtonGroupItem aria-label="More" className="px-0">
                 <Ellipsis />
               </GlassButtonGroupItem>
-            </GlassDropdownMenuTrigger>
+            </GlassMenuTrigger>
           </GlassButtonGroup>
-          <GlassDropdownMenuContent>
-            <GlassDropdownMenuItem>
+          <GlassMenuContent align="end">
+            <GlassMenuItem>
               <MailOpen />
               Mark as read
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuItem>
+            </GlassMenuItem>
+            <GlassMenuItem>
               <Tag />
               Add label
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuItem>
+            </GlassMenuItem>
+            <GlassMenuItem>
               <BellOff />
               Mute thread
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuSeparator />
-            <GlassDropdownMenuItem destructive>
+            </GlassMenuItem>
+            <GlassMenuSeparator />
+            <GlassMenuItem destructive>
               <Trash2 />
               Delete
-            </GlassDropdownMenuItem>
-          </GlassDropdownMenuContent>
-        </GlassDropdownMenu>
+            </GlassMenuItem>
+          </GlassMenuContent>
+        </GlassMenu>
       </GlassButtonGroup>
     </div>
   )

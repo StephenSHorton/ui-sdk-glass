@@ -1792,13 +1792,7 @@ Source: https://onemorethink.dev/docs/select
 import { Archive, ArrowLeft, BellOff, Clock, Ellipsis, Flag, MailOpen, Tag, Trash2 } from 'lucide-react'
 
 import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
-import {
-  GlassDropdownMenu,
-  GlassDropdownMenuContent,
-  GlassDropdownMenuItem,
-  GlassDropdownMenuSeparator,
-  GlassDropdownMenuTrigger,
-} from '@/components/liquid-glass/glass-dropdown-menu'
+import { GlassMenu, GlassMenuContent, GlassMenuItem, GlassMenuSeparator, GlassMenuTrigger } from '@/components/liquid-glass/glass-menu'
 
 const COLS = 13
 const ROWS = 7
@@ -1812,8 +1806,8 @@ const fade = (col: number, row: number) => {
 // The actions of a message. Some share a body of glass, some stand apart: nested groups, with
 // the outer one only spacing them. The glass is white unless a group brings its own colour,
 // as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
-// grid, and its rim mirrors the white glass beside it. The three dots stand apart and unfold
-// into a menu that settles around them.
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and are a
+// Menu: their glass grows down into the menu and the dots go, and it runs back the same way.
 // Where the row would not fit (a phone), the labels step aside and the icons carry it.
 // Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
 // on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
@@ -1851,34 +1845,34 @@ export default function Demo() {
             <span className="@max-[440px]:sr-only">Snooze</span>
           </GlassButtonGroupItem>
         </GlassButtonGroup>
-        <GlassDropdownMenu over="center">
+        <GlassMenu>
           <GlassButtonGroup>
-            <GlassDropdownMenuTrigger asChild>
+            <GlassMenuTrigger asChild>
               <GlassButtonGroupItem aria-label="More" className="px-0">
                 <Ellipsis />
               </GlassButtonGroupItem>
-            </GlassDropdownMenuTrigger>
+            </GlassMenuTrigger>
           </GlassButtonGroup>
-          <GlassDropdownMenuContent>
-            <GlassDropdownMenuItem>
+          <GlassMenuContent align="end">
+            <GlassMenuItem>
               <MailOpen />
               Mark as read
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuItem>
+            </GlassMenuItem>
+            <GlassMenuItem>
               <Tag />
               Add label
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuItem>
+            </GlassMenuItem>
+            <GlassMenuItem>
               <BellOff />
               Mute thread
-            </GlassDropdownMenuItem>
-            <GlassDropdownMenuSeparator />
-            <GlassDropdownMenuItem destructive>
+            </GlassMenuItem>
+            <GlassMenuSeparator />
+            <GlassMenuItem destructive>
               <Trash2 />
               Delete
-            </GlassDropdownMenuItem>
-          </GlassDropdownMenuContent>
-        </GlassDropdownMenu>
+            </GlassMenuItem>
+          </GlassMenuContent>
+        </GlassMenu>
       </GlassButtonGroup>
     </div>
   )
@@ -1938,7 +1932,7 @@ Nest groups to keep some actions in one body and others on their own. The outer 
 
 ## With a menu
 
-For the actions that do not fit, wrap one group in a Dropdown Menu and put its trigger on the three dots: with `over="center"` the group unfolds into the menu, which settles around it. See Dropdown Menu.
+For the actions that do not fit, wrap one group in a Menu and put its trigger on the three dots with `asChild`: the group's glass grows into the menu and the dots go, and it runs back the same way. The example above does it. A Dropdown Menu works the same way. See Menu and Dropdown Menu.
 
 ## Examples
 
@@ -2816,6 +2810,117 @@ export default function Demo() {
 }
 ```
 
+## Out of a button group
+
+Wrap a GlassButtonGroup and the content in the menu, and put the trigger on one of the group's items with `asChild`. The whole group's glass is then the one that grows into the menu, and the menu takes its colour.
+
+```tsx
+<GlassMenu>
+  <GlassButtonGroup>
+    <GlassMenuTrigger asChild>
+      <GlassButtonGroupItem aria-label="More" className="px-0"><Ellipsis /></GlassButtonGroupItem>
+    </GlassMenuTrigger>
+  </GlassButtonGroup>
+  <GlassMenuContent align="end">
+    <GlassMenuItem>Mark as read</GlassMenuItem>
+    <GlassMenuItem destructive>Delete</GlassMenuItem>
+  </GlassMenuContent>
+</GlassMenu>
+```
+
+### The three dots of a toolbar
+
+```tsx
+import { Archive, ArrowLeft, BellOff, Clock, Ellipsis, Flag, MailOpen, Tag, Trash2 } from 'lucide-react'
+
+import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass'
+import { GlassMenu, GlassMenuContent, GlassMenuItem, GlassMenuSeparator, GlassMenuTrigger } from '@/components/liquid-glass/glass-menu'
+
+const COLS = 13
+const ROWS = 7
+
+/** 1 around the middle of the grid, falling to 0 at its edge. */
+const fade = (col: number, row: number) => {
+  const distance = Math.hypot((col - (COLS - 1) / 2) / (COLS / 2), (row - (ROWS - 1) / 2) / (ROWS / 2))
+  return Math.min(1, Math.max(0, (1 - distance) / 0.45))
+}
+
+// The actions of a message. Some share a body of glass, some stand apart: nested groups, with
+// the outer one only spacing them. The glass is white unless a group brings its own colour,
+// as the back button does. Snooze stands apart in clear glass (`material="clear"`): it bends the
+// grid, and its rim mirrors the white glass beside it. The three dots stand apart and are a
+// Menu: their glass grows down into the menu and the dots go, and it runs back the same way.
+// Where the row would not fit (a phone), the labels step aside and the icons carry it.
+// Point at a body and it swells; press and it grows. Behind them, the Press demo's fine grid
+// on the page's own colour, centred on the glass: plain DOM, every cell draws its own top
+// and left line, fainter towards the edge.
+export default function Demo() {
+  return (
+    <div className="@container relative isolate flex h-72 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -z-10 grid -translate-x-1/2 -translate-y-1/2 grid-cols-[repeat(13,40px)]">
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="relative size-10" style={{ opacity: fade(i % COLS, Math.floor(i / COLS)) }}>
+            <span className="absolute inset-x-0 top-0 h-px bg-black/10 dark:bg-white/10" />
+            <span className="absolute inset-y-0 left-0 w-px bg-black/10 dark:bg-white/10" />
+          </span>
+        ))}
+      </div>
+      <GlassButtonGroup aria-label="Message">
+        <GlassButtonGroup className="bg-neutral-900 text-white">
+          <GlassButtonGroupItem aria-label="Back" className="px-0">
+            <ArrowLeft />
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Archive />
+            <span className="@max-[440px]:sr-only">Archive</span>
+          </GlassButtonGroupItem>
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Flag />
+            <span className="@max-[440px]:sr-only">Report</span>
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassButtonGroup material="clear">
+          <GlassButtonGroupItem className="@max-[440px]:px-0">
+            <Clock />
+            <span className="@max-[440px]:sr-only">Snooze</span>
+          </GlassButtonGroupItem>
+        </GlassButtonGroup>
+        <GlassMenu>
+          <GlassButtonGroup>
+            <GlassMenuTrigger asChild>
+              <GlassButtonGroupItem aria-label="More" className="px-0">
+                <Ellipsis />
+              </GlassButtonGroupItem>
+            </GlassMenuTrigger>
+          </GlassButtonGroup>
+          <GlassMenuContent align="end">
+            <GlassMenuItem>
+              <MailOpen />
+              Mark as read
+            </GlassMenuItem>
+            <GlassMenuItem>
+              <Tag />
+              Add label
+            </GlassMenuItem>
+            <GlassMenuItem>
+              <BellOff />
+              Mute thread
+            </GlassMenuItem>
+            <GlassMenuSeparator />
+            <GlassMenuItem destructive>
+              <Trash2 />
+              Delete
+            </GlassMenuItem>
+          </GlassMenuContent>
+        </GlassMenu>
+      </GlassButtonGroup>
+    </div>
+  )
+}
+```
+
 ## The motion on your own popup
 
 Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any control that opens a surface the same motion, with `GlassPopupAnchor` as the control's first child and `GlassPopupSurface` as the content's. Wrap the content's children in an element with `data-glass-list`. The numbers (the spring, which side leads, when the label goes and the content shows) are `MENU` in `engine.ts`.
@@ -2826,6 +2931,7 @@ Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any co
 | --- | --- | --- | --- |
 | `open / defaultOpen / onOpenChange` | `boolean / boolean / (open: boolean) => void` | — | On `GlassMenu`: control the menu yourself, or let it keep its own state. |
 | `GlassMenuTrigger className` | `string` | — | The button is a pill 48px tall. `w-12 px-0` makes it round for a single icon (give it an `aria-label`). |
+| `GlassMenuTrigger asChild` | `boolean` | `false` | Put the trigger on its single child (a `GlassButtonGroupItem`) instead of a glass button of its own: the group's glass grows into the menu. |
 | `GlassMenuContent side` | `'bottom' \| 'top' \| 'left' \| 'right'` | `'bottom'` | Where the menu lies against its button. It flips when there is no room. |
 | `GlassMenuContent align` | `'start' \| 'center' \| 'end'` | `'start'` | How the menu lines up with the button along that side. |
 | `GlassMenuContent sideOffset` | `number` | `8` | The gap between the button and the menu, in px. |

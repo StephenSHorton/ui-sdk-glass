@@ -1658,6 +1658,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.6.10',
+    date: '2026-11-24',
+    title: t('Action Button: a whole end after the merge.', 'Action Button: birleşmeden sonra uç tam.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'With the pointer on the button, its end was cut off in a straight line for a few frames just after the droplet melted in: the swell that greets the merge pushed the droplet, not yet fully in, past the edge of the glass\'s canvas. The swell now waits until the two are one body, and the canvas makes room whenever the glass swells past it.',
+          'İmleç butonun üstündeyken, damla gövdeye karıştıktan hemen sonra butonun ucu birkaç kare boyunca düz bir çizgiyle kesiliyordu: birleşmeyi karşılayan şişme, henüz tam erimemiş damlayı camın tuvalinin kenarından dışarı itiyordu. Şişme artık ikisi tek gövde olana dek bekliyor, tuval de cam ne zaman dışına taşsa ona yer açıyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.6.9',
     date: '2026-11-24',
     title: t('Action Button: it answers when the action lands.', 'Action Button: eylem bitince karşılık veriyor.'),

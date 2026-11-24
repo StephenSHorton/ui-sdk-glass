@@ -153,6 +153,8 @@ const MAX_GROW_PX = 6
 const DROPLET_GAP = 0.25
 /** A pulse: the glass swells as if hovered and pressed for this long (seconds, unless `pulseHold` says otherwise), then lets go. */
 const PULSE = 0.16
+/** A droplet melting in: the glass nods once it is this far in (0–1 of the way out). */
+const NOD_AT = 0.15
 /** Already hovered, its hover swell is at rest: the pulse pushes its width and height instead (per second). */
 const PULSE_KICK = { x: 24, y: 20 }
 /**
@@ -292,6 +294,16 @@ export function GlassLayer({
     let settle = 0
     /** A nod: seconds left of a hover's swell alone (the droplet splitting off or melting in). */
     let nod = 0
+    /** A nod asked for while the droplet is still on its way in: it plays once the two are one body. */
+    let nodDue = false
+    const playNod = () => {
+      nodDue = false
+      // Hovered, the hover swell is at rest already: its springs are pushed instead (a pulse's push).
+      if (hovered) {
+        growX.v += PULSE_KICK.x
+        growY.v += PULSE_KICK.y
+      } else nod = PULSE
+    }
     let bend = 0
     /** The swell the glass is settling at (0–1, eased): the content bends by what is beyond it, so it is even once the glass holds still. */
     let bendFrom = 0
@@ -317,6 +329,7 @@ export function GlassLayer({
           closing = drop.x ? 0 : 1
           bendFrom = hovered ? 1 : 0
           settle = nod = bend = 0
+          nodDue = false
           setBend('')
           scale.x = 1
           host.style.scale = ''
@@ -339,6 +352,7 @@ export function GlassLayer({
         const apart = dropletRef.current === 'apart' && view.visible && !pressed
         const e = hasDroplet ? stepSpring(drop, apart ? 1 : 0, apart ? SPRINGS.dropletOut : SPRINGS.dropletIn, dt) : false
         closing = clamp(closing + (apart ? -1 : 1) * dt * 12)
+        if (nodDue && (apart || drop.x < NOD_AT)) playNod()
         // The content follows the glass while the pulse lasts, and lets go as it settles.
         bend = clamp(bend + ((greeting ? 1 : 0) - bend) * Math.min(1, dt * (greeting ? PULSE_BEND.in : PULSE_BEND.out)))
         if (!greeting && bend < 0.004) bend = 0
@@ -348,7 +362,7 @@ export function GlassLayer({
         host.style.scale = scale.x === 1 ? '' : scale.x.toFixed(4)
         const fading = 1 - colorT > 0.004
         colorT = fading ? colorT + (1 - colorT) * Math.min(1, dt * 14) : 1
-        return a || b || c || d || e || greeting || nodding || bend > 0 || fading || (clear && live && view.visible)
+        return a || b || c || d || e || greeting || nodding || nodDue || bend > 0 || fading || (clear && live && view.visible)
       },
       lens: (refresh) => {
         if (refresh) {
@@ -420,9 +434,6 @@ export function GlassLayer({
           }
           return null
         }
-        const padX = 8
-        const padTop = 10
-        const padBottom = Math.round(h * 0.8 + 4)
         // The host itself is scaled; the glass inside the canvas is divided by that scale.
         const p = clamp(press.x, -0.12, 1.15)
         const s = Math.max(0.5, scale.x)
@@ -431,6 +442,16 @@ export function GlassLayer({
         const t = hasDroplet ? clamp(drop.x, 0, 1.06) : 0
         const pull = h * (1 + DROPLET_GAP) * t
         const hy = (h / 2) * k + grow * growY.x
+        // Swollen, the droplet's end sits a little off the body's. It joins it as the two
+        // become one, or the end would jump when the droplet goes (the spring's last
+        // ripple brings it back for a moment).
+        const dropX = (w / 2 - h / 2) * k + grow * lerp(growX.x - growY.x, growX.x * 0.5, smooth(0, 0.15, t))
+        // The canvas keeps 8px beside the glass and 10px above it, and more whenever the glass
+        // swells past that (a push while it is already swollen): its end is never cut off.
+        const reach = Math.max((w / 2) * k + grow * growX.x, t > 0.001 ? dropX + hy : 0)
+        const padX = Math.max(8, Math.ceil(reach - w / 2 + 2))
+        const padTop = Math.max(10, Math.ceil(hy - h / 2 + 2))
+        const padBottom = Math.round(h * 0.8 + 4)
         const rect = host.getBoundingClientRect()
         const pc = clamp(press.x)
         const unit = h / DESIGN_HEIGHT
@@ -462,10 +483,7 @@ export function GlassLayer({
           droplet:
             t > 0.001
               ? {
-                  // Swollen, the droplet's end sits a little off the body's. It joins it as the two
-                  // become one, or the end would jump when the droplet goes (the spring's last
-                  // ripple brings it back for a moment).
-                  x: (w / 2 - h / 2) * k + grow * lerp(growX.x - growY.x, growX.x * 0.5, smooth(0, 0.15, t)),
+                  x: dropX,
                   r: hy,
                   k: lerp(bridge, Math.min(bridge, 4 * dip), closing),
                 }
@@ -616,17 +634,16 @@ export function GlassLayer({
       engine.wake()
     }
     pokeRef.current = dirty
-    // The pulse (see `pulse`): the glass swells as under a hover and a press at once, and lets
-    // go. Hovered, its hover swell is at rest already: those springs are pushed, so it wobbles.
-    // The nod: a hover's swell alone, for PULSE seconds. Hovered, the same push as a pulse's.
+    // The nod: a hover's swell alone, for PULSE seconds. A droplet melting in swells once it is
+    // in: pushed while it is still out, its end would stick out past the body's.
     nodRef.current = () => {
       if (!swell || host.matches(':disabled')) return
-      if (hovered) {
-        growX.v += PULSE_KICK.x
-        growY.v += PULSE_KICK.y
-      } else nod = PULSE
+      if (hasDroplet && dropletRef.current === 'merged' && drop.x >= NOD_AT) nodDue = true
+      else playNod()
       dirty()
     }
+    // The pulse (see `pulse`): the glass swells as under a hover and a press at once, and lets
+    // go. Hovered, its hover swell is at rest already: those springs are pushed, so it wobbles.
     pulseRef.current = () => {
       if (!swell || host.matches(':disabled')) return
       if (hovered) {

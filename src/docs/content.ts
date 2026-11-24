@@ -1682,8 +1682,8 @@ export const RELEASES: Release[] = [
         kind: 'improved',
         page: 'dropdown-menu',
         text: t(
-          'The light of the press that opens a surface no longer spills past its edge as a white glow: it stays inside the glass, on every popup.',
-          'Yüzeyi açan basışın ışığı artık kenarından beyaz bir parıltı olarak taşmıyor: bütün açılır yüzeylerde camın içinde kalıyor.',
+          'The light of the press that opens a surface spills past its edge as a much fainter glow, on every popup.',
+          'Yüzeyi açan basışın ışığı, bütün açılır yüzeylerde kenarından çok daha hafif bir parıltıyla taşıyor.',
         ),
       },
     ],

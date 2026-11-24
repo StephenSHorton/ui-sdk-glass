@@ -248,7 +248,7 @@ export const GLOW = {
   coverUntil: 0.1,
   coverFadeSpeed: 10,
   /** How much of the light spills past an open surface's edge (0 = none). */
-  halo: 0,
+  halo: 0.35,
 }
 /**
  * What the rim mirrors of the page around the glass. Each point of the rim looks outwards and

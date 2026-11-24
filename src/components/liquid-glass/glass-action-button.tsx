@@ -7,7 +7,7 @@
 //   idle      [ Deploy ]  ( → )      the arrow floats apart as a droplet
 //   pending   [ Deploying     ◌ ]    merged; a spinner turns where the arrow was
 //   success   [ Deployed      ✓ ]    still merged; a check draws itself in, and the glass
-//                                    swells and lights up, stretching the label with it. It
+//                                    swells, stretching the label with it. It
 //                                    stays swollen until the label is in, waits, then lets go
 //
 //   <GlassActionButton
@@ -143,7 +143,7 @@ export function GlassActionButton({
   // Swaps animate only after the first press, never on page load.
   const [touched, setTouched] = useState(false)
   const [labelWidth, setLabelWidth] = useState<number>()
-  // Counts the successes: each one makes the glass swell once and light up (GlassLayer's `pulse`).
+  // Counts the successes: each one makes the glass swell once (GlassLayer's `pulse`).
   const [landed, setLanded] = useState(0)
   const sizer = useRef<HTMLSpanElement>(null)
   const alive = useRef(true)

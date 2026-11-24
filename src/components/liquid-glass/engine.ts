@@ -442,7 +442,7 @@ export const MORPH = {
    */
   closeSoft: 1,
   closeSpeed: 14,
-  closeFade: 0.12,
+  closeFade: 0.24,
   closeGlowReach: 1,
   closeKick: 1,
   /** The control's own glass (clear, lit) gives way to the card's between these two points of the calm follow (0–1). */

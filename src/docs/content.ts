@@ -1686,6 +1686,14 @@ export const RELEASES: Release[] = [
           'Yüzeyi açan basışın ışığı, bütün açılır yüzeylerde kenarından çok daha hafif bir parıltıyla taşıyor.',
         ),
       },
+      {
+        kind: 'improved',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, the content no longer leaves the surface empty and white while it goes back in: it shrinks with the glass and fades over 0.24 s, nearly to the end.',
+          '`over` ile içerik, yüzey geri girerken onu artık boş ve beyaz bırakmıyor: camla birlikte küçülüyor ve 0,24 sn içinde, neredeyse sonuna kadar soluyor.',
+        ),
+      },
     ],
   },
   {

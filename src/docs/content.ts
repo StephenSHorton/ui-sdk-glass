@@ -1660,14 +1660,22 @@ export const RELEASES: Release[] = [
   {
     version: '1.6.11',
     date: '2026-11-24',
-    title: t('Icons come back with the label.', 'İkonlar yazıyla birlikte geri geliyor.'),
+    title: t('Dropdown Menu: icons come back with the label, the list stays inside the glass.', 'Dropdown Menu: ikonlar yazıyla birlikte geri geliyor, liste camın içinde kalıyor.'),
     changes: [
       {
         kind: 'fixed',
         page: 'dropdown-menu',
         text: t(
-          'With `over`, an icon on the control (the three dots of a Button Group, an icon beside a label) now leaves with the label and comes back out of the same blur and dark, instead of popping in at once.',
-          '`over` ile kontroldeki ikon (Button Group\'un üç noktası, yazının yanındaki ikon) artık yazıyla birlikte gidiyor ve aynı bulanıklıktan ve karanlıktan geri geliyor; birden belirmiyor.',
+          'With `over`, an icon on the control (the three dots of a Button Group, an icon beside a label) now comes back with the letters, out of the same blur and dark, instead of fading in on its own ahead of them.',
+          '`over` ile kontroldeki ikon (Button Group\'un üç noktası, yazının yanındaki ikon) artık harflerle birlikte, aynı bulanıklıktan ve karanlıktan geri geliyor; onlardan önce kendi başına belirmiyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'With `over`, the list no longer has its corners cut off while the surface is still round: it shrinks a little more until it fits inside the glass.',
+          '`over` ile yüzey henüz yuvarlakken listenin köşeleri artık kesilmiyor: liste cama sığana dek biraz daha küçük kalıyor.',
         ),
       },
     ],

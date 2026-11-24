@@ -88,6 +88,31 @@ const LETTER = { duration: 0.4, gap: 0.01, blur: 10 }
 /** A morphing surface's content follows each side of the glass, at most this much (×) off its even size: past it, text would look stretched. */
 const MAX_STRETCH = 1.06
 
+/**
+ * How much (0–1) a box `ox, oy` off the glass's middle, `w × h` half its size, must shrink to lie
+ * inside the rounded glass `g` (half sizes `hx, hy`, corner radius `r`).
+ */
+function fitIn(g: { hx: number; hy: number; r: number }, ox: number, oy: number, w: number, h: number) {
+  const r = Math.min(g.r, g.hx, g.hy)
+  const inside = (k: number) => {
+    const dx = Math.abs(ox * k) + w * k
+    const dy = Math.abs(oy * k) + h * k
+    if (dx > g.hx + 0.5 || dy > g.hy + 0.5) return false
+    const qx = dx - (g.hx - r)
+    const qy = dy - (g.hy - r)
+    return qx <= 0 || qy <= 0 || qx * qx + qy * qy <= (r + 0.5) * (r + 0.5)
+  }
+  if (inside(1)) return 1
+  let lo = 0.2
+  let hi = 1
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2
+    if (inside(mid)) lo = mid
+    else hi = mid
+  }
+  return lo
+}
+
 const CSS = `
 [data-glass-popup]{isolation:isolate;overflow:visible!important;background:transparent}
 [data-glass-popup][data-glass-off]{background:rgb(255 255 255 / .86);border:1px solid rgb(0 0 0 / .1);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
@@ -595,8 +620,11 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       for (const name of RIDE) set(content, name, '', '')
       return
     }
-    const kx = m.zoomX
-    const ky = m.zoomY
+    // While the glass is still round, the list's corners would stick out of it and be cut: the
+    // list shrinks a little more, as much as its box needs to lie inside the rounded glass.
+    const fit = fitIn(m, (l.L + l.W / 2 - (s.c.left + s.c.width / 2)) * m.zoomX, (l.T + l.H / 2 - (s.c.top + s.c.height / 2)) * m.zoomY, (l.W / 2) * m.zoomX, (l.H / 2) * m.zoomY)
+    const kx = m.zoomX * fit
+    const ky = m.zoomY * fit
     const lx = l.L + l.W / 2
     const ly = l.T + l.H / 2
     // Where the list's middle is on the glass, and from there the glass's box in the list's own space (before its zoom).

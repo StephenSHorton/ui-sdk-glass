@@ -129,6 +129,13 @@ export const REGISTRY: RegistryItem[] = [
     entries: [liquid('glass-popover.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
+  {
+    name: 'menu',
+    title: 'GlassMenu',
+    description: 'Grow: a menu its button grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-menu.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
 ]
 
 // ── Pages ───────────────────────────────────────────────────────────────────
@@ -373,6 +380,14 @@ and do not modify the files in components/liquid-glass/.`,
           'Cam, üstünde durduğu öğenin köşelerini alır. Bir `rounded-*` sınıfı ekle; mercek, kenarı ve gölgesi onu izler, bükülme haptaki kadar derin kalır.',
         ),
       },
+      { type: 'demo', id: 'glass-button-pull', title: t('Hold and drag (pull)', 'Basılı tutup çek (pull)') },
+      {
+        type: 'p',
+        text: t(
+          'A pointer that holds the button and drags away pulls it after itself. The button follows a little way through a rubber band (10 px at most on a wide button), stretches along the pull and thins across it, and swings back like gel when you let go. A button up to 72 px follows from the point it was pressed at; a wider one moves only once the pointer is past its edge. On by default (`pull={false}` keeps the button in its place), and still under reduced motion. Let go outside the button and nothing is clicked, as with any button.',
+          'Butonu basılı tutup uzağa sürükleyen imleç onu peşinden çeker. Buton bir lastik bantla biraz gelir (geniş butonda en çok 10 px), çekiş yönünde uzar, karşı yönde incelir; bırakınca jöle gibi yerine yaylanır. 72 px\'e kadar olan buton basıldığı noktadan itibaren imleci izler; daha geniş olan, imleç kenarını geçince kıpırdar. Varsayılan olarak açıktır (`pull={false}` butonu yerinde tutar); azaltılmış harekette buton yerinde durur. Butonun dışında bırakırsan, her butonda olduğu gibi tıklama gerçekleşmez.',
+        ),
+      },
       h('API reference', 'API referansı'),
       {
         type: 'props',
@@ -383,6 +398,7 @@ and do not modify the files in components/liquid-glass/.`,
           { name: 'iconPosition', type: "'start' | 'end'", default: "'end'", description: t('Which side the icon sits on.', 'İkonun hangi tarafta durduğu.') },
           { name: 'tint', type: 'number', default: '0.6', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: renk tonunun arkayı ne kadar örttüğü (0–1).') },
           { name: 'asChild', type: 'boolean', default: 'false', description: t('Put the glass on the single child element instead of a `<button>`.', 'Camı `<button>` yerine tek çocuk öğeye koy.') },
+          { name: 'pull', type: 'boolean', default: 'true', description: t('Hold and drag: the button follows the pointer a little way, stretches along the pull and swings back when let go.', 'Basılı tutup sürükle: buton imlecin peşinden biraz gelir, çekiş yönünde uzar, bırakınca yerine yaylanır.') },
           { name: '…rest', type: 'button attributes', description: t('Passed to the button: `onClick`, `disabled`, `type`, and UI SDK\'s `pendingAnnouncement` and `focusableWhenDisabled`.', 'Butona aktarılır: `onClick`, `disabled`, `type` ve UI SDK\'nın `pendingAnnouncement` ile `focusableWhenDisabled` prop\'ları.') },
         ],
       },
@@ -1625,6 +1641,150 @@ const popup = useGlassPopup({ opening: 'morph' })
       },
     ],
   },
+  {
+    slug: 'menu',
+    group: 'components',
+    title: t('Menu', 'Menu'),
+    name: 'GlassMenu',
+    description: t(
+      'A menu its button grows into: the button\'s own glass pours towards where the menu lies, below, above or beside it, and runs the same way back. With submenus, checkbox and radio items, groups and shortcuts.',
+      'Butonunun büyüyerek dönüştüğü menü: butonun kendi camı menünün durduğu yere, alta, üste ya da yana doğru akar ve aynı yoldan geri döner. Alt menüler, onay ve seçim öğeleri, gruplar ve kısayollarla.',
+    ),
+    verb: t('Grow', 'Büyü'),
+    signature: t('The button\'s glass grows into a full menu, on whichever side the menu lies.', 'Butonun camı, menü hangi yanda duruyorsa oraya doğru büyüyüp tam bir menüye dönüşür.'),
+    hero: 'glass-menu-sides',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A menu with structure: options that stay checked, one choice among a few, groups with a label, a submenu.', 'Yapısı olan bir menü: işaretli kalan seçenekler, birkaç seçenekten biri, etiketli gruplar, bir alt menü.'),
+          t('A menu that must open to one side: above a bottom bar, beside a sidebar row.', 'Belli bir yana açılması gereken menü: alttaki bir çubuğun üstüne, kenar çubuğundaki bir satırın yanına.'),
+          t('The three dots of a card or a row: a small round button that becomes its menu.', 'Bir kartın ya da satırın üç noktası: menüsüne dönüşen küçük, yuvarlak bir buton.'),
+        ],
+        avoid: [
+          t('A few plain actions out of a button or a Button Group: use Dropdown Menu.', 'Bir butondan ya da Button Group\'tan çıkan birkaç yalın eylem: Dropdown Menu kullan.'),
+          t('Picking a value that stays shown on the control: use Select.', 'Kontrolün üstünde görünür kalan bir değer seçmek: Select kullan.'),
+          t('A short form or a note about one control: use Popover.', 'Tek bir kontrolle ilgili kısa bir form ya da not: Popover kullan.'),
+        ],
+      },
+      { type: 'install', item: 'menu' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (keyboard, typeahead, focus, submenus, positioning, ARIA) comes from UI SDK, so Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (klavye, harfle arama, odak, alt menüler, konumlandırma, ARIA) UI SDK\'dan gelir; bu yüzden Menu `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassMenu,
+  GlassMenuContent,
+  GlassMenuItem,
+  GlassMenuSeparator,
+  GlassMenuTrigger,
+} from '@/components/liquid-glass/glass-menu'
+
+<GlassMenu>
+  <GlassMenuTrigger aria-label="More" className="w-12 px-0"><Ellipsis /></GlassMenuTrigger>
+  <GlassMenuContent align="end">
+    <GlassMenuItem onSelect={save}>Save to library</GlassMenuItem>
+    <GlassMenuItem onSelect={share}>Share</GlassMenuItem>
+    <GlassMenuSeparator />
+    <GlassMenuItem destructive onSelect={remove}>Delete</GlassMenuItem>
+  </GlassMenuContent>
+</GlassMenu>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The button\'s glass is the menu. Pressed, its outline grows into the menu\'s on one spring: the edge that faces the menu runs ahead and the rest follows, so the glass pours towards its place instead of scaling up. The button\'s label softens and goes as the glass leaves it, and the items stay where they are while the glass opens over them. While the menu is out the button is not there: it has become the menu. Closing runs the same path back, and a close turned round half way carries on from where it is, at the speed it has. The trigger wears Button\'s clear glass, so it needs something behind it to bend.',
+          'Butonun camı menünün kendisidir. Basılınca dış hattı tek bir yayla menününkine büyür: menüye bakan kenar önden gider, gerisi onu izler; böylece cam ölçeklenerek değil, yerine doğru akarak açılır. Cam butondan ayrılırken butonun etiketi yumuşayıp gider; öğeler yerlerinde durur, cam onların üstüne açılır. Menü açıkken buton orada değildir: menüye dönüşmüştür. Kapanış aynı yolu geri gider; yarı yolda geri çevrilen bir kapanış, bulunduğu yerden ve o anki hızıyla devam eder. Tetikleyici Button\'ın berrak camını taşır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+        ),
+      },
+      h('On any side', 'Her yana'),
+      {
+        type: 'p',
+        text: t(
+          '`side` on `GlassMenuContent` says where the menu lies (`bottom`, `top`, `left`, `right`) and `align` how it lines up with the button (`start`, `center`, `end`). The glass finds its own way there, and the menu flips to the other side when there is no room.',
+          '`GlassMenuContent` üzerindeki `side` menünün nerede durduğunu (`bottom`, `top`, `left`, `right`), `align` ise butonla nasıl hizalandığını (`start`, `center`, `end`) söyler. Cam oraya kendi yolunu bulur; yer yoksa menü öbür tarafa döner.',
+        ),
+      },
+      h('Options, groups and shortcuts', 'Seçenekler, gruplar ve kısayollar'),
+      {
+        type: 'p',
+        text: t(
+          '`GlassMenuCheckboxItem` is an option that stays on or off, and `GlassMenuRadioItem`s in a `GlassMenuRadioGroup` share one value. Both keep the menu open, so several can be set in one visit. `GlassMenuGroup` with a `GlassMenuLabel` names a set of items. An item with a `shortcut` shows its keys through `GlassMenuShortcut`.',
+          '`GlassMenuCheckboxItem` açık ya da kapalı kalan bir seçenektir; bir `GlassMenuRadioGroup` içindeki `GlassMenuRadioItem` öğeleri tek bir değeri paylaşır. İkisi de menüyü açık tutar; böylece tek seferde birkaçı ayarlanabilir. `GlassMenuLabel` taşıyan bir `GlassMenuGroup` bir öğe kümesine ad verir. `shortcut` verilen öğe, tuşlarını `GlassMenuShortcut` ile gösterir.',
+        ),
+      },
+      { type: 'demo', id: 'glass-menu-options', title: t('A view menu', 'Bir görünüm menüsü') },
+      h('Submenus', 'Alt menüler'),
+      {
+        type: 'p',
+        text: t(
+          'Put a `GlassMenuSub` among the items, with a `GlassMenuSubTrigger` and a `GlassMenuSubContent` inside. The row opens its submenu on hover, on a press and with the arrow key; the submenu is a card of the same glass that fades in beside its row. The example below has one.',
+          'Öğelerin arasına, içinde bir `GlassMenuSubTrigger` ve bir `GlassMenuSubContent` olan bir `GlassMenuSub` koy. Satır, alt menüsünü üzerine gelince, basınca ve ok tuşuyla açar; alt menü, satırının yanında belirerek açılan aynı camdan bir karttır. Aşağıdaki örnekte bir tane var.',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'submenu.tsx',
+        code: `<GlassMenuContent>
+  <GlassMenuItem>Share</GlassMenuItem>
+  <GlassMenuSub>
+    <GlassMenuSubTrigger>Move to</GlassMenuSubTrigger>
+    <GlassMenuSubContent>
+      <GlassMenuItem>Favourites</GlassMenuItem>
+      <GlassMenuItem>Archive</GlassMenuItem>
+    </GlassMenuSubContent>
+  </GlassMenuSub>
+</GlassMenuContent>`,
+      },
+      { type: 'demo', id: 'glass-menu-basic', title: t('A menu with a submenu', 'Alt menülü bir menü') },
+      h('The motion on your own popup', 'Hareketi kendi açılır yüzeyinde kullanmak'),
+      {
+        type: 'p',
+        text: t(
+          'Menu is built on `GlassPopup`: `useGlassPopup({ opening: \'grow\' })` gives any control that opens a surface the same motion, with `GlassPopupAnchor` as the control\'s first child and `GlassPopupSurface` as the content\'s. Wrap the content\'s children in an element with `data-glass-list`. The numbers (the spring, which side leads, when the label goes and the content shows) are `MENU` in `engine.ts`.',
+          'Menu, `GlassPopup` üzerine kuruludur: `useGlassPopup({ opening: \'grow\' })`, bir yüzey açan her kontrole aynı hareketi verir; `GlassPopupAnchor` kontrolün, `GlassPopupSurface` içeriğin ilk çocuğu olur. İçeriğin çocuklarını `data-glass-list` taşıyan bir öğeyle sar. Sayılar (yay, hangi kenarın önden gittiği, etiketin ne zaman gidip içeriğin ne zaman göründüğü) `engine.ts` içindeki `MENU` sabitindedir.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'open / defaultOpen / onOpenChange', type: 'boolean / boolean / (open: boolean) => void', description: t('On `GlassMenu`: control the menu yourself, or let it keep its own state.', '`GlassMenu` üzerinde: menüyü kendin yönet ya da kendi durumunu tutsun.') },
+          { name: 'GlassMenuTrigger className', type: 'string', description: t('The button is a pill 48px tall. `w-12 px-0` makes it round for a single icon (give it an `aria-label`).', 'Buton 48px yüksekliğinde bir haptır. `w-12 px-0` onu tek bir ikon için yuvarlak yapar (`aria-label` ver).') },
+          { name: 'GlassMenuContent side', type: "'bottom' | 'top' | 'left' | 'right'", default: "'bottom'", description: t('Where the menu lies against its button. It flips when there is no room.', 'Menünün butona göre nerede durduğu. Yer yoksa öbür tarafa döner.') },
+          { name: 'GlassMenuContent align', type: "'start' | 'center' | 'end'", default: "'start'", description: t('How the menu lines up with the button along that side.', 'Menünün o kenar boyunca butonla nasıl hizalandığı.') },
+          { name: 'GlassMenuContent sideOffset', type: 'number', default: '8', description: t('The gap between the button and the menu, in px.', 'Buton ile menü arasındaki boşluk, px olarak.') },
+          { name: 'GlassMenuItem onSelect', type: '() => void', description: t('Runs when the item is pressed; the menu then closes (`closeOnSelect={false}` keeps it open).', 'Öğeye basılınca çalışır; ardından menü kapanır (`closeOnSelect={false}` açık tutar).') },
+          { name: 'GlassMenuItem destructive / disabled', type: 'boolean', default: 'false', description: t('`destructive` paints the item red, for Delete. `disabled` dims it and the keyboard skips it.', '`destructive` öğeyi kırmızıya boyar; Sil için. `disabled` onu soluklaştırır, klavye de atlar.') },
+          { name: 'GlassMenuItem shortcut', type: 'string', description: t('The item\'s keys, as `Mod+R`. Put a `GlassMenuShortcut` inside the item to show them.', 'Öğenin tuşları, `Mod+R` biçiminde. Göstermek için öğenin içine bir `GlassMenuShortcut` koy.') },
+          { name: 'GlassMenuCheckboxItem value', type: 'string', description: t('Names the option (required).', 'Seçeneğe ad verir (zorunlu).') },
+          { name: 'GlassMenuCheckboxItem checked / defaultChecked / onCheckedChange', type: 'boolean / boolean / (checked: boolean) => void', description: t('The option\'s state, yours or its own. A check shows at its end while it is on.', 'Seçeneğin durumu; senin ya da kendi tuttuğu. Açıkken sonunda bir onay işareti görünür.') },
+          { name: 'GlassMenuRadioGroup value / defaultValue / onValueChange', type: 'string / string / (value: string) => void', description: t('The one value its `GlassMenuRadioItem`s share; each item carries its own `value`.', 'İçindeki `GlassMenuRadioItem` öğelerinin paylaştığı tek değer; her öğe kendi `value` değerini taşır.') },
+          { name: 'GlassMenuGroup / GlassMenuLabel', type: 'children', description: t('A set of items and its quiet heading.', 'Bir öğe kümesi ve onun sakin başlığı.') },
+          { name: 'GlassMenuSeparator', type: 'className', description: t('A hairline between items.', 'Öğeler arasında ince bir çizgi.') },
+          { name: 'GlassMenuSub / GlassMenuSubTrigger / GlassMenuSubContent', type: 'children', description: t('A submenu, the row that opens it and its card. `GlassMenuSubContent` takes `side`, `align` and `sideOffset` too.', 'Bir alt menü, onu açan satır ve kartı. `GlassMenuSubContent` de `side`, `align` ve `sideOffset` alır.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A button with `aria-haspopup` that opens a `menu` of `menuitem`, `menuitemcheckbox` and `menuitemradio` rows (the WAI-ARIA menu button pattern).', '`menuitem`, `menuitemcheckbox` ve `menuitemradio` satırlarından oluşan bir `menu` açan, `aria-haspopup` taşıyan bir buton (WAI-ARIA menü butonu kalıbı).'),
+          t('Arrow keys, Home and End move through the items, typing a letter jumps to a match, Enter or Space runs the item. The right arrow opens a submenu and the left arrow closes it. Escape closes the menu and returns focus to the button.', 'Ok tuşları, Home ve End öğeler arasında gezer; bir harf yazmak eşleşene atlar, Enter ya da Boşluk öğeyi çalıştırır. Sağ ok alt menüyü açar, sol ok kapatır. Escape menüyü kapatıp odağı butona döndürür.'),
+          t('The button is hidden while the menu is out, and still there for the keyboard and for screen readers: focus returns to it on close.', 'Menü açıkken buton görünmez, ama klavye ve ekran okuyucular için oradadır: kapanınca odak ona döner.'),
+          t('An icon-only button needs an `aria-label`.', 'Yalnız ikonlu buton `aria-label` ister.'),
+          t('With reduced motion the menu opens and closes at once. Without WebGL2 it is a plain frosted list.', 'Hareketi azalt açıksa menü anında açılıp kapanır. WebGL2 yoksa düz, buzlu bir listedir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1657,6 +1817,100 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.7.2',
+    date: '2026-11-24',
+    title: t('Controls that open something: hold, pull, let go.', 'Bir şey açan kontroller: basılı tut, çekiştir, bırak.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Select, Dropdown Menu, Popover and Menu: the control that opens the surface is now held like a button. Press and hold it and it stays shut: it swells, lights up and, dragged, comes after the pointer and stretches as any button does (`PULL` in `engine.ts`). The surface opens when you let go on the control, and its opening starts from wherever the pull has the glass at that moment. Let go away from the control and nothing opens. Before, a mouse press opened a menu or a list at once, so there was nothing to hold. A press on an open control still closes it at once, and touch and the keyboard are as they were. Choosing an item by pressing the control, dragging to the item and letting go is gone.',
+          'Select, Dropdown Menu, Popover ve Menu: yüzeyi açan kontrol artık bir buton gibi basılı tutulabiliyor. Basılı tuttuğunda kapalı kalır: şişer, ışıklanır; sürüklersen her buton gibi imlecin peşinden gelir ve esner (`engine.ts` içindeki `PULL`). Yüzey, kontrolün üzerinde bıraktığında açılır ve açılış, çekişin camı o an getirdiği yerden başlar. Kontrolün uzağında bırakırsan hiçbir şey açılmaz. Önceden fareyle basmak menüyü ya da listeyi hemen açıyordu, yani basılı tutacak bir şey yoktu. Açık bir kontrole basmak onu yine hemen kapatır; dokunma ve klavye eskisi gibidir. Kontrole basıp bir öğeye sürükleyerek bırakıp seçmek artık yok.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'The light of a press now follows one rule, kept in the engine. A button is lit by the flash of a press (`GLOW` in `engine.ts`): light comes up where the press lands, stays for a moment even on a quick click, then fades as it spreads; Space and Enter start it at the centre. Button, Action Button and Button Group take it now, as the controls of Select, Dropdown Menu, Popover and Menu do. A surface is lit by the soft light of 1.7.1 alone (`LIGHT`), where the press lands and for as long as it is held: Card, and the list or the menu a control opens. A surface that holds choices also lights up around a choice pressed in it, with a wide, soft light that stays inside the glass: the lists of Select, Dropdown Menu and Popover had it, and a Menu, its submenus and any card with rows take it now, from the engine. On every surface a control opens, the soft light is now measured from the surface itself, so it lands where the press does; before, it was measured from the control and mostly missed. The press that opens a Menu lights its button and fades there, without widening over the menu. A view tells the engine that it is a button (`button: true`); everything else is a surface.',
+          'Basış ışığı artık motorda duran tek bir kurala bağlı. Buton, basışın parlamasıyla ışıklanır (`engine.ts` içindeki `GLOW`): ışık basışın indiği yerde yanar, hızlı bir tıklamada bile bir an kalır, sonra yayılarak söner; Space ve Enter onu ortadan başlatır. Button, Action Button ve Button Group artık bu ışığı alıyor; Select, Dropdown Menu, Popover ve Menu kontrolleri zaten alıyordu. Yüzey ise yalnızca 1.7.1\'in yumuşak ışığıyla (`LIGHT`) ışıklanır: basışın indiği yerde, basılı tutulduğu sürece. Card ve bir kontrolün açtığı liste ya da menü böyledir. Seçenek tutan yüzey ayrıca, içinde basılan seçeneğin çevresinde camın içinde kalan geniş, yumuşak bir ışıkla yanar: Select, Dropdown Menu ve Popover listelerinde bu vardı; Menu, alt menüleri ve satırlı kartlar da artık motordan alıyor. Bir kontrolün açtığı her yüzeyde yumuşak ışık artık yüzeyin kendisinden ölçülüyor, yani bastığın yere düşüyor; önceden kontrolden ölçülüyor ve çoğu zaman ıskalıyordu. Menu\'yü açan basış butonunu yakar ve ışık orada söner, menünün üzerine yayılmaz. Bir cam motora buton olduğunu söyler (`button: true`); geri kalan her şey yüzeydir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Pulled glass now draws its own stretch. Before, the whole picture was pulled out of shape with the button: the round ends went oval and what showed through the glass stretched with it. Now the glass stays a pill with round ends, as long and as thin as the pull makes it, and bends what really lies behind it, which stays where it is. A round button becomes a short pill. Button, Action Button, Button Group and the controls of Select, Dropdown Menu, Popover and Menu all do. The label still stretches with the button. A frame of a pull costs what it did (measured: 0.5 to 0.7 ms either way).',
+          'Çekilen cam artık esnemesini kendisi çiziyor. Önceden bütün görüntü butonla birlikte geriliyordu: yuvarlak uçlar ovalleşiyor, camın içinden görünen de onunla uzuyordu. Artık cam, uçları yuvarlak bir hap olarak kalır, çekişin yaptığı kadar uzun ve ince; arkasında gerçekten ne varsa onu büker, arkadaki de yerinde durur. Yuvarlak buton kısa bir hapa dönüşür. Button, Action Button, Button Group ile Select, Dropdown Menu, Popover ve Menu kontrolleri böyle çalışır. Etiket yine butonla birlikte esner. Çekişin bir karesi eskisi kadar tutar (ölçüldü: iki durumda da 0,5–0,7 ms).',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.7.1',
+    date: '2026-11-24',
+    title: t('Glass lights up where it is pressed.', 'Cam, basıldığı yerde ışıklanıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Glass now lights up from within where it is pressed. Press a control and the light comes up where the press landed and stays there for as long as you hold; Space and Enter light the middle. Let go and it sinks back. The light follows nothing, and a pointer that only rests on the glass lights nothing. The light is white laid over the glass, strongest where the press landed and gone at its radius, and it never leaves the glass. Button, Action Button, Button Group, Badge, Slide to Confirm, Card, Slider, Switch and Checkbox take it, and the Tabs lens while it is held. Select, Dropdown Menu, Popover and Menu take it too, and keep the light of their own on top of it: the press that opens one lights it where it landed. On the first three that light widens with the surface as it opens; on Menu it stays where it is and fades. Its numbers are `LIGHT` in `engine.ts`; `on: false` there turns it off. The light is that of Glass HQ\'s liquid-glass (MIT).',
+          'Cam artık basıldığı yerde içten ışıklanıyor. Bir kontrole bastığında ışık bastığın yerde yanar ve basılı tuttuğun sürece orada kalır; Space ve Enter camın ortasını yakar. Bırakınca söner. Işık hiçbir şeyi izlemez; yalnızca üzerinde duran imleç de hiçbir şeyi yakmaz. Işık, camın üzerine bindirilen beyazdır: bastığın yerde en güçlüdür, yarıçapının ucunda biter ve camın dışına taşmaz. Button, Action Button, Button Group, Badge, Slide to Confirm, Card, Slider, Switch ve Checkbox bu ışığı alır; Tabs merceği de basılı tutulurken. Select, Dropdown Menu, Popover ve Menu de bu ışığı alır ve bunun üstüne kendi ışıklarını korur: birini açan basış onu bastığın yerde yakar. İlk üçünde bu ışık yüzey açılırken onunla birlikte genişler; Menu\'de olduğu yerde kalır ve söner. Sayıları `engine.ts` içindeki `LIGHT` sabitindedir; oradaki `on: false` ışığı kapatır. Işık, Glass HQ\'nun liquid-glass kütüphanesindekidir (MIT).',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: '2026-11-24',
+    title: t('Menu.', 'Menu.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'menu',
+        text: t(
+          'Menu: a menu its button grows into. The button\'s own glass pours towards where the menu lies (below, above or beside it), the edge that faces the menu ahead of the rest, and runs the same way back to close; a close turned round half way carries on from where it is. It comes with submenus, checkbox and radio items, groups with a label and shortcuts. Keyboard, typeahead, focus, positioning and ARIA come from UI SDK. The motion is that of Glass HQ\'s liquid-glass (MIT), ported onto the kit\'s own engine.',
+          'Menu: butonunun büyüyerek dönüştüğü menü. Butonun kendi camı menünün durduğu yere (alta, üste ya da yana) akar; menüye bakan kenar önden gider. Kapanış aynı yolu geri gider; yarı yolda geri çevrilen kapanış bulunduğu yerden devam eder. Alt menüler, onay ve seçim öğeleri, etiketli gruplar ve kısayollarla gelir. Klavye, harfle arama, odak, konumlandırma ve ARIA UI SDK\'dan gelir. Hareket, Glass HQ\'nun liquid-glass kütüphanesindekidir (MIT); kitin kendi motoruna taşındı.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'menu',
+        text: t(
+          '`GlassPopup` has a third way out: `useGlassPopup({ opening: \'grow\' })` grows a control\'s glass into the surface it opens, wherever that surface lies. One shape on one spring, drawn by one canvas once the label has gone, and the page behind is read once per opening. Its numbers are `MENU` in `engine.ts`. Select, Dropdown Menu and Popover keep their own motion.',
+          '`GlassPopup`\'a üçüncü bir açılış geldi: `useGlassPopup({ opening: \'grow\' })`, kontrolün camını açtığı yüzeye, yüzey nerede duruyorsa oraya doğru büyütür. Tek yay üzerinde tek şekil; etiket gittikten sonra tek bir tuval çizer, arkadaki sayfa da her açılışta bir kez okunur. Sayıları `engine.ts` içindeki `MENU` sabitindedir. Select, Dropdown Menu ve Popover kendi hareketlerini korur.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.13',
+    date: '2026-11-24',
+    title: t('Reflections: softer, stronger, closer to the rim.', 'Yansımalar: daha yumuşak, daha güçlü, kenara daha yakın.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'What the rim of clear glass mirrors of its neighbours has been retuned. A neighbour now shows more strongly just inside the rim, as a soft wash of its colour rather than a picture of itself. The wash is shallower (about half as deep) and fades evenly inwards. The rim also looks less far, so a neighbour has to be nearer to show. The values are `MIRROR` in `engine.ts`.',
+          'Şeffaf camın kenarının komşularından yansıttığı görüntü yeniden ayarlandı. Komşu artık kenarın hemen içinde daha güçlü görünüyor; kendi resmi gibi değil, renginin yumuşak bir ışığı olarak. Bu ışık daha sığ (yaklaşık yarı derinlikte) ve içeri doğru eşit biçimde sönüyor. Kenar da daha yakına bakıyor: komşunun görünmesi için daha yakın olması gerekiyor. Değerler `engine.ts` içindeki `MIRROR` sabitinde.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.12',
+    date: '2026-11-24',
+    title: t('Buttons: hold one and pull.', 'Butonlar: basılı tut, çekiştir.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'A new `pull` prop on Button and GlassLayer. A pointer that holds the glass and drags away pulls it after itself: it follows a little way through a rubber band, stretches along the pull and thins across it, and swings back like gel when let go. Small glass (up to 72 px) follows from the point it was pressed at, larger glass once the pointer is past its edge. It is for buttons, and on by default on all of them: Button, Action Button and Button Group (`pull={false}` on Button or GlassLayer keeps one in its place). No other glass is pulled. The engine does it; its numbers are `PULL` in `engine.ts`, and `on: false` there turns it off everywhere. The motion is that of Glass HQ\'s liquid-glass (MIT), ported onto the kit\'s engine.',
+          'Button ve GlassLayer\'a yeni bir `pull` prop\'u geldi. Camı basılı tutup uzağa sürükleyen imleç onu peşinden çeker: cam bir lastik bantla biraz gelir, çekiş yönünde uzar, karşı yönde incelir; bırakınca jöle gibi yerine yaylanır. Küçük cam (72 px\'e kadar) basıldığı noktadan itibaren imleci izler, daha büyüğü imleç kenarını geçince. Butonlar içindir ve hepsinde varsayılan olarak açıktır: Button, Action Button ve Button Group (Button ya da GlassLayer üzerindeki `pull={false}` birini yerinde tutar). Başka hiçbir cam çekilmez. İşi motor yapar; sayıları `engine.ts` içindeki `PULL` sabitindedir, oradaki `on: false` hepsini kapatır. Hareket, Glass HQ\'nun liquid-glass kütüphanesindekinin (MIT) kit motoruna aktarılmış hâli.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.6.11',
     date: '2026-11-24',

@@ -1828,6 +1828,8 @@ export type Change = {
   kind: ChangeKind
   /** The docs page (slug) the change is about, when it is about one. */
   page?: string
+  /** Other component pages it changes too: each gets the Updated pill while its line is current. */
+  also?: string[]
   text: L
 }
 
@@ -1865,6 +1867,7 @@ export const RELEASES: Release[] = [
       },
       {
         kind: 'fixed',
+        also: ['select', 'dropdown-menu', 'popover'],
         page: 'menu',
         text: t(
           'Menu, Select, Dropdown Menu and Popover: while the glass was on its way out of its control or back in, a thin dark line could show across it at the edge of the control, and the control\'s own box could look lighter than the rest. The glass is drawn there by two canvases, the control\'s and the surface\'s, that meet at the control\'s edge: each was cut at the same line, so both were half drawn along it and the page showed through, and the light of the press lit the control\'s side alone. The control\'s canvas now reaches a pixel under the surface\'s, and the surface\'s takes the same light.',
@@ -1873,9 +1876,25 @@ export const RELEASES: Release[] = [
       },
       {
         kind: 'improved',
+        also: ['menu', 'select', 'dropdown-menu', 'popover'],
         text: t(
           'Select, Dropdown Menu, Popover and Menu: on the way out the content fades sooner, ahead of the glass. Popover and an over-the-control Dropdown Menu take it in 0.12 s instead of 0.24 s, Select and Dropdown Menu no longer keep it until the glass is nearly back in: it is gone in 0.07 s, and Menu no longer waits for the glass to shrink: its content is gone in 0.12 s.',
           'Select, Dropdown Menu, Popover ve Menu: kapanırken içerik camın önünde, daha çabuk saydamlaşıyor. Popover ve kontrolün üzerinde açılan Dropdown Menu bunu 0,24 sn yerine 0,12 sn\'de, Select ve Dropdown Menu içeriği artık cam neredeyse geri girene kadar tutmuyor, 0,07 sn\'de söndürüyor; Menu de artık camın küçülmesini beklemiyor, içeriği 0,12 sn\'de gidiyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'menu',
+        text: t(
+          'Menu: the moment its glass is a button again, the button swells once as under a hover and lets go, as Select, Dropdown Menu and Popover already did.',
+          'Menu: camı yeniden düğme olduğu anda düğme, üzerine gelinmiş gibi bir kez şişip bırakıyor; Select, Dropdown Menu ve Popover zaten böyle yapıyordu.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'Docs: a component changed since the last one was added now says so with an Updated pill beside its name, in the sidebar and on its page.',
+          'Dokümantasyon: son bileşen eklendiğinden beri değişen bir bileşenin adının yanında, kenar çubuğunda ve kendi sayfasında artık Güncellendi yazıyor.',
         ),
       },
     ],
@@ -1887,6 +1906,7 @@ export const RELEASES: Release[] = [
     changes: [
       {
         kind: 'improved',
+        also: ['menu', 'select', 'dropdown-menu', 'popover'],
         text: t(
           'Select, Dropdown Menu, Popover and Menu: the control that opens the surface is now held like a button. Press and hold it and it stays shut: it swells, lights up and, dragged, comes after the pointer and stretches as any button does (`PULL` in `engine.ts`). The surface opens when you let go on the control, and its opening starts from wherever the pull has the glass at that moment. Let go away from the control and nothing opens. Before, a mouse press opened a menu or a list at once, so there was nothing to hold. A press on an open control still closes it at once, and touch and the keyboard are as they were. Choosing an item by pressing the control, dragging to the item and letting go is gone.',
           'Select, Dropdown Menu, Popover ve Menu: yüzeyi açan kontrol artık bir buton gibi basılı tutulabiliyor. Basılı tuttuğunda kapalı kalır: şişer, ışıklanır; sürüklersen her buton gibi imlecin peşinden gelir ve esner (`engine.ts` içindeki `PULL`). Yüzey, kontrolün üzerinde bıraktığında açılır ve açılış, çekişin camı o an getirdiği yerden başlar. Kontrolün uzağında bırakırsan hiçbir şey açılmaz. Önceden fareyle basmak menüyü ya da listeyi hemen açıyordu, yani basılı tutacak bir şey yoktu. Açık bir kontrole basmak onu yine hemen kapatır; dokunma ve klavye eskisi gibidir. Kontrole basıp bir öğeye sürükleyerek bırakıp seçmek artık yok.',
@@ -3216,5 +3236,16 @@ export const FEATURED = RELEASES.find((r) => r.changes.some((c) => c.kind === 'n
 export const newsOf = (slug: string) =>
   RELEASES.flatMap((r) => r.changes.filter((c) => c.page === slug).map((c) => ({ ...c, version: r.version, date: r.date })))
 
-/** The sidebar pill: "new" on the components the announced release added, until the next one. */
-export const badgeOf = (slug: string): 'new' | null => (FEATURED.changes.some((c) => c.kind === 'new' && c.page === slug) ? 'new' : null)
+/** The releases of the current line: the announced one and the patches shipped after it. */
+const CURRENT = RELEASES.slice(0, RELEASES.indexOf(FEATURED) + 1)
+
+/**
+ * The sidebar pill: "new" on the components the announced release added, until the next one;
+ * "updated" on the other components a release of the current line changed.
+ */
+export const badgeOf = (slug: string): 'new' | 'updated' | null =>
+  FEATURED.changes.some((c) => c.kind === 'new' && c.page === slug)
+    ? 'new'
+    : isComponent(slug) && CURRENT.some((r) => r.changes.some((c) => c.page === slug || c.also?.includes(slug)))
+      ? 'updated'
+      : null

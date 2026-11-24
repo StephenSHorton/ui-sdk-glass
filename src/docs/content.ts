@@ -1818,6 +1818,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.7.3',
+    date: '2026-11-24',
+    title: t('No line where the glass leaves its control.', 'Camın kontrolünden ayrıldığı yerde çizgi yok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'menu',
+        text: t(
+          'Menu, Select, Dropdown Menu and Popover: while the glass was on its way out of its control or back in, a thin dark line could show across it at the edge of the control, and the control\'s own box could look lighter than the rest. The glass is drawn there by two canvases, the control\'s and the surface\'s, that meet at the control\'s edge: each was cut at the same line, so both were half drawn along it and the page showed through, and the light of the press lit the control\'s side alone. The control\'s canvas now reaches a pixel under the surface\'s, and the surface\'s takes the same light.',
+          'Menu, Select, Dropdown Menu ve Popover: cam kontrolünden çıkarken ya da geri dönerken, kontrolün kenarında camın üzerinde ince, koyu bir çizgi görünebiliyor ve kontrolün kendi kutusu camın geri kalanından açık görünebiliyordu. Cam orada iki tuvalle çiziliyor, kontrolünkü ve yüzeyinki; ikisi kontrolün kenarında buluşuyor. İkisi de aynı çizgiden kesildiği için o çizgi boyunca ikisi de yarım çiziliyor ve sayfa aradan görünüyordu; basışın ışığı da yalnız kontrol tarafını yakıyordu. Kontrolün tuvali artık yüzeyinkinin bir piksel altına uzanıyor ve yüzeyinki de aynı ışığı alıyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.7.2',
     date: '2026-11-24',
     title: t('Controls that open something: hold, pull, let go.', 'Bir şey açan kontroller: basılı tut, çekiştir, bırak.'),

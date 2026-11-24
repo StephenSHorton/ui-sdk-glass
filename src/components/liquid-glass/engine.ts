@@ -150,6 +150,12 @@ export type GlassLens = {
   glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number } }
   /** `false`: this glass does not take the light under the pointer (see LIGHT). Every other glass does, unless that light is turned off. */
   pointerLight?: boolean
+  /**
+   * Another view this glass continues (one shape drawn by two canvases, each on its side of a
+   * seam): it takes that view's light of a press (LIGHT) as it is, where it is on screen, instead
+   * of one of its own, so the light does not stop at the seam.
+   */
+  lightOf?: GlassView
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -1623,7 +1629,11 @@ function createEngine(): GlassEngine | null {
     // Pointer light: what the pointer is doing to this glass is worked out here, where the
     // glass's place on screen is fresh; the light itself is advanced once a frame (stepLight).
     let lit = lights.get(v)
-    if (LIGHT.on && m.pointerLight !== false) {
+    // A glass that continues another takes that one's light (see `lightOf`), measured from here.
+    const shared = m.lightOf && m.lightOf !== v ? lights.get(m.lightOf) : undefined
+    if (shared) {
+      lit = { ...shared, x: shared.x + shared.sx - shared.bodyX - m.screenX, y: shared.y + shared.sy - m.screenY }
+    } else if (LIGHT.on && m.pointerLight !== false) {
       if (!lit) {
         const host = hostOf(v)
         lit = { glow: { x: 0, v: 0 }, x: 0, y: 0, press: false, key: false, free: !!host && getComputedStyle(host).pointerEvents === 'none', sx: 0, sy: 0, hx: 0, hy: 0, bodyX: 0, blob: null, onBlob: false }

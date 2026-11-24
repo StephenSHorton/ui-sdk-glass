@@ -74,6 +74,8 @@ const FILLED = 0.92
 const LINE = { alpha: 0.6, darkAlpha: 0.25, width: 1.3 }
 /** Room around the trigger's own canvas, and around the popup's. */
 const TRIGGER_PAD = 16
+/** How far (px) the control's canvas reaches past the seam, under the popup's, so no line shows where they meet. */
+const SEAM_OVERLAP = 1
 const PAD = 28
 const PAD_BOTTOM = 56
 const TUNE = GOOEY
@@ -1120,12 +1122,16 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
         const ky = s.sc * s.stretch.y
         write(canvas, 'transform-origin', `${a.left + a.width / 2 - box.L}px ${a.top + a.height / 2 - box.T}px`)
         write(canvas, 'scale', kx === 1 && ky === 1 ? '' : kx === ky ? (1 / kx).toFixed(6) : `${(1 / kx).toFixed(6)} ${(1 / ky).toFixed(6)}`)
-        // While the popup's canvas draws the rest, this one keeps to the trigger's own box.
+        // While the popup's canvas draws the rest, this one keeps to the trigger's own box, and a
+        // hair past it (SEAM_OVERLAP), under the popup's canvas: two edges cut at the same line are
+        // each half drawn where they meet (this canvas is scaled with its swollen control, so its
+        // edge seldom lies on whole pixels), and the page showed through between them as a dark line.
+        const o = SEAM_OVERLAP
         write(
           canvas,
           'clip-path',
           s.c && panelDrawn && !s.parted
-            ? `inset(${s.seam.top - box.T}px ${box.L + box.W - s.seam.right}px ${box.T + box.H - s.seam.bottom}px ${s.seam.left - box.L}px)`
+            ? `inset(${s.seam.top - box.T - o}px ${box.L + box.W - s.seam.right - o}px ${box.T + box.H - s.seam.bottom - o}px ${s.seam.left - box.L - o}px)`
             : '',
         )
         return {
@@ -1353,8 +1359,11 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
         // whole lens. Nothing changes as the neck lets go.
         // (A growing shape is one lens from its first frame. While the control's canvas still draws
         // its share, this one mirrors what that one does, so the rim is the same on both sides of the seam.)
-        if (s.grow) return { ...lensFor(box, s, page, dirty, s.card), ...single(s, box), reflection: s.parted ? undefined : mirrorOf(box, a.height), left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
-        return { ...lensFor(box, s, page, dirty, s.parted ? 1 : s.morph ? s.card : 0), ...alone, left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
+        // While the two canvases draw one shape, this one takes the control's light of a press
+        // (LIGHT) rather than none of its own: lit on one side of the seam only, the control's box showed as a lighter square.
+        const lightOf = !s.parted && !s.morph && triggerView ? triggerView : undefined
+        if (s.grow) return { ...lensFor(box, s, page, dirty, s.card), ...single(s, box), reflection: s.parted ? undefined : mirrorOf(box, a.height), lightOf, left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
+        return { ...lensFor(box, s, page, dirty, s.parted ? 1 : s.morph ? s.card : 0), ...alone, lightOf, left: L - c.left - s.edge.left, top: T - c.top - s.edge.top }
       },
       drawn: () => {
         if (panelDrawn) return

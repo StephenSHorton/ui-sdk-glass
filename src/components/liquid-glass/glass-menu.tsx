@@ -21,6 +21,18 @@
 //     </GlassMenuContent>
 //   </GlassMenu>
 //
+// Out of a button group: wrap the group and the content, and put the trigger on one of its items
+// with `asChild`. The whole group's glass then grows into the menu.
+//
+//   <GlassMenu>
+//     <GlassButtonGroup>
+//       <GlassMenuTrigger asChild>
+//         <GlassButtonGroupItem aria-label="More"><Ellipsis /></GlassButtonGroupItem>
+//       </GlassMenuTrigger>
+//     </GlassButtonGroup>
+//     <GlassMenuContent align="end">…</GlassMenuContent>
+//   </GlassMenu>
+//
 // `side` and `align` on the content say where the menu lies; the glass finds its own way there.
 // Groups with a label, checkbox and radio items, shortcuts and submenus are parts of it.
 // UI SDK owns the behaviour (keyboard, typeahead, focus, submenus, the top layer, positioning,
@@ -46,14 +58,19 @@ import {
   type MenuProps,
   type MenuSubProps,
 } from '@ui-sdk/react/menu'
-import { useContext, type ComponentProps, type ReactNode } from 'react'
+import { Children, useContext, type ComponentProps, type ReactElement, type ReactNode } from 'react'
 
 import { GlassCard } from './glass-card'
 import { GlassPopupAnchor, GlassPopupContext, GlassPopupSurface, useGlassPopup } from './glass-popup'
 
 export type GlassMenuProps = MenuProps
 
-export type GlassMenuTriggerProps = { children?: ReactNode; className?: string } & Omit<ComponentProps<typeof MenuTrigger>, 'children' | 'className' | 'render'>
+export type GlassMenuTriggerProps = {
+  children?: ReactNode
+  /** Render the trigger on the single child element: a GlassButtonGroupItem, whose group's glass then grows into the menu. */
+  asChild?: boolean
+  className?: string
+} & Omit<ComponentProps<typeof MenuTrigger>, 'children' | 'className' | 'render'>
 
 export type GlassMenuContentProps = { children?: ReactNode; className?: string } & Omit<ComponentProps<typeof MenuContent>, 'children' | 'className' | 'render'>
 
@@ -82,9 +99,13 @@ export function GlassMenu({ children, ...options }: GlassMenuProps) {
   )
 }
 
-/** The button whose glass becomes the menu. Round it for a single icon (`className="w-12 px-0"`, with an `aria-label`). */
-export function GlassMenuTrigger({ children, className = '', ...rest }: GlassMenuTriggerProps) {
+/**
+ * The button whose glass becomes the menu. Round it for a single icon (`className="w-12 px-0"`, with an `aria-label`).
+ * With `asChild`, an item of a GlassButtonGroup inside the GlassMenu: the group's glass is the one that grows.
+ */
+export function GlassMenuTrigger({ children, asChild = false, className = '', ...rest }: GlassMenuTriggerProps) {
   const popup = useContext(GlassPopupContext)
+  if (asChild || !popup) return <MenuTrigger render={Children.only(children) as ReactElement} {...rest} />
   return (
     <MenuTrigger
       data-glass-host=""

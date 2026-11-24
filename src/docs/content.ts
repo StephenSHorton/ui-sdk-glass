@@ -446,7 +446,7 @@ and do not modify the files in components/liquid-glass/.`,
           t('**Idle.** The arrow floats apart from the body as a separate glass droplet.', '**Boşta.** Ok, gövdeden ayrı bir cam damlası olarak durur.'),
           t('**Press.** The droplet stretches back on a gooey bridge and melts into the body.', '**Bas.** Damla yapışkan bir köprüyle geri uzanır ve gövdeye karışır.'),
           t('**Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.', '**Bekleme.** Tek gövde; etiket `pendingLabel`\'a dönüşür ve okun yerinde bir döner simge, `onAction`\'ın döndürdüğü söz sonuçlanana dek döner.'),
-          t('**Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. `resetAfter` vermezsen öyle kalır.'),
+          t('**Success.** Still one body: `successLabel` and a check that draws itself in. As it lands the glass swells, as if hovered and pressed at the same time, lights up whole with the light spilling onto the page around it, and stretches the label and the check with it; it lets go a moment after the label is in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. O anda cam, aynı anda hem üstüne gelinmiş hem basılmış gibi şişer, ışığı çevresindeki sayfaya taşacak şekilde baştan başa aydınlanır; etiketi ve onay işaretini de kendisiyle birlikte esnetir, etiket yerine geldikten bir an sonra da bırakır. `resetAfter` vermezsen öyle kalır.'),
           t('**Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.', '**Hata.** `onAction` hata fırlatırsa damla yeniden ayrılır ve hata `onActionError`\'a gider.'),
           t('**Start over.** Change `resetKey` and the droplet splits off again from any state. Don\'t remount the button with `key`: that snaps it back.', '**Baştan başla.** `resetKey`\'i değiştirince damla her durumdan yeniden ayrılır. Butonu `key` ile baştan kurma: o zaman birden atlar.'),
         ],
@@ -1658,6 +1658,37 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.6.9',
+    date: '2026-11-24',
+    title: t('Action Button: it answers when the action lands.', 'Action Button: eylem bitince karşılık veriyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'The moment the action succeeds, the glass swells as it does under a hover and a press together and lights up. It stays swollen until the new label and the check are in, waits a moment, then settles. The light is the kind a Dropdown Menu\'s surface opens with, softer and wider: it covers the glass and spills well onto the page around it. The label and the check stretch with it, a little more in height than in width. GlassLayer has a new `pulse` prop for it: change its value and the glass answers once (`pulseHold` sets how long it stays swollen), and content with `scale: var(--glass-bend, 1)` follows it.',
+          'Eylem başarıyla bittiği anda cam, üstüne gelinip basılmış gibi şişiyor ve aydınlanıyor. Yeni etiket ve onay işareti yerine gelene dek şişik kalıyor, bir an bekliyor, sonra yerine oturuyor. Işık, Dropdown Menu yüzeyinin açılırken aldığı ışığın daha yumuşak ve daha geniş hâli: camın tamamını kaplıyor ve çevresindeki sayfaya iyice yayılıyor. Etiket ve onay işareti de onunla birlikte esniyor; boyuna, enine olduğundan biraz daha fazla. GlassLayer\'a bunun için yeni bir `pulse` prop\'u geldi: değeri değişince cam bir kez karşılık verir (`pulseHold` ne kadar şişik kalacağını belirler), `scale: var(--glass-bend, 1)` verilen içerik de onu izler.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'As the droplet melts in, the button\'s end no longer grows taller than the rest for a moment and shrinks back: the bridge now only fills the dip between the droplet and the body.',
+          'Damla gövdeye karışırken butonun ucu artık bir anlığına gövdeden uzun olup geri küçülmüyor: köprü yalnızca damla ile gövde arasındaki çukuru dolduruyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'The blur of a label changing letter by letter is no longer cut off in a box around the text: it has room on every side and fades out softly.',
+          'Harf harf değişen etiketin bulanıklığı artık yazının çevresinde bir kutu gibi kesilmiyor: her yanında yer var ve yumuşakça sönüyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.6.8',
     date: '2026-11-23',
     title: t('Popover and Dropdown Menu: a softer close.', 'Popover ve Dropdown Menu: daha yumuşak kapanış.'),
@@ -1695,6 +1726,14 @@ export const RELEASES: Release[] = [
         ),
       },
       {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'The soft close now ends still: once the surface is back in, the button no longer swells and settles for a moment. It showed most on a small button, such as the three dots of a Button Group. Popover closes the same way.',
+          'Yumuşak kapanış artık durarak bitiyor: yüzey geri girdikten sonra buton bir anlığına şişip inmiyor. En çok küçük butonda görünüyordu, örneğin bir Button Group\'un üç noktasında. Popover da aynı şekilde kapanıyor.',
+        ),
+      },
+      {
         kind: 'removed',
         text: t(
           'The stage that stood in for the Examples sections on the component pages is gone, heading included. The pages now show only what is there.',
@@ -1703,45 +1742,6 @@ export const RELEASES: Release[] = [
       },
     ],
   },
-  {
-    version: '1.6.5',
-    date: '2026-11-23',
-    title: t('The site moved to onemorethink.dev.', 'Site onemorethink.dev adresine taşındı.'),
-    changes: [
-      {
-        kind: 'improved',
-        text: t(
-          'Docs, install commands, the registry and the llms files now use onemorethink.dev. The old address redirects to the same page.',
-          'Dokümanlar, kurulum komutları, registry ve llms dosyaları artık onemorethink.dev adresini kullanıyor. Eski adres aynı sayfaya yönlendiriyor.',
-        ),
-      },
-    ],
-  },
-  {
-    version: '1.6.4',
-    date: '2026-11-23',
-    title: t('A new logo.', 'Yeni logo.'),
-    changes: [
-      {
-        kind: 'improved',
-        text: t(
-      {
-        kind: 'fixed',
-        page: 'dropdown-menu',
-        text: t(
-          'The soft close now ends still: once the surface is back in, the button no longer swells and settles for a moment. It showed most on a small button, such as the three dots of a Button Group. Popover closes the same way.',
-          'Yumuşak kapanış artık durarak bitiyor: yüzey geri girdikten sonra buton bir anlığına şişip inmiyor. En çok küçük butonda görünüyordu, örneğin bir Button Group\'un üç noktasında. Popover da aynı şekilde kapanıyor.',
-        ),
-      },
-          'The header, the phone menu and the footer now carry the new logo in place of the written name, and the browser tab shows its hand.',
-          'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor, tarayıcı sekmesinde de logonun eli görünüyor.',
-        ),
-      },
-    ],
-  },
-  {
-    version: '1.6.3',
-    date: '2026-11-23',
   {
     version: '1.6.7',
     date: '2026-11-23',
@@ -1771,6 +1771,37 @@ export const RELEASES: Release[] = [
       },
     ],
   },
+  {
+    version: '1.6.5',
+    date: '2026-11-23',
+    title: t('The site moved to onemorethink.dev.', 'Site onemorethink.dev adresine taşındı.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'Docs, install commands, the registry and the llms files now use onemorethink.dev. The old address redirects to the same page.',
+          'Dokümanlar, kurulum komutları, registry ve llms dosyaları artık onemorethink.dev adresini kullanıyor. Eski adres aynı sayfaya yönlendiriyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.4',
+    date: '2026-11-23',
+    title: t('A new logo.', 'Yeni logo.'),
+    changes: [
+      {
+        kind: 'improved',
+        text: t(
+          'The header, the phone menu and the footer now carry the new logo in place of the written name, and the browser tab shows its hand.',
+          'Üst bilgi, telefon menüsü ve alt bilgi artık yazılı ad yerine yeni logoyu taşıyor, tarayıcı sekmesinde de logonun eli görünüyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.3',
+    date: '2026-11-23',
     title: t('Dropdown Menu: it can open around its button.', 'Dropdown Menu: butonunun çevresinde açılabiliyor.'),
     changes: [
       {

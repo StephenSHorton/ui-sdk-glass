@@ -146,8 +146,10 @@ export type GlassLens = {
    * included, unless `blob` says how much of it the blob takes (0–1; 0 keeps the light to the body). `halo` lets it
    * spill past one edge, the body's or the blob's (0–1, how much): there
    * it brightens the page's colour the same way. Without it nothing shows outside the glass.
+   * `halo.reach` (px) ends the spill that far from the edge, following the glass's own shape:
+   * without it the spill ends at the canvas, which shows as a box around a small round glass.
    */
-  glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number } }
+  glow?: { x: number; y: number; r: number; amount: number; blob?: number; halo?: { around: 'body' | 'blob'; amount: number; reach?: number } }
   /** Lens centre on screen, for aiming the cursor light. */
   screenX: number
   screenY: number
@@ -495,7 +497,7 @@ uniform float uTextured, uRefract, uMag, uDisp, uBlurCenter, uBlurEdge, uBlurShi
 uniform float uFrostEdge, uSaturation, uBendCurve, uEdgeBand;
 uniform vec2 uRadial;
 uniform vec4 uGlow;
-uniform vec2 uGlowHalo;
+uniform vec3 uGlowHalo;
 uniform float uGlowBlob;
 uniform vec4 uBlobMat;
 uniform vec3 uBlobLine;
@@ -649,7 +651,7 @@ void main() {
   vec4 outsideCol = vec4(0.0, 0.0, 0.0, 1.0 - dim(1.0 - sh));
 
   // Glow (see below): its strength here. It stays inside the glass unless a halo is asked for
-  // (uGlowHalo: 1 = around the body, 2 = around the blob; and how much).
+  // (uGlowHalo: 1 = around the body, 2 = around the blob; how much; and how far, 0 = to the canvas's edge).
   float glowAt = 0.0;
   if (uGlow.w > 0.0) {
     vec2 gd = (local - uGlow.xy) / max(uGlow.z, 1.0);
@@ -659,6 +661,7 @@ void main() {
       // brightest, laid over just thick enough to lift the surface colour to L^(1 / (1 + halo)).
       float edgeDist = uGlowHalo.x > 1.5 ? roundRect(local - uBlob.xy, uBlob.zw, uBlobShape.x) : roundRect(local - vec2(uBodyX, 0.0), uHalf, uRadius);
       float halo = glowAt * uGlowHalo.y * exp(-max(edgeDist, 0.0) / 28.0) * smoothstep(0.0, 14.0, border);
+      if (uGlowHalo.z > 0.0) halo *= 1.0 - smoothstep(uGlowHalo.z * 0.5, uGlowHalo.z, edgeDist);
       float pageL = max(dot(uSurface, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
       float pageMax = max(max(uSurface.r, uSurface.g), uSurface.b);
       float cover = clamp((pow(pageL, 1.0 / (1.0 + halo)) / pageL - 1.0) * pageMax / max(1.0 - pageMax, 1e-3), 0.0, 1.0);
@@ -1187,7 +1190,7 @@ function createEngine(): GlassEngine | null {
     set('uLightMix', lightMix)
     const glow = m.glow
     set('uGlow', (glow?.x ?? 0) / unit, (glow?.y ?? 0) / unit, (glow?.r ?? 0) / unit, Math.max(0, glow?.amount ?? 0))
-    set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0))
+    set('uGlowHalo', glow?.halo ? (glow.halo.around === 'blob' && blob ? 2 : 1) : 0, clamp(glow?.halo?.amount ?? 0), Math.max(0, glow?.halo?.reach ?? 0) / unit)
     set('uGlowBlob', clamp(glow?.blob ?? 1))
     // The same layers and the same uniforms as the frame on the canvas: nothing to draw.
     if (fresh && on.sent.length === sent.length && sent.every((value, i) => value === on.sent[i])) return

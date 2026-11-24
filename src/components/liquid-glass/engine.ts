@@ -433,7 +433,7 @@ export const MORPH = {
   /**
    * `closeSoft: 1`: closing is a motion of its own (`0`: the opening played backwards). The
    * surface goes back into the control on one spring with no bounce (`closeSpeed`), slowing as it
-   * lands, and the control takes it with a small swell: it is not thrown and does not light up. The content
+   * lands, and the control stays still: it is not thrown, does not swell and does not light up. The content
    * does not wait for the glass: it is gone `closeFade` seconds after the close begins. A choice's
    * light comes into the control with the surface and narrows to `closeGlowReach` (× the control's
    * height) as it does, so it does not flood the control. `closeKick`:

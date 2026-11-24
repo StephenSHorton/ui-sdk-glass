@@ -446,7 +446,7 @@ and do not modify the files in components/liquid-glass/.`,
           t('**Idle.** The arrow floats apart from the body as a separate glass droplet.', '**Boşta.** Ok, gövdeden ayrı bir cam damlası olarak durur.'),
           t('**Press.** The droplet stretches back on a gooey bridge and melts into the body.', '**Bas.** Damla yapışkan bir köprüyle geri uzanır ve gövdeye karışır.'),
           t('**Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.', '**Bekleme.** Tek gövde; etiket `pendingLabel`\'a dönüşür ve okun yerinde bir döner simge, `onAction`\'ın döndürdüğü söz sonuçlanana dek döner.'),
-          t('**Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. `resetAfter` vermezsen öyle kalır.'),
+          t('**Success.** Still one body: `successLabel` and a check that draws itself in. As it lands the glass swells, as if hovered and pressed at the same time, and stretches the label and the check with it; it lets go a moment after the label is in. It stays merged, unless you set `resetAfter`.', '**Başarı.** Hâlâ tek gövde: `successLabel` ve kendini çizen bir onay işareti. O anda cam, aynı anda hem üstüne gelinmiş hem basılmış gibi şişer; etiketi ve onay işaretini de kendisiyle birlikte esnetir, etiket yerine geldikten bir an sonra da bırakır. `resetAfter` vermezsen öyle kalır.'),
           t('**Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.', '**Hata.** `onAction` hata fırlatırsa damla yeniden ayrılır ve hata `onActionError`\'a gider.'),
           t('**Start over.** Change `resetKey` and the droplet splits off again from any state. Don\'t remount the button with `key`: that snaps it back.', '**Baştan başla.** `resetKey`\'i değiştirince damla her durumdan yeniden ayrılır. Butonu `key` ile baştan kurma: o zaman birden atlar.'),
         ],
@@ -1658,6 +1658,53 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '1.6.9',
+    date: '2026-11-24',
+    title: t('Action Button: it answers when the action lands.', 'Action Button: eylem bitince karşılık veriyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'The moment the action succeeds, the glass swells as it does under a hover and a press together. It stays swollen until the new label and the check are in, waits a moment, then settles. The label and the check stretch with it as it swells, a little more in height than in width, and are even again while it waits. GlassLayer has a new `pulse` prop for it: change its value and the glass answers once (`pulseHold` sets how long it stays swollen), and content with `scale: var(--glass-bend, 1)` follows it.',
+          'Eylem başarıyla bittiği anda cam, üstüne gelinip basılmış gibi şişiyor. Yeni etiket ve onay işareti yerine gelene dek şişik kalıyor, bir an bekliyor, sonra yerine oturuyor. Etiket ve onay işareti de şişerken onunla birlikte esniyor (boyuna, enine olduğundan biraz daha fazla), cam beklerken yeniden düz duruyor. GlassLayer\'a bunun için yeni bir `pulse` prop\'u geldi: değeri değişince cam bir kez karşılık verir (`pulseHold` ne kadar şişik kalacağını belirler), `scale: var(--glass-bend, 1)` verilen içerik de onu izler.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'The glass also swells once, as it does under the pointer, when the droplet melts in and when it splits off again.',
+          'Cam, damla gövdeye karışırken ve yeniden ayrılırken de imlecin altındaki gibi bir kez şişiyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'action-button',
+        text: t(
+          'Merged, the spinner and the check sit by the label as an icon in a button does: close after the text, with a little less room on their side than on the label\'s (20 px to 24 px on the large size). The merged button is narrower for it.',
+          'Birleşik hâlde döner simge ve onay işareti, bir butondaki ikon gibi etiketin yanında duruyor: yazının hemen ardında, kendi taraflarında etiket tarafındakinden biraz daha az boşlukla (büyük boyda 24 px\'e karşı 20 px). Birleşik buton da bu kadar daralıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'As the droplet melts in, the button\'s end no longer grows taller than the rest for a moment and shrinks back: the bridge now only fills the dip between the droplet and the body.',
+          'Damla gövdeye karışırken butonun ucu artık bir anlığına gövdeden uzun olup geri küçülmüyor: köprü yalnızca damla ile gövde arasındaki çukuru dolduruyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'The blur of a label changing letter by letter is no longer cut off in a box around the text: it has room on every side and fades out softly.',
+          'Harf harf değişen etiketin bulanıklığı artık yazının çevresinde bir kutu gibi kesilmiyor: her yanında yer var ve yumuşakça sönüyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '1.6.8',
     date: '2026-11-23',
     title: t('Popover and Dropdown Menu: a softer close.', 'Popover ve Dropdown Menu: daha yumuşak kapanış.'),
@@ -1695,10 +1742,47 @@ export const RELEASES: Release[] = [
         ),
       },
       {
+        kind: 'fixed',
+        page: 'dropdown-menu',
+        text: t(
+          'The soft close now ends still: once the surface is back in, the button no longer swells and settles for a moment. It showed most on a small button, such as the three dots of a Button Group. Popover closes the same way.',
+          'Yumuşak kapanış artık durarak bitiyor: yüzey geri girdikten sonra buton bir anlığına şişip inmiyor. En çok küçük butonda görünüyordu, örneğin bir Button Group\'un üç noktasında. Popover da aynı şekilde kapanıyor.',
+        ),
+      },
+      {
         kind: 'removed',
         text: t(
           'The stage that stood in for the Examples sections on the component pages is gone, heading included. The pages now show only what is there.',
           'Bileşen sayfalarında Örnekler bölümlerinin yerinde duran alan, başlığıyla birlikte kaldırıldı. Sayfalar artık yalnızca var olanı gösteriyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.7',
+    date: '2026-11-23',
+    title: t('Action Button: no twitch after the merge.', 'Action Button: birleşmeden sonra seğirme yok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'action-button',
+        text: t(
+          'With the pointer still on the button, its end no longer jumps out and back for a moment just after the droplet has melted in.',
+          'İmleç butonun üstündeyken, damla gövdeye karıştıktan hemen sonra butonun ucu artık bir anlığına dışarı çıkıp geri dönmüyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.6.6',
+    date: '2026-11-23',
+    title: t('A brand page.', 'Marka sayfası.'),
+    changes: [
+      {
+        kind: 'new',
+        text: t(
+          'The new Brand page (linked in the footer) holds the logo and its symbol as SVG and PNG, the clear space and smallest sizes, the logo on the site\'s colours, the palette, the type and what not to do with the logo.',
+          'Yeni Marka sayfası (alt bilgide) logoyu ve sembolünü SVG ve PNG olarak, güvenli alanı ve en küçük boyutları, logonun sitenin renkleri üstündeki hâlini, paleti, yazı tiplerini ve logoyla yapılmaması gerekenleri bir arada sunuyor.',
         ),
       },
     ],

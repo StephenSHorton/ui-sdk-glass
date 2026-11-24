@@ -36,7 +36,7 @@
 // own: the content goes first, the surface slides back into the control and slows as it lands.
 // A label that comes back letter by letter: the label of a morphing control goes in
 // <GlassPopupText> (GlassPopover and GlassDropdownMenu do it for their own triggers). The moment
-// its surface is back in, as the control swells to take it, the label returns letter by letter,
+// its surface is back in, the label returns letter by letter,
 // out of a blur and the dark.
 // Without WebGL2 the surface is a plain frosted panel and the anchor keeps its CSS look.
 // COPY VERBATIM. MIT — https://github.com/bilalgursen/liquid-glass
@@ -357,12 +357,13 @@ function createMorph(matchWidth: boolean, morphs: boolean, from: GlassPopupFrom)
       return false
     }
     // The popup has just gone back in: the control takes it like a hover, and lets go again.
+    // (Not after a soft close, which lands slowing down and ends still.)
     if (shut && !wasShut) {
-      settle = SETTLE
+      if (!(morphs && MORPH.closeSoft > 0.5)) settle = SETTLE
       // A morphing control lights up with that swell. A press still lit is topped up, never added to.
       // (Not after a soft close, which ends without a light.)
       if (morphs && MORPH.closeSoft <= 0.5 && glow.x < SETTLE_GLOW) light(undefined, undefined, SETTLE_GLOW - Math.max(glow.x, 0), false, false)
-      // A label that comes back letter by letter (GlassPopupText) does so with that swell, at once.
+      // A label that comes back letter by letter (GlassPopupText) does so at that moment, at once.
       if (morphs) setLabel('in')
     }
     if (!shut) setLabel('')

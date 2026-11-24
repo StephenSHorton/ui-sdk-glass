@@ -17,7 +17,12 @@
 // `swell={false}` keeps it still, as a card's glass is. `blur` frosts what clear glass shows.
 // The gooey droplet (used only by GlassActionButton): the host's direct child marked
 // `data-glass-drop` sits at the end, and the glass separates around it (`apart`) or melts
-// back into one body (`merged`). Switching between the two animates. COPY VERBATIM.
+// back into one body (`merged`). Switching between the two animates, and the glass swells
+// once as it does under the pointer.
+// `pulse`: change it and the glass answers once, as if hovered and pressed for a moment
+// (GlassActionButton does it when its action succeeds). While it does, the host carries `--glass-bend` (two numbers): put `scale: var(--glass-bend, 1)` on the
+// content that should stretch with the glass. `pulseHold` (seconds) keeps it swollen longer
+// before it lets go. COPY VERBATIM.
 // MIT — https://github.com/bilalgursen/liquid-glass
 
 import { useEffect, useRef } from 'react'
@@ -127,6 +132,14 @@ export type GlassLayerProps = {
   disabled?: boolean
   /** Swell on hover and grow when pressed (default). `false` keeps the glass still under the pointer. */
   swell?: boolean
+  /**
+   * Change it (a counter) and the glass answers once: it swells as if hovered and pressed for a
+   * moment. Meanwhile the host has `--glass-bend`, for content that
+   * stretches with it (`scale: var(--glass-bend, 1)`). Nothing happens on mount, or under reduced motion.
+   */
+  pulse?: unknown
+  /** How long a pulse stays swollen before it lets go, in seconds (default 0.16: a nod). */
+  pulseHold?: number
   /** Fine-tuning: tint colour, a rim line, frost mix, bend, light and shadow (see GlassOptics). */
   optics?: GlassOptics
 }
@@ -138,6 +151,17 @@ const HOVER_GROW = 0.08
 const MAX_GROW_PX = 6
 /** Gap between the separated droplet and the body, as a share of the height. */
 const DROPLET_GAP = 0.25
+/** A pulse: the glass swells as if hovered and pressed for this long (seconds, unless `pulseHold` says otherwise), then lets go. */
+const PULSE = 0.16
+/** Already hovered, its hover swell is at rest: the pulse pushes its width and height instead (per second). */
+const PULSE_KICK = { x: 24, y: 20 }
+/**
+ * During a pulse the content stretches with the glass, each way by this much of what the pulse
+ * adds to the glass's swell that way (`--glass-bend`). It comes in and fades at these rates (per second).
+ * Held swollen, the content does not stay stretched: it evens out at `even`, and as the glass
+ * lets go it follows at `back` (per second).
+ */
+const PULSE_BEND = { amount: 0.5, in: 30, out: 5, even: 4, back: 12 }
 
 /** The CSS the glass relies on. Rendered once per page by <GlassStyles /> (React 19 dedupes it). */
 export const GLASS_CSS = `
@@ -177,6 +201,8 @@ export function GlassLayer({
   trigger,
   disabled = false,
   swell = true,
+  pulse,
+  pulseHold,
   optics,
 }: GlassLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -188,6 +214,24 @@ export function GlassLayer({
   tuneRef.current = { tint, blur, optics }
   const pokeRef = useRef<(() => void) | null>(null)
   useEffect(() => pokeRef.current?.(), [droplet, tint, blur, optics])
+  // A pulse plays when the value changes, never for the one the glass was mounted with.
+  const pulseRef = useRef<(() => void) | null>(null)
+  const pulseHoldRef = useRef(pulseHold)
+  pulseHoldRef.current = pulseHold
+  // The droplet splitting off or melting in: the glass swells once, as under a hover.
+  const nodRef = useRef<(() => void) | null>(null)
+  const lastDroplet = useRef(droplet)
+  useEffect(() => {
+    const from = lastDroplet.current
+    lastDroplet.current = droplet
+    if (from !== droplet && from !== 'none' && droplet !== 'none') nodRef.current?.()
+  }, [droplet])
+  const lastPulse = useRef(pulse)
+  useEffect(() => {
+    if (Object.is(lastPulse.current, pulse)) return
+    lastPulse.current = pulse
+    pulseRef.current?.()
+  }, [pulse])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -242,6 +286,22 @@ export function GlassLayer({
     const growY: Spring = { x: 0, v: 0 }
     const scale: Spring = { x: 1, v: 0 }
     const drop: Spring = { x: 0, v: 0 }
+    /** How much the droplet is on its way in (0–1), eased: the bridge is held flat then (see the lens). */
+    let closing = 0
+    // A pulse: seconds of its swell left, and how much the content bends with it (0–1).
+    let settle = 0
+    /** A nod: seconds left of a hover's swell alone (the droplet splitting off or melting in). */
+    let nod = 0
+    let bend = 0
+    /** The swell the glass is settling at (0–1, eased): the content bends by what is beyond it, so it is even once the glass holds still. */
+    let bendFrom = 0
+    let bent = ''
+    const setBend = (next: string) => {
+      if (bent === next) return
+      bent = next
+      if (next) host.style.setProperty('--glass-bend', next)
+      else host.style.removeProperty('--glass-bend')
+    }
     const maxScale = () => 1 + (2 * MAX_GROW_PX) / Math.max(w, 1)
 
     const view: GlassView = {
@@ -254,24 +314,41 @@ export function GlassLayer({
           press.x = growX.x = growY.x = press.v = growX.v = growY.v = 0
           drop.x = hasDroplet && dropletRef.current === 'apart' ? 1 : 0
           drop.v = 0
+          closing = drop.x ? 0 : 1
+          bendFrom = hovered ? 1 : 0
+          settle = nod = bend = 0
+          setBend('')
           scale.x = 1
           host.style.scale = ''
           if (colorT !== 1) view.dirty = true
           colorT = 1
           return false
         }
-        const hov = hovered ? 1 : 0
-        const target = pressed ? Math.min(PRESS_SCALE, maxScale()) : hovered ? Math.min(HOVER_SCALE, maxScale()) : 1
-        const a = stepSpring(press, pressed ? 1 : 0, SPRINGS.press, dt)
+        const greeting = settle > 0
+        settle = Math.max(0, settle - dt)
+        const nodding = nod > 0
+        nod = Math.max(0, nod - dt)
+        const hov = hovered || greeting || nodding ? 1 : 0
+        // A pulse swells the glass as a press does, on top of the hover.
+        const down = pressed || greeting
+        const target = down ? Math.min(PRESS_SCALE, maxScale()) : hov ? Math.min(HOVER_SCALE, maxScale()) : 1
+        const a = stepSpring(press, down ? 1 : 0, SPRINGS.press, dt)
         const b = stepSpring(growX, hov, SPRINGS.hoverX, dt)
         const c = stepSpring(growY, hov, SPRINGS.hoverY, dt)
         const d = stepSpring(scale, target, SPRINGS.press, dt)
         const apart = dropletRef.current === 'apart' && view.visible && !pressed
         const e = hasDroplet ? stepSpring(drop, apart ? 1 : 0, apart ? SPRINGS.dropletOut : SPRINGS.dropletIn, dt) : false
+        closing = clamp(closing + (apart ? -1 : 1) * dt * 12)
+        // The content follows the glass while the pulse lasts, and lets go as it settles.
+        bend = clamp(bend + ((greeting ? 1 : 0) - bend) * Math.min(1, dt * (greeting ? PULSE_BEND.in : PULSE_BEND.out)))
+        if (!greeting && bend < 0.004) bend = 0
+        bendFrom = clamp(bendFrom + (hov - bendFrom) * Math.min(1, dt * (hov > bendFrom ? PULSE_BEND.even : PULSE_BEND.back)))
+        const by = bend * PULSE_BEND.amount * 2 * HOVER_GROW
+        setBend(bend ? `${(1 + (by * (growX.x - bendFrom) * h) / Math.max(w, 1)).toFixed(4)} ${(1 + by * (growY.x - bendFrom)).toFixed(4)}` : '')
         host.style.scale = scale.x === 1 ? '' : scale.x.toFixed(4)
         const fading = 1 - colorT > 0.004
         colorT = fading ? colorT + (1 - colorT) * Math.min(1, dt * 14) : 1
-        return a || b || c || d || e || fading || (clear && live && view.visible)
+        return a || b || c || d || e || greeting || nodding || bend > 0 || fading || (clear && live && view.visible)
       },
       lens: (refresh) => {
         if (refresh) {
@@ -363,6 +440,12 @@ export function GlassLayer({
         const { tint, blur, optics: o } = tuneRef.current
         // The engine scales the shadow with the light too; divide it back out, so they tune apart.
         const strength = Math.max(clamp(o?.light ?? 1, 0, 3), 1e-4)
+        // The gooey bridge opens as the droplet leaves and closes once it has snapped.
+        const bridge = h * 0.34 * smooth(0, 0.15, t) * (1 - smooth(0.8, 1, t))
+        // On its way in, the droplet ends up inside the body's end, and a bridge that soft would
+        // swell that end past the body (it grew, then shrank as the droplet went). There the
+        // bridge only fills the dip between the two: the end stays as tall as the rest.
+        const dip = Math.hypot(hy, (pull * k) / 2) - hy
         return {
           // The canvas is placed against the padding box; the glass is measured on the border box.
           left: -padX - host.clientLeft,
@@ -379,10 +462,12 @@ export function GlassLayer({
           droplet:
             t > 0.001
               ? {
-                  x: (w / 2 - h / 2) * k + grow * growX.x * 0.5,
+                  // Swollen, the droplet's end sits a little off the body's. It joins it as the two
+                  // become one, or the end would jump when the droplet goes (the spring's last
+                  // ripple brings it back for a moment).
+                  x: (w / 2 - h / 2) * k + grow * lerp(growX.x - growY.x, growX.x * 0.5, smooth(0, 0.15, t)),
                   r: hy,
-                  // The gooey bridge opens as the droplet leaves and closes once it has snapped.
-                  k: h * 0.34 * smooth(0, 0.15, t) * (1 - smooth(0.8, 1, t)),
+                  k: lerp(bridge, Math.min(bridge, 4 * dip), closing),
                 }
               : undefined,
           // Shading bands deeper than a square corner would meet in diagonal seams: the bevel
@@ -531,6 +616,26 @@ export function GlassLayer({
       engine.wake()
     }
     pokeRef.current = dirty
+    // The pulse (see `pulse`): the glass swells as under a hover and a press at once, and lets
+    // go. Hovered, its hover swell is at rest already: those springs are pushed, so it wobbles.
+    // The nod: a hover's swell alone, for PULSE seconds. Hovered, the same push as a pulse's.
+    nodRef.current = () => {
+      if (!swell || host.matches(':disabled')) return
+      if (hovered) {
+        growX.v += PULSE_KICK.x
+        growY.v += PULSE_KICK.y
+      } else nod = PULSE
+      dirty()
+    }
+    pulseRef.current = () => {
+      if (!swell || host.matches(':disabled')) return
+      if (hovered) {
+        growX.v += PULSE_KICK.x
+        growY.v += PULSE_KICK.y
+      }
+      settle = Math.max(0, pulseHoldRef.current ?? PULSE)
+      dirty()
+    }
     const onDown = () => {
       if (!swell || isDisabled()) return
       pressed = true
@@ -593,7 +698,10 @@ export function GlassLayer({
       delete host.dataset.glassReady
       delete host.dataset.glassTone
       host.style.scale = ''
+      host.style.removeProperty('--glass-bend')
       pokeRef.current = null
+      pulseRef.current = null
+      nodRef.current = null
     }
   }, [material, backdrop, live, trigger, disabled, swell])
 

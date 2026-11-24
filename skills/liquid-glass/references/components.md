@@ -311,7 +311,7 @@ import { GlassActionButton } from '@/components/liquid-glass'
 - **Idle.** The arrow floats apart from the body as a separate glass droplet.
 - **Press.** The droplet stretches back on a gooey bridge and melts into the body.
 - **Pending.** One body; the label morphs to `pendingLabel` and a spinner turns where the arrow was, until the promise from `onAction` settles.
-- **Success.** Still one body: `successLabel` and a check that draws itself in. It stays merged, unless you set `resetAfter`.
+- **Success.** Still one body: `successLabel` and a check that draws itself in. As it lands the glass swells, as if hovered and pressed at the same time, and stretches the label and the check with it; it lets go a moment after the label is in. It stays merged, unless you set `resetAfter`.
 - **Error.** If `onAction` throws, the droplet splits off again and `onActionError` gets the error.
 - **Start over.** Change `resetKey` and the droplet splits off again from any state. Don't remount the button with `key`: that snaps it back.
 

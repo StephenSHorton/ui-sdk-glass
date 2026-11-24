@@ -388,6 +388,13 @@ and do not modify the files in components/liquid-glass/.`,
           'Butonu basılı tutup uzağa sürükleyen imleç onu peşinden çeker. Buton bir lastik bantla biraz gelir (geniş butonda en çok 10 px), çekiş yönünde uzar, karşı yönde incelir; bırakınca jöle gibi yerine yaylanır. 72 px\'e kadar olan buton basıldığı noktadan itibaren imleci izler; daha geniş olan, imleç kenarını geçince kıpırdar. Varsayılan olarak açıktır (`pull={false}` butonu yerinde tutar); azaltılmış harekette buton yerinde durur. Butonun dışında bırakırsan, her butonda olduğu gibi tıklama gerçekleşmez.',
         ),
       },
+      {
+        type: 'p',
+        text: t(
+          'Two buttons that come near each other melt into one body, as two drops of liquid do: pull the round button towards the wide one above. Within reach the sides that face each other lean out, nearer still a bridge forms, and it thins and lets go as they part. They begin to melt once the gap between them is under 6 px, and join under half of that (`COHESION` in `engine.ts`). Joined, hold one and part of its light runs on into the other. Every button of the kit does it, Action Button and Button Group included; a card, a menu or a lens never melts.',
+          'Birbirine yaklaşan iki buton, iki damla sıvı gibi tek gövdede kaynaşır: yukarıdaki yuvarlak butonu geniş olana doğru çek. Erime girince birbirine bakan kenarlar dışa doğru uzanır, daha da yaklaşınca aralarında bir köprü oluşur, ayrılırken köprü incelip kopar. Aradaki boşluk 6 px\'in altına inince kaynaşmaya başlarlar, bunun yarısının altında birleşirler (`engine.ts` içinde `COHESION`). Birleşince birini basılı tut, ışığının bir kısmı ötekine de akar. Kitin her butonu bunu yapar, Action Button ve Button Group da; kart, menü ya da mercek asla kaynaşmaz.',
+        ),
+      },
       h('API reference', 'API referansı'),
       {
         type: 'props',
@@ -1844,6 +1851,46 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.0.0',
+    date: '2026-11-24',
+    title: t('Buttons melt into each other as they come near.', 'Butonlar birbirine yaklaşınca kaynaşıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'button',
+        also: ['action-button', 'button-group'],
+        text: t(
+          'Cohesion: two buttons that come near each other melt into one body, as two drops of liquid do (the fusion of Liquid Glass Studio, MIT). Within reach the sides that face each other lean out, nearer still a bridge forms between them, and it thins and lets go as they part, whatever brings them together: a pull, a swell, the layout. Each glass keeps its own canvas and draws its side of the bridge; across it the two share their bevel, bend, tint and shadow, so the line where they meet does not show. Joined, hold one and part of the light of the press runs on into the other (a little of it by default, `light` in `COHESION`). Pull the round button towards the wide one in the "Hold and drag" example to see it. The engine does it for every button (`COHESION` in `engine.ts`); a card, a menu or a lens never melts.',
+          'Kohezyon: birbirine yaklaşan iki buton, iki damla sıvı gibi tek gövdede kaynaşıyor (Liquid Glass Studio\'daki kaynaşma, MIT). Erime girince birbirine bakan kenarlar dışa doğru uzanıyor, daha da yaklaşınca aralarında bir köprü oluşuyor, ayrılırken köprü incelip kopuyor. Onları neyin yaklaştırdığı fark etmiyor: çekiş, şişme ya da yerleşim. Her cam kendi tuvalini koruyor ve köprünün kendi yarısını çiziyor; köprü boyunca ikisi kenar eğimini, bükülmeyi, rengi ve gölgeyi paylaşıyor, bu yüzden buluştukları çizgi görünmüyor. Birleşince birini basılı tut, basışın ışığının bir kısmı ötekine de akar (varsayılan olarak azı; `COHESION` içinde `light`). Görmek için "Basılı tutup çek" örneğindeki yuvarlak butonu geniş olana doğru çek. Motor bunu her buton için yapıyor (`engine.ts` içinde `COHESION`); kart, menü ya da mercek asla kaynaşmıyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'button',
+        text: t(
+          'The rim of clear glass mirrors a picture of what lies around it, taken now and then. Taken while a neighbour was still lit by a press (or swollen), it could keep that light on the rim after it had gone, until the pointer came back over the glass. While anything on the page moves or is lit, the glass now keeps the picture it has, and takes a new one at once when all is still.',
+          'Şeffaf camın kenarı, çevresinin arada bir çekilen bir resmini yansıtır. Bu resim, bir komşu hâlâ basışın ışığıyla yanarken (ya da şişmişken) çekilirse, o ışık söndükten sonra da kenarda kalabiliyordu; imleç camın üzerine geri gelene kadar. Sayfada bir şey hareket ederken ya da yanarken cam artık elindeki resmi koruyor ve her şey durunca hemen yenisini çekiyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '1.7.4',
+    date: '2026-11-24',
+    title: t('No magenta line as a Menu opens in Safari.', 'Safari\'de Menu açılırken mor çizgi yok.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'menu',
+        also: ['dropdown-menu'],
+        text: t(
+          'Menu: in Safari on iPhone, a thin magenta line could show down the right side of the list for a frame or two as it came into focus. The list comes out of a blur while the glass, still smaller than the list, cuts it to its own shape, and WebKit draws a blur of under about a pixel and a half on a list cut that way with that line. The blur now ends at two device pixels instead of thinning to nothing. A Dropdown Menu with `over` brings its list in the same way, and its blur ends there too.',
+          'Menu: iPhone\'da Safari\'de liste netleşirken bir iki kare boyunca listenin sağ kenarında ince, mor bir çizgi görünebiliyordu. Liste bir bulanıklıktan çıkıyor; bu sırada listeden henüz küçük olan cam onu kendi şekline kesiyor. WebKit böyle kesilmiş bir listede bir buçuk pikselden küçük bir bulanıklığı o çizgiyle çiziyor. Bulanıklık artık hiçe incelmek yerine iki cihaz pikselinde bitiyor. `over` ile açılan Dropdown Menu da listesini aynı yolla getiriyor; onun bulanıklığı da artık orada bitiyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '1.7.3',
     date: '2026-11-24',

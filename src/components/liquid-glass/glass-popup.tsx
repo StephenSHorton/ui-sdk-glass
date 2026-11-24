@@ -107,6 +107,13 @@ const CONTENT_GLOW = { lift: 0.55, bloom: 7, alpha: 0.65 }
 const LETTER = { duration: 0.4, gap: 0.01, blur: 10 }
 /** A morphing surface's content follows each side of the glass, at most this much (×) off its even size: past it, text would look stretched. */
 const MAX_STRETCH = 1.06
+/**
+ * The content's blur ends at this many device px instead of thinning to nothing: under about one and
+ * a half, WebKit (iOS Safari) draws the clipped list with a magenta line down its side.
+ */
+const SOFT_MIN = 2
+/** The content's blur (`soft`, CSS px) as a filter, or none once it is under SOFT_MIN. */
+const softBlur = (soft: number, digits: number) => (soft * (window.devicePixelRatio || 1) >= SOFT_MIN ? `blur(${soft.toFixed(digits)}px)` : '')
 
 /**
  * How much (0–1) a box `ox, oy` off the glass's middle, `w × h` half its size, must shrink to lie
@@ -691,7 +698,7 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
       const cut = !!g && !!inset && out > 0 && inset.some((v) => v > 0.5)
       set(content, '--glass-clip', cut ? `inset(${inset.map((v) => `${v.toFixed(1)}px`).join(' ')} round ${g.r.toFixed(1)}px)` : '', '')
       const soft = out > 0 && out < 1 ? MENU.contentBlur * (1 - out) : 0
-      set(content, '--glass-soft', soft > 0.05 ? `blur(${soft.toFixed(1)}px)` : '', '')
+      set(content, '--glass-soft', softBlur(soft, 1), '')
       return
     }
     if (!morphs) return set(content, '--glass-ride-y', `${s.ride.toFixed(2)}px`, '0.00px')
@@ -737,7 +744,7 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
     set(content, '--glass-ride-y', `${(y - ly).toFixed(2)}px`, '')
     set(content, '--glass-zoom', `${kx.toFixed(4)} ${ky.toFixed(4)}`, '')
     set(content, '--glass-clip', `inset(${inset.map((v) => `${v.toFixed(1)}px`).join(' ')} round ${(m.r / kx).toFixed(1)}px / ${(m.r / ky).toFixed(1)}px)`, '')
-    set(content, '--glass-soft', soft > 0.05 ? `blur(${soft.toFixed(2)}px)` : '', '')
+    set(content, '--glass-soft', softBlur(soft, 2), '')
   }
 
   /** `card`: 0 draws the control's glass (the surface melted into it wears its own), 1 the surface alone. */

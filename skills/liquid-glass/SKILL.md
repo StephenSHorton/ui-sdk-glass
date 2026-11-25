@@ -1,15 +1,37 @@
 ---
 name: liquid-glass
-description: Add liquid glass UI to a React app with Liquid Glass UI (bilalgursen/liquid-glass) — copy-paste components, one verb each: glass buttons (press), async action buttons whose arrow droplet melts into the body when pressed (merge), tabs whose selection travels as a lens (travel), badges with text flowing through the glass (flow), slide-to-confirm tracks with a glass thumb (drag), glass cards that hold content over moving colour (hold), button groups that share one body of glass (share), range sliders (slide), on/off switches (flip), checkboxes (tick) selects whose list stretches out of the button (stretch) and dropdown menus that pour out of a button or a whole button group (open). Use when the user asks for liquid glass, glassmorphism with real refraction, Apple-style glass, glass cards or widgets, glass sliders, switches / toggles or checkboxes, gooey/droplet buttons, slide to confirm / slide to pay / slide to unlock, or mentions Liquid Glass UI. Installs the real component files instead of re-implementing them.
+description: Add liquid glass UI to a React app with ui-sdk-glass (StephenSHorton/ui-sdk-glass, a fork of Liquid Glass UI by Bilal Gürşen) — copy-paste components, one verb each: glass buttons (press), async action buttons whose arrow droplet melts into the body when pressed (merge), tabs whose selection travels as a lens (travel), badges with text flowing through the glass (flow), slide-to-confirm tracks with a glass thumb (drag), glass cards that hold content over moving colour (hold), button groups that share one body of glass (share), range sliders (slide), on/off switches (flip), checkboxes (tick) selects whose list stretches out of the button (stretch) and dropdown menus that pour out of a button or a whole button group (open). Use when the user asks for liquid glass, glassmorphism with real refraction, Apple-style glass, glass cards or widgets, glass sliders, switches / toggles or checkboxes, gooey/droplet buttons, slide to confirm / slide to pay / slide to unlock, or mentions ui-sdk-glass or Liquid Glass UI. Copies the real component files from the fork instead of re-implementing them.
 ---
 
-# Liquid Glass UI
+# ui-sdk-glass
 
-Copy-paste React components drawn in WebGL2, one verb each. Docs: https://onemorethink.dev — every page also exists as Markdown (`/docs/<page>.md`), and `https://onemorethink.dev/llms-full.txt` holds everything.
+Copy-paste React components drawn in WebGL2, one verb each. **ui-sdk-glass is Stephen Horton's fork of [Liquid Glass UI](https://github.com/bilalgursen/liquid-glass) by Bilal Gürşen** (MIT): the engine, the components and their docs are Bilal's work. The fork runs on UI SDK `0.1.0-beta.17` (the original pins `0.1.0-beta.13`) and adds components of its own.
+
+Source: https://github.com/StephenSHorton/ui-sdk-glass. The original's docs at https://onemorethink.dev describe the original's files; for this fork read `references/components.md`.
+
+## Install
+
+Copy `src/components/liquid-glass/` from https://github.com/StephenSHorton/ui-sdk-glass into the project as `components/liquid-glass/`, byte for byte:
+
+```bash
+npx degit StephenSHorton/ui-sdk-glass/src/components/liquid-glass components/liquid-glass
+# or, without degit:
+git clone --depth 1 https://github.com/StephenSHorton/ui-sdk-glass /tmp/ui-sdk-glass
+cp -R /tmp/ui-sdk-glass/src/components/liquid-glass components/liquid-glass
+```
+
+Put the folder under the source root the `@/` alias points at (`src/components/liquid-glass/` when `@/` is `src/`). Then add the packages, UI SDK at exactly this version (it is in beta; both packages move together):
+
+```bash
+npm install @ui-sdk/core@0.1.0-beta.17 @ui-sdk/react@0.1.0-beta.17
+npm install three   # RangeSlider, Switch and Checkbox; or leave the controls/ folder out
+```
+
+To take one component only, copy just the files its section in `references/components.md` lists. Never use the original's `npx shadcn@latest add https://onemorethink.dev/r/…` commands for this fork: that registry ships the original's files, pinned to UI SDK `0.1.0-beta.13`.
 
 ## Non-negotiable rules
 
-1. **Install, never re-implement.** Use the shadcn command below, or copy files from https://github.com/bilalgursen/liquid-glass/tree/main/src/components byte for byte. Do not write your own shader, port the engine to another library, "simplify" it, or translate identifiers. The look depends on exact constants.
+1. **Copy, never re-implement.** Copy the files from https://github.com/StephenSHorton/ui-sdk-glass/tree/main/src/components/liquid-glass byte for byte, as above. Do not write your own shader, port the engine to another library, "simplify" it, or translate identifiers. The look depends on exact constants.
 2. **Do not edit files in `components/liquid-glass/`.** Customise only through documented props, `className` (`bg-*`, `text-*`, sizes, position) and the `--glass-tint` CSS variable.
 3. **Copy the examples as they are.** The code in `references/components.md` is the exact source of each live demo.
 4. Requirements: React 19, Tailwind CSS v4, an `@/` import alias to the source folder. Files already start with `"use client"`.
@@ -18,25 +40,24 @@ Copy-paste React components drawn in WebGL2, one verb each. Docs: https://onemor
 
 Pick by the verb. They never overlap.
 
-| Verb | Need | Use | Install |
-| --- | --- | --- | --- |
-| Press | One glass button, or a router link styled as one | `GlassButton` (`material`: `clear` \| `tinted`; `asChild` for `<Link>`; needs `@ui-sdk/core` and `@ui-sdk/react`) | `…/r/button.json` |
-| Merge | One async action whose result shows on the button (Deploy → Deploying… → Deployed ✓) | `GlassActionButton` — its arrow is a gooey droplet | `…/r/action-button.json` |
-| Travel | Tabs / segmented control with a sliding glass lens | `GlassTabs`; for your own Radix Tabs or radio group, `GlassLens` (ships with it); needs `@ui-sdk/core` and `@ui-sdk/react` | `…/r/tabs.json` |
-| Flow | A one-word "New" badge with text flowing through glass | `GlassBadge` | `…/r/badge.json` |
-| Drag | A deliberate action a stray tap must not trigger (Slide to send $240 → Sending… → Sent ✓) | `GlassSlideToConfirm` (`fillClassName` colours the fill) | `…/r/slide-to-confirm.json` |
-| Hold | A small card of content over colour, imagery or motion (a weather widget, a now-playing card) | `GlassCard` (frosted: `blur` 3.5 px, `tint` 0.68 light / 0.79 dark; `live` when something moves behind it) | `…/r/card.json` |
-| Share | Two to five related actions in one body of glass (a toolbar, map controls, a split button) | `GlassButtonGroup` with `GlassButtonGroupItem`, `GlassButtonGroupSeparator`, `GlassButtonGroupText` (`orientation`, `size`, `material`) | `…/r/button-group.json` |
-| Slide | Picking a value on a range (volume, brightness) | `RangeSlider` from `controls/RangeSlider` (`value`, `onChange`, `min`, `max`, `step`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) | `…/r/slider.json` |
-| Flip | An on/off setting that takes effect at once | `Switch` from `controls/Switch` (`checked`, `onChange`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) | `…/r/switch.json` |
-| Tick | Choosing items in a list or a form | `Checkbox` from `controls/Checkbox` (`checked`, `onChange`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) | `…/r/checkbox.json` |
-| Stretch | Picking one option from a list that opens out of its button | `GlassSelect` from `glass-select` (`label`, `options`, `value`, `onValueChange`; needs `@ui-sdk/core` and `@ui-sdk/react`); for your own menu or popover, `GlassPopup` (ships with it) | `…/r/select.json` |
-| Open | A menu of actions out of a button or out of a button group's three dots | `GlassDropdownMenu` from `glass-dropdown-menu` with `GlassDropdownMenuTrigger` (`asChild` on a `GlassButtonGroupItem`), `GlassDropdownMenuContent`, `GlassDropdownMenuItem` (`onSelect`, `destructive`), `GlassDropdownMenuSeparator`; needs `@ui-sdk/core` and `@ui-sdk/react` | `…/r/dropdown-menu.json` |
-| Unfold | A little more about one control, or a few choices for it, out of the button itself | `GlassPopover` from `glass-popover` with `GlassPopoverTrigger`, `GlassPopoverContent` (`over`, `align`), `GlassPopoverTitle`, `GlassPopoverDescription`, `GlassPopoverClose` (`variant="solid"`, `onClick`); needs `@ui-sdk/core` and `@ui-sdk/react` | `…/r/popover.json` |
-| Grow | A full menu out of a button, on any side: checkable options, one choice among a few, groups, shortcuts, submenus | `GlassMenu` from `glass-menu` with `GlassMenuTrigger`, `GlassMenuContent` (`side`, `align`), `GlassMenuItem` (`onSelect`, `destructive`, `shortcut`), `GlassMenuCheckboxItem` (`value`, `checked`, `onCheckedChange`), `GlassMenuRadioGroup` + `GlassMenuRadioItem`, `GlassMenuGroup` + `GlassMenuLabel`, `GlassMenuShortcut`, `GlassMenuSeparator`, `GlassMenuSub` + `GlassMenuSubTrigger` + `GlassMenuSubContent`; needs `@ui-sdk/core` and `@ui-sdk/react` | `…/r/menu.json` |
-| — | All of them | — | `…/r/liquid-glass.json` |
+| Verb | Need | Use |
+| --- | --- | --- |
+| Press | One glass button, or a router link styled as one | `GlassButton` (`material`: `clear` \| `tinted`; `asChild` for `<Link>`; needs `@ui-sdk/core` and `@ui-sdk/react`) |
+| Merge | One async action whose result shows on the button (Deploy → Deploying… → Deployed ✓) | `GlassActionButton` — its arrow is a gooey droplet |
+| Travel | Tabs / segmented control with a sliding glass lens | `GlassTabs`; for your own Radix Tabs or radio group, `GlassLens` (ships with it); needs `@ui-sdk/core` and `@ui-sdk/react` |
+| Flow | A one-word "New" badge with text flowing through glass | `GlassBadge` |
+| Drag | A deliberate action a stray tap must not trigger (Slide to send $240 → Sending… → Sent ✓) | `GlassSlideToConfirm` (`fillClassName` colours the fill) |
+| Hold | A small card of content over colour, imagery or motion (a weather widget, a now-playing card) | `GlassCard` (frosted: `blur` 3.5 px, `tint` 0.68 light / 0.79 dark; `live` when something moves behind it) |
+| Share | Two to five related actions in one body of glass (a toolbar, map controls, a split button) | `GlassButtonGroup` with `GlassButtonGroupItem`, `GlassButtonGroupSeparator`, `GlassButtonGroupText` (`orientation`, `size`, `material`) |
+| Slide | Picking a value on a range (volume, brightness) | `RangeSlider` from `controls/RangeSlider` (`value`, `onChange`, `min`, `max`, `step`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) |
+| Flip | An on/off setting that takes effect at once | `Switch` from `controls/Switch` (`checked`, `onChange`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) |
+| Tick | Choosing items in a list or a form | `Checkbox` from `controls/Checkbox` (`checked`, `onChange`, `label`; needs `three`, `@ui-sdk/core` and `@ui-sdk/react`) |
+| Stretch | Picking one option from a list that opens out of its button | `GlassSelect` from `glass-select` (`label`, `options`, `value`, `onValueChange`; needs `@ui-sdk/core` and `@ui-sdk/react`); for your own menu or popover, `GlassPopup` (ships with it) |
+| Open | A menu of actions out of a button or out of a button group's three dots | `GlassDropdownMenu` from `glass-dropdown-menu` with `GlassDropdownMenuTrigger` (`asChild` on a `GlassButtonGroupItem`), `GlassDropdownMenuContent`, `GlassDropdownMenuItem` (`onSelect`, `destructive`), `GlassDropdownMenuSeparator`; needs `@ui-sdk/core` and `@ui-sdk/react` |
+| Unfold | A little more about one control, or a few choices for it, out of the button itself | `GlassPopover` from `glass-popover` with `GlassPopoverTrigger`, `GlassPopoverContent` (`over`, `align`), `GlassPopoverTitle`, `GlassPopoverDescription`, `GlassPopoverClose` (`variant="solid"`, `onClick`); needs `@ui-sdk/core` and `@ui-sdk/react` |
+| Grow | A full menu out of a button, on any side: checkable options, one choice among a few, groups, shortcuts, submenus | `GlassMenu` from `glass-menu` with `GlassMenuTrigger`, `GlassMenuContent` (`side`, `align`), `GlassMenuItem` (`onSelect`, `destructive`, `shortcut`), `GlassMenuCheckboxItem` (`value`, `checked`, `onCheckedChange`), `GlassMenuRadioGroup` + `GlassMenuRadioItem`, `GlassMenuGroup` + `GlassMenuLabel`, `GlassMenuShortcut`, `GlassMenuSeparator`, `GlassMenuSub` + `GlassMenuSubTrigger` + `GlassMenuSubContent`; needs `@ui-sdk/core` and `@ui-sdk/react` |
 
-`…` = `npx shadcn@latest add https://onemorethink.dev`. Everything wraps your own DOM. `GlassButton`, `GlassTabs`, `GlassSelect`, `GlassDropdownMenu`, `GlassPopover`, `GlassMenu`, `RangeSlider`, `Switch` and `Checkbox` take their behaviour from UI SDK and need `@ui-sdk/core` and `@ui-sdk/react` (in beta: keep the exact versions the install adds); `RangeSlider`, `Switch` and `Checkbox` also need `three`. The rest have zero npm dependencies.
+Everything wraps your own DOM. `GlassButton`, `GlassTabs`, `GlassSelect`, `GlassDropdownMenu`, `GlassPopover`, `GlassMenu`, `RangeSlider`, `Switch` and `Checkbox` take their behaviour from UI SDK and need `@ui-sdk/core` and `@ui-sdk/react` (in beta: keep them at exactly `0.1.0-beta.17`); `RangeSlider`, `Switch` and `Checkbox` also need `three`. The rest have zero npm dependencies.
 
 ## Essentials
 
@@ -68,11 +89,11 @@ import { GlassActionButton, GlassButton, GlassTabs } from '@/components/liquid-g
 - `GlassDropdownMenu` is imported from `glass-dropdown-menu`, not the index, and needs `@ui-sdk/core` and `@ui-sdk/react`. To open it from a button group, wrap that one `GlassButtonGroup` and the content in it and put `GlassDropdownMenuTrigger asChild` around one `GlassButtonGroupItem`.
 - `GlassPopover` is imported from `glass-popover`, not the index, and needs `@ui-sdk/core` and `@ui-sdk/react`. Its button is hidden while the popover is out (it has become it), so always leave a way to close: `GlassPopoverClose`, or the press outside. It opens from its button's edge by itself (`over="center"`: around the button); do not add a `sideOffset` unless you mean to place it. For your own surface with the same motion: `useGlassPopup({ opening: 'morph' })`, with the content wrapped in a `data-glass-list` element and laid over its control.
 - `GlassMenu` is imported from `glass-menu`, not the index, and needs `@ui-sdk/core` and `@ui-sdk/react`. Its button is hidden while the menu is out (its glass has become the menu) and it closes on a press outside, a choice or Escape. Say where the menu lies with `side` and `align` on `GlassMenuContent`; never offset it over the button. Use it for menus with structure (checkbox and radio items, groups, submenus) or a set side; a few plain actions, or a menu out of a `GlassButtonGroup`, are `GlassDropdownMenu`. For your own surface with the same motion: `useGlassPopup({ opening: 'grow' })`, with the content's children wrapped in a `data-glass-list` element.
-- `GlassSelect` is imported from `glass-select`, not the index, and needs `@ui-sdk/core` and `@ui-sdk/react` (UI SDK is in beta: keep the exact versions the install adds). It is clear glass: give it something to bend. For your own menu or popover use `GlassPopup` (`useGlassPopup`, `GlassPopupAnchor`, `GlassPopupSurface`): the content must carry `data-open` / `data-ending-style` and stay mounted while it animates out, as UI SDK's popups do.
+- `GlassSelect` is imported from `glass-select`, not the index, and needs `@ui-sdk/core` and `@ui-sdk/react` (UI SDK is in beta: keep it at exactly `0.1.0-beta.17`). It is clear glass: give it something to bend. For your own menu or popover use `GlassPopup` (`useGlassPopup`, `GlassPopupAnchor`, `GlassPopupSurface`): the content must carry `data-open` / `data-ending-style` and stay mounted while it animates out, as UI SDK's popups do.
 - Without WebGL2 or before the first frame, components show their plain CSS look. Reduced motion freezes the glass. Do not add your own fallbacks.
 - Dark mode: the glass reads colours from CSS (any theme system works); clear glass picks its text colour from its own tone.
 
 ## Reference
 
-- `references/components.md` — every component page: live example source, props table.
-- Turkish docs: https://onemorethink.dev/tr/docs
+- `references/components.md` — every component page: live example source, the files to copy, props table.
+- The original project: https://github.com/bilalgursen/liquid-glass, docs at https://onemorethink.dev (Turkish: https://onemorethink.dev/tr/docs).

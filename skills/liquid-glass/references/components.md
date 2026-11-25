@@ -1,5 +1,7 @@
 <!-- Generated from src/docs/content.ts by scripts/ai-files.ts. Do not edit by hand. -->
 
+Every component page of ui-sdk-glass, a fork of Liquid Glass UI by Bilal Gürşen. Install by copying the files each page lists from https://github.com/StephenSHorton/ui-sdk-glass, never with the original's shadcn registry: it ships files pinned to another UI SDK version.
+
 # GlassButton
 
 > A button made of glass. Clear glass bends the page behind it; tinted glass takes your background colour.
@@ -51,8 +53,17 @@ export default function Demo() {
 - Choosing between options: use GlassTabs.
 - Every button of a dense form: keep the glass for the action that matters.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-button.tsx`
+- `glass-layer.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/button.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The button underneath is UI SDK's, so Button needs `@ui-sdk/core` and `@ui-sdk/react`. Return a Promise from `onClick` and the button stays pending until it settles: it ignores further presses and says so to screen readers. The install command adds both packages at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -366,7 +377,7 @@ Two buttons that come near each other melt into one body, as two drops of liquid
 - The glass canvas is `aria-hidden`; only your label is announced.
 - Icon-only buttons need an `aria-label`.
 
-Source: https://onemorethink.dev/docs/button
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/button
 
 # GlassActionButton
 
@@ -422,9 +433,12 @@ export default function Demo() {
 - Toggling back and forth between two states: use GlassTabs.
 - More than one per screen: the droplet is the kit's one gooey effect, keep it special.
 
-```bash
-npx shadcn@latest add https://onemorethink.dev/r/action-button.json
-```
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-action-button.tsx`
+- `glass-layer.tsx`
 
 ## Usage
 
@@ -519,7 +533,7 @@ With `resetAfter={2400}` the droplet splits off again 2.4 seconds after a succes
 - A `role="status"` region announces the pending and success labels.
 - With reduced motion the droplet and labels switch without animation.
 
-Source: https://onemorethink.dev/docs/action-button
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/action-button
 
 # GlassTabs
 
@@ -573,8 +587,18 @@ export default function Demo() {
 - Navigating between pages: use links.
 - Long lists of options: use a select.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-layer.tsx`
+- `glass-lens.tsx`
+- `glass-tabs.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/tabs.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The behaviour (one tab stop, arrow keys, a hidden radio per option for forms) comes from UI SDK's segmented control, so Tabs needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -722,7 +746,7 @@ export default function Demo() {
 - Icon-only options take an `aria-label` each.
 - With reduced motion the pill simply jumps.
 
-Source: https://onemorethink.dev/docs/tabs
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/tabs
 
 # GlassBadge
 
@@ -760,9 +784,12 @@ export default function Demo() {
 - Counts or status that must be read at a glance: the text is moving.
 - Several on one screen: the motion competes.
 
-```bash
-npx shadcn@latest add https://onemorethink.dev/r/badge.json
-```
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-badge.tsx`
+- `glass-layer.tsx`
 
 ## Usage
 
@@ -1007,7 +1034,7 @@ Without a position class the badge sits in the line like any inline element. Giv
 - The text is announced once, not as a loop.
 - With reduced motion the text stands still, centred.
 
-Source: https://onemorethink.dev/docs/badge
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/badge
 
 # GlassSlideToConfirm
 
@@ -1084,9 +1111,12 @@ export default function Demo() {
 - An async action a single press may start: use GlassActionButton.
 - Consequences people must read first: use a dialog.
 
-```bash
-npx shadcn@latest add https://onemorethink.dev/r/slide-to-confirm.json
-```
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-layer.tsx`
+- `glass-slide-to-confirm.tsx`
 
 ## Usage
 
@@ -1164,7 +1194,7 @@ Colour the fill with `fillClassName`: its `bg-*` is the fill, its `text-*` is th
 - Success is never colour alone: the chevron becomes a check and the label is written beside it.
 - Vertical page scroll still works over the control on touch. With reduced motion each state shows at once.
 
-Source: https://onemorethink.dev/docs/slide-to-confirm
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/slide-to-confirm
 
 # GlassCard
 
@@ -1286,9 +1316,12 @@ export default function Demo() {
 - A card on a flat background: there is nothing to bend.
 - One clickable action: use GlassButton.
 
-```bash
-npx shadcn@latest add https://onemorethink.dev/r/card.json
-```
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-card.tsx`
+- `glass-layer.tsx`
 
 ## Usage
 
@@ -1436,7 +1469,7 @@ The rim pulls what is behind towards the card's centre, by 6.5% of the viewport,
 - The glass canvas is `aria-hidden`; only your content is read.
 - Content that moves behind it should respect reduced motion: the rows above stop.
 
-Source: https://onemorethink.dev/docs/card
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/card
 
 # RangeSlider
 
@@ -1466,8 +1499,23 @@ export default function Demo() {
 - Exact numbers the user must type: use a number input.
 - Confirming one action: that is Slide to Confirm.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `controls/Icon.tsx`
+- `controls/RangeSlider.tsx`
+- `controls/glass/draw.ts`
+- `controls/glass/physics.ts`
+- `controls/glass/runtime.ts`
+- `controls/glass/tokens.ts`
+- `controls/glass/useGlassCanvas.ts`
+- `controls/shared.ts`
+- `engine.ts`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/slider.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
+npm install three
 ```
 
 > Slider, Switch and Checkbox are drawn by their own renderer, which needs `three`, and take their behaviour (keyboard, the label, the input a form reads) from UI SDK: `@ui-sdk/core` and `@ui-sdk/react`. The install command adds all three; UI SDK is in beta, so it is added at the exact version this was built on.
@@ -1532,7 +1580,7 @@ export default function Demo() {
 - The `label` names the input.
 - With reduced motion the glass follows without springs.
 
-Source: https://onemorethink.dev/docs/slider
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/slider
 
 # Switch
 
@@ -1558,8 +1606,22 @@ export default function Demo() {
 - A choice that is saved later with a form: use Checkbox.
 - More than two states: use Tabs.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `controls/Switch.tsx`
+- `controls/glass/draw.ts`
+- `controls/glass/physics.ts`
+- `controls/glass/runtime.ts`
+- `controls/glass/tokens.ts`
+- `controls/glass/useGlassCanvas.ts`
+- `controls/shared.ts`
+- `engine.ts`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/switch.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
+npm install three
 ```
 
 ## Usage
@@ -1619,7 +1681,7 @@ export default function Demo() {
 - The `label` is a real `<label>` tied to the button.
 - With reduced motion the knob simply jumps.
 
-Source: https://onemorethink.dev/docs/switch
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/switch
 
 # Checkbox
 
@@ -1651,8 +1713,22 @@ export default function Demo() {
 - A setting that takes effect at once: use Switch.
 - One choice out of several: use Tabs.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `controls/Checkbox.tsx`
+- `controls/glass/draw.ts`
+- `controls/glass/physics.ts`
+- `controls/glass/runtime.ts`
+- `controls/glass/tokens.ts`
+- `controls/glass/useGlassCanvas.ts`
+- `controls/shared.ts`
+- `engine.ts`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/checkbox.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
+npm install three
 ```
 
 ## Usage
@@ -1711,7 +1787,7 @@ export default function Demo() {
 - The `label` is a real `<label>` tied to the button.
 - With reduced motion the mark and the cap change without springs.
 
-Source: https://onemorethink.dev/docs/checkbox
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/checkbox
 
 # GlassSelect
 
@@ -1772,8 +1848,18 @@ export default function Demo() {
 - An on/off setting: use Switch.
 - Several of these on one screen: one stretching list is a moment, a form full of them is noise.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-layer.tsx`
+- `glass-popup.tsx`
+- `glass-select.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/select.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Select needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -1849,7 +1935,7 @@ const popup = useGlassPopup()
 - With reduced motion the list opens and closes at once, with no stretch or jolt.
 - Without WebGL2 it is a plain frosted list.
 
-Source: https://onemorethink.dev/docs/select
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/select
 
 # GlassButtonGroup
 
@@ -1957,9 +2043,13 @@ export default function Demo() {
 - A single action: use Button.
 - Unrelated actions: one body says they belong together.
 
-```bash
-npx shadcn@latest add https://onemorethink.dev/r/button-group.json
-```
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-button-group.tsx`
+- `glass-layer.tsx`
+- `glass-popup.tsx`
 
 ## Usage
 
@@ -2114,7 +2204,7 @@ export default function Demo() {
 - Icon-only items need an `aria-label`. Separators are `role="separator"`.
 - Without WebGL2 it keeps its plain CSS colour.
 
-Source: https://onemorethink.dev/docs/button-group
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/button-group
 
 # GlassDropdownMenu
 
@@ -2196,8 +2286,18 @@ export default function Demo() {
 - Two or three actions that fit on screen: show them in a Button Group.
 - Several of these on one screen: one stretching list is a moment, many are noise.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-dropdown-menu.tsx`
+- `glass-layer.tsx`
+- `glass-popup.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/dropdown-menu.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The behaviour (keyboard, typeahead, focus, positioning, ARIA) comes from UI SDK, so Dropdown Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -2434,7 +2534,7 @@ export default function Demo() {
 - An icon-only trigger needs an `aria-label`.
 - With reduced motion the list opens and closes at once. Without WebGL2 it is a plain frosted list.
 
-Source: https://onemorethink.dev/docs/dropdown-menu
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/dropdown-menu
 
 # GlassPopover
 
@@ -2510,8 +2610,18 @@ export default function Demo() {
 - A plain list of actions: use Dropdown Menu. Picking a value for a form: use Select.
 - A hint shown on hover: the button is hidden while the popover is out, so it must be pressed.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-layer.tsx`
+- `glass-popover.tsx`
+- `glass-popup.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/popover.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The behaviour (the top layer, positioning, focus, Escape, the outside press, ARIA) comes from UI SDK, so Popover needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -2587,7 +2697,7 @@ const popup = useGlassPopup({ opening: 'morph' })
 - An icon-only button needs an `aria-label`.
 - With reduced motion the popover opens and closes at once. Without WebGL2 it is a plain frosted panel.
 
-Source: https://onemorethink.dev/docs/popover
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/popover
 
 # GlassMenu
 
@@ -2683,8 +2793,19 @@ export default function Demo() {
 - Picking a value that stays shown on the control: use Select.
 - A short form or a note about one control: use Popover.
 
+Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
+
+- `dom-snapshot.ts`
+- `engine.ts`
+- `glass-card.tsx`
+- `glass-layer.tsx`
+- `glass-menu.tsx`
+- `glass-popup.tsx`
+
+Then add the packages they import:
+
 ```bash
-npx shadcn@latest add https://onemorethink.dev/r/menu.json
+npm install @ui-sdk/core@0.1.0-beta.13 @ui-sdk/react@0.1.0-beta.13
 ```
 
 > The behaviour (keyboard, typeahead, focus, submenus, positioning, ARIA) comes from UI SDK, so Menu needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
@@ -3020,4 +3141,4 @@ Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any co
 - An icon-only button needs an `aria-label`.
 - With reduced motion the menu opens and closes at once. Without WebGL2 it is a plain frosted list.
 
-Source: https://onemorethink.dev/docs/menu
+Original page (Liquid Glass UI by Bilal Gürşen): https://onemorethink.dev/docs/menu

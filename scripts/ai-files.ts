@@ -50,6 +50,9 @@ function closure(entries: string[]) {
 }
 
 const VERSIONS: Record<string, string> = JSON.parse(read('package.json')).dependencies
+// UI SDK is in beta: both packages are pinned to one exact version, which the skill repeats.
+const UI_SDK_VERSION = VERSIONS['@ui-sdk/core']
+if (UI_SDK_VERSION !== VERSIONS['@ui-sdk/react']) throw new Error('[ai-files] @ui-sdk/core and @ui-sdk/react must be pinned to the same version')
 
 function registryItem(item: RegistryItem) {
   const { files, packages } = closure(item.entries)
@@ -81,7 +84,38 @@ const md = (s: string) => s // the source strings are already Markdown (`code`, 
 /** Agents get the export they import (GlassButton); the site shows the shorter docs title. */
 const nameOf = (p: DocPage, locale: Locale) => p.name ?? p.title[locale]
 
-function blockToMd(b: Block, locale: Locale): string {
+// The skill in skills/liquid-glass/ is this fork's: it installs by copying the kit from this repo,
+// not with the original's shadcn registry (onemorethink.dev/r), which ships other versions of the files.
+const FORK_REPO_URL = 'https://github.com/StephenSHorton/ui-sdk-glass'
+const KIT_DIR = 'src/components/liquid-glass/'
+
+/** Markdown is written for the site's /docs/*.md and llms files, or for the fork's skill reference. */
+type Target = 'site' | 'skill'
+
+/** The skill's install step: the files a registry item needs, copied from this fork, and the packages to add. */
+function copyInstruction(name: string): string {
+  const item = REGISTRY.find((r) => r.name === name)
+  if (!item) throw new Error(`[ai-files] install block names unknown registry item ${name}`)
+  const { files, packages } = closure(item.entries)
+  const deps = [...new Set([...packages, ...(item.dependencies ?? [])])].sort()
+  // @ui-sdk/core is named alone in the registry; the files also import @ui-sdk/react.
+  const uiSdk = deps.filter((d) => d.startsWith('@ui-sdk/'))
+  const other = deps.filter((d) => !d.startsWith('@ui-sdk/'))
+  const lines = [
+    `Copy these files from ${FORK_REPO_URL} (\`${KIT_DIR}\`) into your project's \`components/liquid-glass/\`, byte for byte, keeping their folders:`,
+    '',
+    ...files.map((f) => `- \`${f.slice(KIT_DIR.length)}\``),
+  ]
+  if (deps.length) {
+    lines.push('', 'Then add the packages they import:', '', '```bash')
+    if (uiSdk.length) lines.push(`npm install ${['@ui-sdk/core', '@ui-sdk/react'].map((p) => `${p}@${UI_SDK_VERSION}`).join(' ')}`)
+    if (other.length) lines.push(`npm install ${other.join(' ')}`)
+    lines.push('```')
+  }
+  return lines.join('\n')
+}
+
+function blockToMd(b: Block, locale: Locale, target: Target = 'site'): string {
   switch (b.type) {
     case 'p':
       return md(b.text[locale])
@@ -96,7 +130,7 @@ function blockToMd(b: Block, locale: Locale): string {
     case 'code':
       return `\`\`\`${b.title === 'terminal' ? 'bash' : b.title === 'prompt' ? 'text' : 'tsx'}\n${b.code}\n\`\`\``
     case 'install':
-      return `\`\`\`bash\n${installCommand(b.item)}\n\`\`\``
+      return target === 'skill' ? copyInstruction(b.item) : `\`\`\`bash\n${installCommand(b.item)}\n\`\`\``
     case 'when': {
       const [use, avoid] = locale === 'tr' ? ['Şunun için', 'Şunun için değil'] : ['Use it for', 'Not for']
       return [`**${use}**`, '', ...b.use.map((i) => `- ${md(i[locale])}`), '', `**${avoid}**`, '', ...b.avoid.map((i) => `- ${md(i[locale])}`)].join('\n')
@@ -114,11 +148,12 @@ function blockToMd(b: Block, locale: Locale): string {
   }
 }
 
-export function pageToMarkdown(page: DocPage, locale: Locale): string {
+export function pageToMarkdown(page: DocPage, locale: Locale, target: Target = 'site'): string {
   const parts = [`# ${nameOf(page, locale)}`, `> ${page.description[locale]}`]
   if (page.hero) parts.push(`\`\`\`tsx\n${demoSource(page.hero)}\n\`\`\``)
-  for (const b of page.blocks) parts.push(blockToMd(b, locale))
-  parts.push(`Source: ${SITE_ORIGIN}${localizedPath(`/docs/${page.slug}`, locale)}`)
+  for (const b of page.blocks) parts.push(blockToMd(b, locale, target))
+  // The skill's reference credits the original once, at its top: some pages are the fork's own.
+  if (target === 'site') parts.push(`Source: ${SITE_ORIGIN}${localizedPath(`/docs/${page.slug}`, locale)}`)
   return parts.join('\n\n') + '\n'
 }
 
@@ -208,7 +243,9 @@ export function generateAiFiles() {
     [
       '<!-- Generated from src/docs/content.ts by scripts/ai-files.ts. Do not edit by hand. -->',
       '',
-      ...PAGES.filter((p) => p.group !== 'start').map((p) => pageToMarkdown(p, 'en')),
+      `Every component page of ui-sdk-glass, a fork of Liquid Glass UI by Bilal Gürşen. Install by copying the files each page lists from ${FORK_REPO_URL}, never with the original's shadcn registry: it ships files pinned to another UI SDK version.`,
+      '',
+      ...PAGES.filter((p) => p.group !== 'start').map((p) => pageToMarkdown(p, 'en', 'skill')),
     ].join('\n'),
   )
 }

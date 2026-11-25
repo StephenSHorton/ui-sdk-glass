@@ -1851,6 +1851,141 @@ const popup = useGlassPopup()
 
 Source: https://onemorethink.dev/docs/select
 
+# GlassInput
+
+> A text field made of glass, with a label above it. The page bends at its rim while what you type stays sharp on top; as a search field it brings a magnifier and a clear button.
+
+```tsx
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+// A month of spending as flat bars, rising, and a search field laid across them: the bars bend at
+// the field's rim and the words stay sharp on the glass. The field sits 14px below the middle
+// (under its label), where the bars are centred. The first three are shorter than the field, so the label stays clear of them.
+const bars = [
+  { height: 40, colour: '#0a84ff' },
+  { height: 32, colour: '#ff6b3d' },
+  { height: 40, colour: '#30d158' },
+  { height: 118, colour: '#bf5af2' },
+  { height: 150, colour: '#ffd60a' },
+  { height: 196, colour: '#ff375f' },
+  { height: 164, colour: '#64d2ff' },
+  { height: 220, colour: '#ff9f0a' },
+  { height: 180, colour: '#5e5ce6' },
+]
+
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-80 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-[calc(50%+14px)] left-1/2 -z-10 flex h-56 -translate-x-1/2 -translate-y-1/2 items-center gap-2.5">
+        {bars.map((bar, i) => (
+          <span key={i} className="w-7 shrink-0 rounded-full" style={{ height: bar.height, background: bar.colour }} />
+        ))}
+      </div>
+      <GlassInput label="Merchant" type="search" placeholder="Search merchants" className="w-72" />
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- A search box over a list or a table: `type="search"` adds a magnifier and a clear button.
+- A line of text in a form (a name, an email, a URL), with a label and a description: the value is submitted under `name`.
+- A filter row beside a Select: the two are the same height and the same glass.
+
+**Not for**
+
+- Picking from a known list of values: use Select.
+- Several paragraphs of text: a single line is all it holds.
+- A long form of fields on one page: glass is for the one field people come for, plain fields read faster in bulk.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/input.json
+```
+
+> The behaviour (the label, description and form wiring, the clear button) comes from UI SDK, so Input needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+const [query, setQuery] = useState('')
+
+<GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+
+<GlassInput label="Email" type="email" name="email" required description="We send the receipt here." />
+```
+
+The field wears Button's clear glass, the same as Select's button, but it holds still under the pointer: it is a surface you write on, not a button. The text, the caret, the placeholder and the selection are the page's own, drawn over the glass, so they stay sharp, and they follow the glass's tone: dark on light glass, white on dark. The glass is clear, so it needs something behind it to bend.
+
+### A filter row beside a Select
+
+```tsx
+import { useState } from 'react'
+
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+import { GlassSelect } from '@/components/liquid-glass/glass-select'
+
+const categories = [
+  { value: 'all', label: 'All categories' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'meals', label: 'Meals' },
+  { value: 'software', label: 'Software' },
+]
+
+// A filter row: the search field and a Select are the same height and the same glass, so they
+// line up. Behind them, three discs of flat colour for the glass to bend.
+export default function Demo() {
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<string | null>('all')
+  return (
+    <div className="relative isolate flex min-h-80 w-full max-w-2xl flex-col items-center justify-center gap-6 py-10">
+      <div aria-hidden className="absolute inset-0 -z-10 flex items-center justify-center">
+        <span className="size-44 shrink-0 translate-x-10 translate-y-4 rounded-full bg-[#ff6b3d]" />
+        <span className="size-56 shrink-0 rounded-full bg-[#0a84ff]" />
+        <span className="size-40 shrink-0 -translate-x-8 -translate-y-6 rounded-full bg-[#ffd60a]" />
+      </div>
+      <div className="flex flex-wrap items-end justify-center gap-3">
+        <GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+        <GlassSelect label="Category" options={categories} value={category} onValueChange={setCategory} className="w-48" />
+      </div>
+      <p className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-medium text-neutral-700 tabular-nums dark:bg-black/60 dark:text-neutral-200">
+        {query ? `Looking for “${query}”` : 'Every merchant'} · {categories.find((c) => c.value === category)?.label ?? 'All categories'}
+      </p>
+    </div>
+  )
+}
+```
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | — | The label above the field, tied to it. Leave it out only with an `aria-label`. |
+| `description` | `ReactNode` | — | A line under the field, read out as its description. |
+| `type` | `'text' \| 'search' \| 'email' \| 'url' \| 'tel' \| 'password' \| 'number'` | `'text'` | The native input type. `search` adds a magnifier and a clear button that shows while there is text. |
+| `value` | `string` | — | The text (controlled). |
+| `defaultValue` | `string` | — | The starting text when the field keeps its own state. A form reset returns here. |
+| `onValueChange` | `(value: string, details) => void` | — | Called with the new text and why it changed (`details.reason`: typing, the clear button, a reset). |
+| `icon` | `ReactNode` | — | An icon at the start. A search field has a magnifier unless you give one. |
+| `clearLabel` | `string` | `'Clear'` | The clear button's name for screen readers. |
+| `name` | `string` | — | Submits the text with a form under this name. |
+| `disabled` | `boolean` | `false` | Dimmed, not editable and left out of the form. |
+| `tint` | `number` | `0.6` | How much tint covers the backdrop (0–1). |
+| `blur` | `number` | `0` | Frosts what the glass shows, in px like CSS `blur()`. |
+| `className` | `string` | — | Classes for the field (label, glass and description); it is 16rem wide by default. |
+| `...` | `input props` | — | `placeholder`, `required`, `autoComplete`, `aria-label` and any other native input prop go to the input. |
+
+## Accessibility
+
+- A native `<input>`, named by `label` and described by `description`; pressing the label or the magnifier focuses it.
+- The clear button is a real button with its own name (`clearLabel`): it empties the field and gives focus back to it.
+- Focus draws a blue outline around the whole glass; a focused clear button draws its own.
+- Without WebGL2 it is a plain frosted field.
+
+Source: https://onemorethink.dev/docs/input
+
 # GlassButtonGroup
 
 > Related actions in one body of glass. The buttons share a single lens: point at any of them and the whole body swells.

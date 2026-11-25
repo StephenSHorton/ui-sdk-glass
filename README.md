@@ -40,6 +40,7 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Flip | `Switch` | On/off switch whose knob swells into clear glass as it crosses the track. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Stretch | `GlassSelect` | Select whose list swells out of its button as one body of glass, on a neck that stretches and snaps. Ships `GlassPopup` for your own menu or popover. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
+| Type | `GlassInput` | Text field of glass with a label above it: the page bends at its rim, the words stay sharp. `type="search"` adds a magnifier and a clear button. Same height and glass as `GlassSelect`'s button, for filter rows. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 
 No npm dependencies, except the components marked "Needs …". Every component has its own docs page with live examples, the exact demo source, "use it for / not for", props and an install command.
 

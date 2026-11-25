@@ -72,7 +72,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard, GlassButtonGroup and GlassInput on one WebGL2 engine. GlassButton, GlassTabs and GlassInput need @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('index.ts')],
     dependencies: ['@ui-sdk/core'],
     docs: 'introduction',
@@ -113,6 +113,13 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassSelect',
     description: 'Stretch: a select whose list swells out of its button as one body of glass, on a neck that stretches and snaps (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-select.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'input',
+    title: 'GlassInput',
+    description: 'Type: a glass text field with a label above it; type="search" adds a magnifier and a clear button. Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-input.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
   {
@@ -1288,6 +1295,92 @@ const popup = useGlassPopup()
     ],
   },
   {
+    slug: 'input',
+    group: 'components',
+    title: t('Input', 'Input'),
+    name: 'GlassInput',
+    description: t(
+      'A text field made of glass, with a label above it. The page bends at its rim while what you type stays sharp on top; as a search field it brings a magnifier and a clear button.',
+      'Camdan bir metin alanı, üstünde etiketiyle. Sayfa kenarında bükülür, yazdıkların ise üstte keskin kalır; arama alanı olarak bir büyüteç ve bir temizle butonu getirir.',
+    ),
+    verb: t('Type', 'Yaz'),
+    signature: t('A field of glass you type on: the page bends at its rim, your words stay sharp.', 'Üstüne yazdığın camdan bir alan: sayfa kenarında bükülür, sözcüklerin keskin kalır.'),
+    hero: 'glass-input-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A search box over a list or a table: `type="search"` adds a magnifier and a clear button.', 'Bir liste ya da tablonun üstündeki arama kutusu: `type="search"` bir büyüteç ve bir temizle butonu ekler.'),
+          t('A line of text in a form (a name, an email, a URL), with a label and a description: the value is submitted under `name`.', 'Bir formdaki tek satırlık metin (ad, e-posta, URL), etiketi ve açıklamasıyla: değer `name` ile gönderilir.'),
+          t('A filter row beside a Select: the two are the same height and the same glass.', 'Bir Select\'in yanındaki filtre satırı: ikisi aynı yükseklikte ve aynı camdan.'),
+        ],
+        avoid: [
+          t('Picking from a known list of values: use Select.', 'Bilinen bir değer listesinden seçmek: Select kullan.'),
+          t('Several paragraphs of text: a single line is all it holds.', 'Birkaç paragraflık metin: yalnızca tek satır alır.'),
+          t('A long form of fields on one page: glass is for the one field people come for, plain fields read faster in bulk.', 'Tek sayfada uzun bir alan listesi: cam, insanların asıl geldiği tek alan içindir; çok sayıda alan düz hâlde daha hızlı okunur.'),
+        ],
+      },
+      { type: 'install', item: 'input' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (the label, description and form wiring, the clear button) comes from UI SDK, so Input needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (etiket, açıklama ve form bağlantısı, temizle butonu) UI SDK\'dan gelir; bu yüzden Input `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+const [query, setQuery] = useState('')
+
+<GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+
+<GlassInput label="Email" type="email" name="email" required description="We send the receipt here." />`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The field wears Button\'s clear glass, the same as Select\'s button, but it holds still under the pointer: it is a surface you write on, not a button. The text, the caret, the placeholder and the selection are the page\'s own, drawn over the glass, so they stay sharp, and they follow the glass\'s tone: dark on light glass, white on dark. The glass is clear, so it needs something behind it to bend.',
+          'Alan, Select\'in butonu gibi Button\'ın berrak camını taşır, ama işaretçinin altında kıpırdamaz: üstüne yazdığın bir yüzeydir, buton değil. Metin, imleç, yer tutucu ve seçim sayfanın kendisidir, camın üstüne çizilir; bu yüzden keskin kalır ve camın tonunu izler: açık camda koyu, koyu camda beyaz. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+        ),
+      },
+      { type: 'demo', id: 'glass-input-filters', title: t('A filter row beside a Select', 'Bir Select\'in yanında filtre satırı') },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'label', type: 'ReactNode', description: t('The label above the field, tied to it. Leave it out only with an `aria-label`.', 'Alanın üstündeki, ona bağlı etiket. Yalnızca bir `aria-label` verdiğinde boş bırak.') },
+          { name: 'description', type: 'ReactNode', description: t('A line under the field, read out as its description.', 'Alanın altında, açıklaması olarak okunan bir satır.') },
+          { name: 'type', type: "'text' | 'search' | 'email' | 'url' | 'tel' | 'password' | 'number'", default: "'text'", description: t('The native input type. `search` adds a magnifier and a clear button that shows while there is text.', 'Yerel input türü. `search` bir büyüteç ve metin varken görünen bir temizle butonu ekler.') },
+          { name: 'value', type: 'string', description: t('The text (controlled).', 'Metin (kontrollü).') },
+          { name: 'defaultValue', type: 'string', description: t('The starting text when the field keeps its own state. A form reset returns here.', 'Alan kendi durumunu tutarken başlangıç metni. Form sıfırlanınca buraya döner.') },
+          { name: 'onValueChange', type: '(value: string, details) => void', description: t('Called with the new text and why it changed (`details.reason`: typing, the clear button, a reset).', 'Yeni metinle ve neden değiştiğiyle çağrılır (`details.reason`: yazmak, temizle butonu, sıfırlama).') },
+          { name: 'icon', type: 'ReactNode', description: t('An icon at the start. A search field has a magnifier unless you give one.', 'Baştaki simge. Arama alanında sen vermezsen bir büyüteç olur.') },
+          { name: 'clearLabel', type: 'string', default: "'Clear'", description: t('The clear button\'s name for screen readers.', 'Temizle butonunun ekran okuyucular için adı.') },
+          { name: 'name', type: 'string', description: t('Submits the text with a form under this name.', 'Metni formla bu adla gönderir.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dimmed, not editable and left out of the form.', 'Soluk, düzenlenemez ve formun dışında.') },
+          { name: 'tint', type: 'number', default: '0.6', description: t('How much tint covers the backdrop (0–1).', 'Arka planı ne kadar renk örttüğü (0–1).') },
+          { name: 'blur', type: 'number', default: '0', description: t('Frosts what the glass shows, in px like CSS `blur()`.', 'Camın gösterdiğini buzlar; CSS `blur()` gibi px cinsinden.') },
+          { name: 'className', type: 'string', description: t('Classes for the field (label, glass and description); it is 16rem wide by default.', 'Alan (etiket, cam ve açıklama) için sınıflar; varsayılan genişlik 16rem.') },
+          { name: '...', type: 'input props', description: t('`placeholder`, `required`, `autoComplete`, `aria-label` and any other native input prop go to the input.', '`placeholder`, `required`, `autoComplete`, `aria-label` ve diğer yerel input prop\'ları input\'a gider.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A native `<input>`, named by `label` and described by `description`; pressing the label or the magnifier focuses it.', 'Adını `label`dan, açıklamasını `description`dan alan yerel bir `<input>`; etikete ya da büyütece basmak onu odaklar.'),
+          t('The clear button is a real button with its own name (`clearLabel`): it empties the field and gives focus back to it.', 'Temizle butonu kendi adı (`clearLabel`) olan gerçek bir butondur: alanı boşaltır ve odağı ona geri verir.'),
+          t('Focus draws a blue outline around the whole glass; a focused clear button draws its own.', 'Odak, camın tamamının çevresine mavi bir çizgi çizer; odaktaki temizle butonu kendi çizgisini çizer.'),
+          t('Without WebGL2 it is a plain frosted field.', 'WebGL2 yoksa düz, buzlu bir alandır.'),
+        ],
+      },
+    ],
+  },
+  {
     slug: 'button-group',
     group: 'components',
     title: t('Button Group', 'Button Group'),
@@ -1859,6 +1952,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.1.0',
+    date: '2026-11-25',
+    title: t('Input.', 'Input.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'input',
+        text: t(
+          'Input: a text field made of glass, with a label above it and a line under it. The page bends at its rim and what you type stays sharp on top, in the glass\'s own tone. As a search field (`type="search"`) it brings a magnifier and a clear button that empties it and gives focus back. It is as tall as Select\'s button and wears the same glass, so the two make a filter row. The label, form and clear behaviour come from UI SDK.',
+          'Input: camdan bir metin alanı, üstünde etiketi, altında bir satırla. Sayfa kenarında bükülür, yazdıkların ise camın kendi tonunda, üstte keskin kalır. Arama alanı olarak (`type="search"`) bir büyüteç ve alanı boşaltıp odağı geri veren bir temizle butonu getirir. Select\'in butonuyla aynı boyda ve aynı camdan, bu yüzden ikisi bir filtre satırı olur. Etiket, form ve temizleme davranışı UI SDK\'dan gelir.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.0.4',
     date: '2026-11-25',

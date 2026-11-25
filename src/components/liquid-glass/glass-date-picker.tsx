@@ -116,7 +116,7 @@ export function GlassDatePicker({
         ref={setField}
         data-glass-host=""
         // Outlines, not rings: once the glass draws, the field's own border and shadows give way to it.
-        className="relative flex h-12 w-full items-center rounded-full border border-black/10 bg-white/60 pr-1.5 pl-5 text-[15px] font-medium text-neutral-900 outline-offset-2 has-[[data-invalid]]:outline-2 has-[[data-invalid]]:outline-red-500 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#3291FF] has-[:disabled]:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900"
+        className="relative flex h-12 w-full items-center rounded-full border border-black/10 bg-white/60 pr-1.5 pl-5 text-[15px] font-medium text-neutral-900 outline-offset-2 has-[[data-invalid]]:outline-2 has-[[data-invalid]]:outline-red-500 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#3291FF] has-[[data-disabled]]:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900"
       >
         <GlassPopupAnchor popup={popup} />
         <DatePickerInput

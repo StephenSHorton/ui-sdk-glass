@@ -1841,7 +1841,7 @@ const popup = useGlassPopup({ opening: 'morph' })
       'A date field of glass. Type a date in the page\'s language, or press the calendar and a month swells out of the whole field as one body of glass with it. The day chosen is circled, and the value is a plain `YYYY-MM-DD` date.',
       'Camdan bir tarih alanı. Sayfanın dilinde bir tarih yaz ya da takvime bas: bir ay, alanın tamamından onunla tek bir cam gövde olarak şişer. Seçilen gün daire içine alınır, değer de yalın bir `YYYY-MM-DD` tarihidir.',
     ),
-    verb: t('Circle', 'Daire'),
+    verb: t('Circle', 'Çevrele'),
     signature: t('Type a date or circle one on a month that swells out of the field.', 'Bir tarih yaz ya da alandan şişen bir ayda birini daire içine al.'),
     hero: 'glass-date-picker-basic',
     blocks: [

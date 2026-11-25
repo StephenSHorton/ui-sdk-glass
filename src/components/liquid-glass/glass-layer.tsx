@@ -196,6 +196,8 @@ export const GLASS_CSS = `
 @keyframes glass-spin{to{transform:rotate(1turn)}}
 [data-glass-spin]{animation:glass-spin .8s linear infinite}
 [data-glass-ready] [data-glass-fallback]{visibility:hidden}
+/* A hidden fallback stops moving too. Its marquee ran on unseen, on the main thread, and made the browser work out the page's layers again on every frame of anything else on the page. */
+[data-glass-ready] [data-glass-fallback] [data-glass-marquee]{animation:none}
 @media (prefers-reduced-motion:reduce){[data-glass-marquee],[data-glass-in],[data-glass-draw],[data-glass-spin]{animation:none}}
 `
 

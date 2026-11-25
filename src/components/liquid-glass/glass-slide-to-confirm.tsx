@@ -872,7 +872,7 @@ export function GlassSlideToConfirm({
       data-glass-host=""
       data-state={state}
       data-disabled={disabled ? '' : undefined}
-      className={`relative isolate block w-full cursor-grab touch-pan-y rounded-full font-medium whitespace-nowrap text-neutral-600 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] aria-disabled:cursor-default data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 dark:text-neutral-300 ${s.host} ${className}`}
+      className={`relative isolate block w-full cursor-grab touch-pan-y rounded-full font-medium whitespace-nowrap text-neutral-600 outline-none select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] aria-disabled:cursor-default data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 dark:text-neutral-300 ${s.host} ${className}`}
     >
       <GlassStyles />
       <canvas ref={canvasRef} aria-hidden style={{ position: 'absolute', zIndex: 30, maxWidth: 'none', pointerEvents: 'none', width: 0, height: 0 }} />

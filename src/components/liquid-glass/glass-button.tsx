@@ -72,7 +72,7 @@ export function GlassButton({
   // (the stylesheet's order, not the class order, would otherwise decide which one wins).
   const own = asChild ? `${(Children.only(children) as ReactElement<{ className?: string }>).props.className ?? ''} ${className}` : className
   const corners = /(^|\s)!?rounded-/.test(own) ? '' : 'rounded-full'
-  const classes = `inline-flex shrink-0 cursor-pointer items-center justify-center ${corners} font-semibold whitespace-nowrap select-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:opacity-40 [&_svg]:shrink-0 ${sizes[size]} ${fallback[material]}`
+  const classes = `inline-flex shrink-0 cursor-pointer items-center justify-center ${corners} font-semibold whitespace-nowrap select-none outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:opacity-40 [&_svg]:shrink-0 ${sizes[size]} ${fallback[material]}`
   // The glass layer must be the host's first child.
   const content = (label: ReactNode) => (
     <>

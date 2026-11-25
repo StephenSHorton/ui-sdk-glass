@@ -72,7 +72,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard, GlassTable, GlassButtonGroup, GlassInput and GlassToaster on one WebGL2 engine. GlassButton, GlassTabs, GlassInput and GlassToaster need @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('index.ts')],
     dependencies: ['@ui-sdk/core'],
     docs: 'introduction',
@@ -99,6 +99,12 @@ export const REGISTRY: RegistryItem[] = [
     entries: [liquid('glass-card.tsx')],
   },
   {
+    name: 'table',
+    title: 'GlassTable',
+    description: 'Sort: rows of data on one large sheet of glass, with a header, a totals row and column heads that sort when pressed.',
+    entries: [liquid('glass-table.tsx')],
+  },
+  {
     name: 'button-group',
     title: 'GlassButtonGroup',
     description: 'Share: related actions in one body of glass, side by side or stacked, with separators and text.',
@@ -113,6 +119,13 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassSelect',
     description: 'Stretch: a select whose list swells out of its button as one body of glass, on a neck that stretches and snaps (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-select.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'input',
+    title: 'GlassInput',
+    description: 'Type: a glass text field with a label above it; type="search" adds a magnifier and a clear button. Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-input.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
   {
@@ -134,6 +147,20 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassMenu',
     description: 'Grow: a menu its button (or a whole GlassButtonGroup) grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-menu.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'date-picker',
+    title: 'GlassDatePicker',
+    description: 'Circle: a date field to type into, whose calendar swells out of the whole field as one body of glass; the value is a plain YYYY-MM-DD date (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-date-picker.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'toast',
+    title: 'GlassToaster',
+    description: 'Rise: a short message on frosted glass after an action, which stays a moment and goes; several gather into a stack. Plain, error and loading forms, one action. Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-toast.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
 ]
@@ -919,6 +946,122 @@ const [view, setView] = useState('week')
     ],
   },
   {
+    slug: 'table',
+    group: 'components',
+    title: t('Table', 'Table'),
+    name: 'GlassTable',
+    description: t(
+      'Rows of data on one large sheet of glass. The sheet is Card\'s frosted glass, so figures stay readable over any backdrop; inside it is a real HTML table with a header, rows and a totals row, and its column heads sort when pressed.',
+      'Tek büyük cam levha üstünde veri satırları. Levha Card\'ın buzlu camıdır; rakamlar her zeminde okunur kalır. İçinde gerçek bir HTML tablosu var: başlık, satırlar ve bir toplam satırı; sütun başlıkları basılınca sıralar.',
+    ),
+    verb: t('Sort', 'Sırala'),
+    signature: t('One sheet of glass under rows of data; its heads sort them.', 'Veri satırlarının altında tek cam levha; başlıkları onları sıralar.'),
+    hero: 'glass-table-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('The big surface of a dashboard: transactions, months, a budget, a list of expenses.', 'Bir panelin büyük yüzeyi: hareketler, aylar, bir bütçe, bir gider listesi.'),
+          t('Rows people compare and sort, with a total at the foot.', 'İnsanların karşılaştırıp sıraladığı, altında bir toplamı olan satırlar.'),
+        ],
+        avoid: [
+          t('A few lines of content in a widget: use Card.', 'Bir widget\'ta birkaç satırlık içerik: Card kullan.'),
+          t('Layout. A table is for data with columns, never for placing things side by side.', 'Yerleşim. Tablo sütunlu veri içindir, öğeleri yan yana dizmek için değil.'),
+          t('Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.', 'Binlerce satır: bir seferde bir sayfa göster; tablo ne kadar uzun olursa olsun cam tek levhadır, ama sayfa yine de her satırı yerleştirmek zorunda.'),
+        ],
+      },
+      { type: 'install', item: 'table' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassTable, GlassTableHeader, GlassTableBody, GlassTableFooter,
+  GlassTableRow, GlassTableHead, GlassTableCell, sortRows, type GlassTableSort,
+} from '@/components/liquid-glass'
+
+const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+
+<GlassTable aria-label="Transactions" sort={sort} onSortChange={setSort} className="w-full">
+  <GlassTableHeader>
+    <GlassTableRow>
+      <GlassTableHead sortKey="date">Date</GlassTableHead>
+      <GlassTableHead>Payee</GlassTableHead>
+      <GlassTableHead sortKey="amount" numeric>Amount</GlassTableHead>
+    </GlassTableRow>
+  </GlassTableHeader>
+  <GlassTableBody>
+    {sortRows(rows, sort).map((r) => (
+      <GlassTableRow key={r.id}>
+        <GlassTableCell>{r.date}</GlassTableCell>
+        <GlassTableCell>{r.payee}</GlassTableCell>
+        <GlassTableCell numeric>{r.amount}</GlassTableCell>
+      </GlassTableRow>
+    ))}
+  </GlassTableBody>
+  <GlassTableFooter>
+    <GlassTableRow>
+      <GlassTableCell colSpan={2}>Total</GlassTableCell>
+      <GlassTableCell numeric>{total}</GlassTableCell>
+    </GlassTableRow>
+  </GlassTableFooter>
+</GlassTable>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The table sorts nothing by itself: a head with a `sortKey` is a button, and pressing it hands you the new sort (`onSortChange`). Sort your rows by it with `sortRows`, which compares numbers and dates by value and text as people read it ("Item 2" before "Item 10"), puts empty values last and leaves your array as it is. A new column starts ascending; pressing the sorted one turns it round. Leave out `sort` and give `defaultSort` to let the table keep the sort itself.',
+          'Tablo kendiliğinden hiçbir şeyi sıralamaz: `sortKey` verilen bir başlık bir butondur ve basılınca sana yeni sıralamayı verir (`onSortChange`). Satırlarını `sortRows` ile ona göre sırala: sayıları ve tarihleri değerine, yazıyı insanların okuduğu gibi karşılaştırır ("Item 2", "Item 10"dan önce), boş değerleri sona koyar ve dizine dokunmaz. Yeni bir sütun artan sırayla başlar; sıralı olana yeniden basmak yönünü çevirir. `sort` vermeyip `defaultSort` verirsen sıralamayı tablo kendisi tutar.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-table-transactions', title: t('A month of transactions', 'Bir ayın hareketleri') },
+      {
+        type: 'p',
+        text: t(
+          'A dashboard\'s table at full size: a thousand pixels wide, two dozen rows and two totals. Each row holds glass of its own, Tabs used as a segmented control to file the expense and a Button to attach a receipt; they bend the sheet and the row behind them. Sort by any head and the rows move, controls and all. Where the page is narrower than the table, as on this page and on a phone, the table scrolls sideways inside its sheet while the glass stays where it is.',
+          'Tam boyutta bir panel tablosu: bin piksel genişliğinde, iki düzine satır ve iki toplam. Her satırın kendi camı var: gideri sınıflandırmak için segmentli kontrol olarak kullanılan Tabs ve fiş eklemek için bir Button; arkalarındaki levhayı ve satırı bükerler. Herhangi bir başlığa göre sırala; satırlar kontrolleriyle birlikte yer değiştirir. Sayfa tablodan darsa, bu sayfadaki ve telefondaki gibi, tablo levhasının içinde yana kayar, cam ise yerinde kalır.',
+        ),
+      },
+      {
+        type: 'p',
+        text: t(
+          'The sheet is Card\'s glass: the rim pulls what is behind towards the centre, the face frosts it with a 5 px blur and covers it with a 70% tint, white on a light page and black on a dark one, and the text takes the tone the glass ends up. However many rows there are, it is one glass, drawn when something changes and never at rest: sorting, scrolling the table sideways and pressing a head add no glass of their own. Thin lines in the text\'s own colour run between rows, a stronger one sets the totals apart, and `numeric` cells are right-aligned in figures of one width. `className` and `style` belong to the sheet (size, corners, a `bg-*` with `material="tinted"`); every other attribute goes to the `<table>`.',
+          'Levha Card\'ın camıdır: kenar arkada kalanı merkeze çeker, yüz onu 5 px bulanıklıkla buzlar ve %70\'lik bir tonla örter (açık sayfada beyaz, koyu sayfada siyah), yazı da camın vardığı tonu alır. Kaç satır olursa olsun tek bir camdır; bir şey değişince çizilir, dururken asla: sıralamak, tabloyu yana kaydırmak ve bir başlığa basmak kendi camını eklemez. Satırların arasında yazının kendi renginde ince çizgiler, toplamları ayıran daha güçlü bir çizgi var; `numeric` hücreler sağa yaslanır ve rakamları eşit genişliktedir. `className` ve `style` levhanındır (boyut, köşeler, `material="tinted"` ile bir `bg-*`); diğer her öznitelik `<table>`\'a gider.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'ReactNode', description: t('The table\'s parts: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`.', 'Tablonun parçaları: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`.') },
+          { name: 'sort', type: 'GlassTableSort | null', description: t('The sort, controlled: `{ key, direction }`, `direction` being `ascending` or `descending`. `null`: not sorted.', 'Kontrollü sıralama: `{ key, direction }`; `direction` `ascending` ya da `descending`. `null`: sıralı değil.') },
+          { name: 'defaultSort', type: 'GlassTableSort | null', default: 'null', description: t('The sort to start with, when the table keeps it itself.', 'Sıralamayı tablo kendisi tutarken başlangıç sıralaması.') },
+          { name: 'onSortChange', type: '(sort: GlassTableSort) => void', description: t('A sortable head was pressed: the new sort.', 'Sıralanabilir bir başlığa basıldı: yeni sıralama.') },
+          { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('As Card\'s: clear frosts and bends what is behind; tinted takes the sheet\'s background colour.', 'Card\'daki gibi: clear arkasını buzlar ve büker; tinted levhanın arka plan rengini alır.') },
+          { name: 'tint', type: 'number', default: '0.7', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: tonun arkayı ne kadar örttüğü (0–1).') },
+          { name: 'blur', type: 'number', default: '5', description: t('Clear glass only: the frost, in px like CSS `blur()`.', 'Yalnız clear: buzlanma, CSS `blur()` gibi px.') },
+          { name: 'live', type: 'boolean', default: 'false', description: t('Repaint the backdrop every frame, for content that moves behind the table.', 'Tablonun arkasında hareket eden içerik için arkayı her karede yeniden boya.') },
+          { name: 'className / style', type: 'string / CSSProperties', description: t('The sheet\'s: size, margin, corners (`rounded-*`) and, for tinted glass, colour (`bg-*`).', 'Levhanın: boyut, dış boşluk, köşeler (`rounded-*`) ve renkli camda renk (`bg-*`).') },
+          { name: '…rest', type: 'table attributes', description: t('Passed to the `<table>` (`aria-label`, `id`…).', '`<table>`\'a aktarılır (`aria-label`, `id`…).') },
+          { name: 'GlassTableHead', type: '{ sortKey?: string; numeric?: boolean }', description: t('A column head (`<th scope="col">`). With `sortKey` it holds a button that sorts by that key. `numeric` right-aligns it, the arrow before the label.', 'Bir sütun başlığı (`<th scope="col">`). `sortKey` ile o anahtara göre sıralayan bir buton taşır. `numeric` onu sağa yaslar, ok yazının önüne geçer.') },
+          { name: 'GlassTableCell', type: '{ numeric?: boolean }', description: t('A cell (`<td>`). `numeric`: right-aligned, figures of one width.', 'Bir hücre (`<td>`). `numeric`: sağa yaslı, eşit genişlikte rakamlar.') },
+          { name: 'sortRows', type: '(rows, sort, value?) => rows', description: t('Your rows in the order `sort` asks for, as a new array. `value(row, key)` reads a value; by default `row[key]`.', 'Satırların `sort`un istediği sırada, yeni bir dizi olarak. `value(row, key)` bir değeri okur; varsayılan `row[key]`.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A real `<table>` with `<thead>`, `<tbody>` and `<tfoot>`: screen readers move through it by row and column and read each cell with its head. Name it with `aria-label` or a `GlassTableCaption`.', '`<thead>`, `<tbody>` ve `<tfoot>` ile gerçek bir `<table>`: ekran okuyucular satır ve sütun boyunca gezer, her hücreyi başlığıyla okur. `aria-label` ya da bir `GlassTableCaption` ile adlandır.'),
+          t('A sortable head is a `<button>` inside its `<th>`, reached with Tab and pressed with Enter or Space. The sorted column carries `aria-sort="ascending"` or `"descending"`, which screen readers announce with the head; the arrow beside the label shows the same.', 'Sıralanabilir başlık, `<th>` içinde bir `<button>`dır; Tab ile ulaşılır, Enter ya da Space ile basılır. Sıralı sütun `aria-sort="ascending"` ya da `"descending"` taşır, ekran okuyucular bunu başlıkla birlikte okur; yazının yanındaki ok aynısını gösterir.'),
+          t('A table wider than its sheet scrolls sideways inside it, with the wheel, a trackpad, touch or the arrow keys once something in it has focus.', 'Levhasından geniş bir tablo onun içinde yana kayar: tekerlek, dokunmatik yüzey, dokunma ya da içinde odaklı bir şey varken ok tuşlarıyla.'),
+          t('The glass canvas is `aria-hidden`; only the table is read.', 'Cam tuvali `aria-hidden`; yalnız tablo okunur.'),
+        ],
+      },
+    ],
+  },
+  {
     slug: 'slider',
     group: 'components',
     title: t('Slider', 'Slider'),
@@ -1283,6 +1426,92 @@ const popup = useGlassPopup()
           t('Arrow keys, Home and End move through the options, typing a letter jumps to a match, Enter selects, Escape closes and returns focus to the button. Disabled options are skipped.', 'Ok tuşları, Home ve End seçenekler arasında gezer; bir harf yazmak eşleşene atlar, Enter seçer, Escape kapatıp odağı butona döndürür. Devre dışı seçenekler atlanır.'),
           t('With reduced motion the list opens and closes at once, with no stretch or jolt.', 'Hareketi azalt açıksa liste esneme ve sarsıntı olmadan anında açılıp kapanır.'),
           t('Without WebGL2 it is a plain frosted list.', 'WebGL2 yoksa düz, buzlu bir listedir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'input',
+    group: 'components',
+    title: t('Input', 'Input'),
+    name: 'GlassInput',
+    description: t(
+      'A text field made of glass, with a label above it. The page bends at its rim while what you type stays sharp on top; as a search field it brings a magnifier and a clear button.',
+      'Camdan bir metin alanı, üstünde etiketiyle. Sayfa kenarında bükülür, yazdıkların ise üstte keskin kalır; arama alanı olarak bir büyüteç ve bir temizle butonu getirir.',
+    ),
+    verb: t('Type', 'Yaz'),
+    signature: t('A field of glass you type on: the page bends at its rim, your words stay sharp.', 'Üstüne yazdığın camdan bir alan: sayfa kenarında bükülür, sözcüklerin keskin kalır.'),
+    hero: 'glass-input-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('A search box over a list or a table: `type="search"` adds a magnifier and a clear button.', 'Bir liste ya da tablonun üstündeki arama kutusu: `type="search"` bir büyüteç ve bir temizle butonu ekler.'),
+          t('A line of text in a form (a name, an email, a URL), with a label and a description: the value is submitted under `name`.', 'Bir formdaki tek satırlık metin (ad, e-posta, URL), etiketi ve açıklamasıyla: değer `name` ile gönderilir.'),
+          t('A filter row beside a Select: the two are the same height and the same glass.', 'Bir Select\'in yanındaki filtre satırı: ikisi aynı yükseklikte ve aynı camdan.'),
+        ],
+        avoid: [
+          t('Picking from a known list of values: use Select.', 'Bilinen bir değer listesinden seçmek: Select kullan.'),
+          t('Several paragraphs of text: a single line is all it holds.', 'Birkaç paragraflık metin: yalnızca tek satır alır.'),
+          t('A long form of fields on one page: glass is for the one field people come for, plain fields read faster in bulk.', 'Tek sayfada uzun bir alan listesi: cam, insanların asıl geldiği tek alan içindir; çok sayıda alan düz hâlde daha hızlı okunur.'),
+        ],
+      },
+      { type: 'install', item: 'input' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (the label, description and form wiring, the clear button) comes from UI SDK, so Input needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (etiket, açıklama ve form bağlantısı, temizle butonu) UI SDK\'dan gelir; bu yüzden Input `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+const [query, setQuery] = useState('')
+
+<GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+
+<GlassInput label="Email" type="email" name="email" required description="We send the receipt here." />`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The field wears Button\'s clear glass, the same as Select\'s button, but it holds still under the pointer: it is a surface you write on, not a button. The text, the caret, the placeholder and the selection are the page\'s own, drawn over the glass, so they stay sharp, and they follow the glass\'s tone: dark on light glass, white on dark. The glass is clear, so it needs something behind it to bend.',
+          'Alan, Select\'in butonu gibi Button\'ın berrak camını taşır, ama işaretçinin altında kıpırdamaz: üstüne yazdığın bir yüzeydir, buton değil. Metin, imleç, yer tutucu ve seçim sayfanın kendisidir, camın üstüne çizilir; bu yüzden keskin kalır ve camın tonunu izler: açık camda koyu, koyu camda beyaz. Cam berraktır, bu yüzden bükecek bir arka plana ihtiyaç duyar.',
+        ),
+      },
+      { type: 'demo', id: 'glass-input-filters', title: t('A filter row beside a Select', 'Bir Select\'in yanında filtre satırı') },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'label', type: 'ReactNode', description: t('The label above the field, tied to it. Leave it out only with an `aria-label`.', 'Alanın üstündeki, ona bağlı etiket. Yalnızca bir `aria-label` verdiğinde boş bırak.') },
+          { name: 'description', type: 'ReactNode', description: t('A line under the field, read out as its description.', 'Alanın altında, açıklaması olarak okunan bir satır.') },
+          { name: 'type', type: "'text' | 'search' | 'email' | 'url' | 'tel' | 'password' | 'number'", default: "'text'", description: t('The native input type. `search` adds a magnifier and a clear button that shows while there is text.', 'Yerel input türü. `search` bir büyüteç ve metin varken görünen bir temizle butonu ekler.') },
+          { name: 'value', type: 'string', description: t('The text (controlled).', 'Metin (kontrollü).') },
+          { name: 'defaultValue', type: 'string', description: t('The starting text when the field keeps its own state. A form reset returns here.', 'Alan kendi durumunu tutarken başlangıç metni. Form sıfırlanınca buraya döner.') },
+          { name: 'onValueChange', type: '(value: string, details) => void', description: t('Called with the new text and why it changed (`details.reason`: typing, the clear button, a reset).', 'Yeni metinle ve neden değiştiğiyle çağrılır (`details.reason`: yazmak, temizle butonu, sıfırlama).') },
+          { name: 'icon', type: 'ReactNode', description: t('An icon at the start. A search field has a magnifier unless you give one.', 'Baştaki simge. Arama alanında sen vermezsen bir büyüteç olur.') },
+          { name: 'clearLabel', type: 'string', default: "'Clear'", description: t('The clear button\'s name for screen readers.', 'Temizle butonunun ekran okuyucular için adı.') },
+          { name: 'name', type: 'string', description: t('Submits the text with a form under this name.', 'Metni formla bu adla gönderir.') },
+          { name: 'disabled', type: 'boolean', default: 'false', description: t('Dimmed, not editable and left out of the form.', 'Soluk, düzenlenemez ve formun dışında.') },
+          { name: 'tint', type: 'number', default: '0.6', description: t('How much tint covers the backdrop (0–1).', 'Arka planı ne kadar renk örttüğü (0–1).') },
+          { name: 'blur', type: 'number', default: '0', description: t('Frosts what the glass shows, in px like CSS `blur()`.', 'Camın gösterdiğini buzlar; CSS `blur()` gibi px cinsinden.') },
+          { name: 'className', type: 'string', description: t('Classes for the field (label, glass and description); it is 16rem wide by default.', 'Alan (etiket, cam ve açıklama) için sınıflar; varsayılan genişlik 16rem.') },
+          { name: '...', type: 'input props', description: t('`placeholder`, `required`, `autoComplete`, `aria-label` and any other native input prop go to the input.', '`placeholder`, `required`, `autoComplete`, `aria-label` ve diğer yerel input prop\'ları input\'a gider.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A native `<input>`, named by `label` and described by `description`; pressing the label or the magnifier focuses it.', 'Adını `label`dan, açıklamasını `description`dan alan yerel bir `<input>`; etikete ya da büyütece basmak onu odaklar.'),
+          t('The clear button is a real button with its own name (`clearLabel`): it empties the field and gives focus back to it.', 'Temizle butonu kendi adı (`clearLabel`) olan gerçek bir butondur: alanı boşaltır ve odağı ona geri verir.'),
+          t('Focus draws a blue outline around the whole glass; a focused clear button draws its own.', 'Odak, camın tamamının çevresine mavi bir çizgi çizer; odaktaki temizle butonu kendi çizgisini çizer.'),
+          t('Without WebGL2 it is a plain frosted field.', 'WebGL2 yoksa düz, buzlu bir alandır.'),
         ],
       },
     ],
@@ -1825,6 +2054,201 @@ const popup = useGlassPopup({ opening: 'morph' })
       },
     ],
   },
+  {
+    slug: 'date-picker',
+    group: 'components',
+    title: t('Date Picker', 'Date Picker'),
+    name: 'GlassDatePicker',
+    description: t(
+      'A date field of glass. Type a date in the page\'s language, or press the calendar and a month swells out of the whole field as one body of glass with it. The day chosen is circled, and the value is a plain `YYYY-MM-DD` date.',
+      'Camdan bir tarih alanı. Sayfanın dilinde bir tarih yaz ya da takvime bas: bir ay, alanın tamamından onunla tek bir cam gövde olarak şişer. Seçilen gün daire içine alınır, değer de yalın bir `YYYY-MM-DD` tarihidir.',
+    ),
+    verb: t('Circle', 'Çevrele'),
+    signature: t('Type a date or circle one on a month that swells out of the field.', 'Bir tarih yaz ya da alandan şişen bir ayda birini daire içine al.'),
+    hero: 'glass-date-picker-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('One date in a form: a due date, a birthday, the day of a payment.', 'Formda tek bir tarih: son ödeme günü, doğum günü, bir ödemenin günü.'),
+          t('Two of them side by side for a From and To pair, each keeping the other in bounds with `min` and `max`.', 'From ve To çifti için yan yana iki tane; her biri `min` ve `max` ile ötekini sınırda tutar.'),
+        ],
+        avoid: [
+          t('Picking one of a few named options (Today, This week): use Select or Tabs.', 'Birkaç adlandırılmış seçenekten birini seçmek (Bugün, Bu hafta): Select ya da Tabs kullan.'),
+          t('A time of day: this holds a date only.', 'Günün bir saati: bu yalnızca tarih tutar.'),
+        ],
+      },
+      { type: 'install', item: 'date-picker' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (reading a typed date, the calendar\'s keyboard, focus, positioning, forms, ARIA) comes from UI SDK, so Date Picker needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (yazılan tarihi okumak, takvimin klavyesi, odak, konumlandırma, formlar, ARIA) UI SDK\'dan gelir; bu yüzden Date Picker `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'export.tsx',
+        code: `import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+const [from, setFrom] = useState<string | null>(null)
+const [to, setTo] = useState<string | null>(null)
+
+<GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} />
+<GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} />
+// from, to: "2026-11-02", "2026-11-27", or null`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'Type a date and press Enter or leave the field: it reads the order of the page\'s language (11/02/2026 in English, 02.11.2026 in Turkish), ISO dates, digits without separators and month names, and writes the date back in that format. While the field is empty it shows the format to type. Text that is not a date, or a date past `min` or `max`, stays as typed, is marked invalid and leaves the value as it was. Press the calendar and the month swells out of the whole field, held on by a neck that stretches and snaps, as Select\'s list does; closing plays it backwards. The field wears Button\'s glass, the calendar Card\'s frost, and the day chosen is circled in the surface\'s ink.',
+          'Bir tarih yaz ve Enter\'a bas ya da alandan çık: sayfanın dilindeki sırayı (İngilizcede 11/02/2026, Türkçede 02.11.2026), ISO tarihlerini, ayraçsız rakamları ve ay adlarını okur, tarihi o biçimde geri yazar. Alan boşken yazılacak biçimi gösterir. Tarih olmayan bir metin ya da `min` veya `max` dışında kalan bir tarih yazıldığı gibi kalır, geçersiz olarak işaretlenir ve değer olduğu gibi kalır. Takvime bas: ay, alanın tamamından şişer, Select\'in listesindeki gibi esneyip kopan bir boyunla ona tutunur; kapanış bunun tersidir. Alan Button\'ın camını, takvim Card\'ın buzlu camını taşır; seçilen gün yüzeyin mürekkebiyle daire içine alınır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'label', type: 'ReactNode', description: t('The field\'s label, a real `<label>` tied to the input.', 'Alanın etiketi; girişe bağlı gerçek bir `<label>`.') },
+          { name: 'value', type: 'string | null', description: t('The date (controlled), `YYYY-MM-DD`. `null` = none.', 'Tarih (kontrollü), `YYYY-MM-DD`. `null` = yok.') },
+          { name: 'defaultValue', type: 'string | null', description: t('The starting date when the field keeps its own state.', 'Alan kendi durumunu tutarken başlangıç tarihi.') },
+          { name: 'onValueChange', type: '(value: string | null) => void', description: t('Called with the new date, `YYYY-MM-DD`, when one is picked or a typed one is committed; `null` once the field is emptied.', 'Bir tarih seçildiğinde ya da yazılan onaylandığında yeni tarihle (`YYYY-MM-DD`) çağrılır; alan boşaltılınca `null` ile.') },
+          { name: 'min / max', type: 'string', description: t('The earliest and latest dates that can be typed or picked, `YYYY-MM-DD`. The keys and the month steps stop there.', 'Yazılabilecek ya da seçilebilecek en erken ve en geç tarih, `YYYY-MM-DD`. Tuşlar ve ay adımları orada durur.') },
+          { name: 'unavailable', type: 'DateMatchers', description: t('Dates that can\'t be picked: ISO dates, `{ from, to }`, `{ weekday: [0, 6] }` for weekends, `{ before }`, `{ after }` or a function. They stay focusable and are struck through.', 'Seçilemeyen tarihler: ISO tarihleri, `{ from, to }`, hafta sonu için `{ weekday: [0, 6] }`, `{ before }`, `{ after }` ya da bir fonksiyon. Odaklanabilir kalırlar ve üstleri çizilir.') },
+          { name: 'placeholder', type: 'string', description: t('Shown while the field is empty. Defaults to the format to type, in the page\'s language.', 'Alan boşken görünür. Varsayılanı, sayfanın dilinde yazılacak biçimdir.') },
+          { name: 'name', type: 'string', description: t('Submits the date with a form under this name, as `YYYY-MM-DD`.', 'Tarihi formla bu adla `YYYY-MM-DD` olarak gönderir.') },
+          { name: 'required / disabled', type: 'boolean', default: 'false', description: t('`required` keeps an empty field from submitting its form. `disabled` dims it and nothing can be typed or picked.', '`required` boş alanın formunu göndermesini engeller. `disabled` onu soluklaştırır; hiçbir şey yazılamaz ya da seçilemez.') },
+          { name: 'locale', type: 'string', description: t('The language of the format and the month and day names. Defaults to the page\'s `lang`.', 'Biçimin, ay ve gün adlarının dili. Varsayılanı sayfanın `lang` değeridir.') },
+          { name: 'labels', type: '{ open?: string; previous?: string; next?: string }', description: t('What screen readers hear for the calendar button and the month steps, in your language. English by default.', 'Ekran okuyucuların takvim butonu ve ay adımları için duyduğu adlar, senin dilinde. Varsayılanı İngilizce.') },
+          { name: 'className', type: 'string', description: t('Classes for the field (label and input); it is 16rem wide by default.', 'Alan (etiket ve giriş) için sınıflar; varsayılan genişlik 16rem.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A text input named by `label` and described by the format to type, with a button that opens a dialog holding the month as a `grid` (the WAI-ARIA date picker dialog). The button is named by the date chosen.', '`label` ile adlandırılan ve yazılacak biçimle açıklanan bir metin girişi; yanında ayı bir `grid` olarak tutan bir diyalog açan buton (WAI-ARIA tarih seçici diyaloğu). Buton seçilen tarihle adlandırılır.'),
+          t('In the calendar the arrow keys move a day or a week, Home and End go to the week\'s ends, Page Up and Page Down turn the month (with Shift, the year), Enter or Space picks the day and Escape closes and returns focus.', 'Takvimde ok tuşları bir gün ya da bir hafta gider, Home ve End haftanın uçlarına, Page Up ve Page Down ayı (Shift ile yılı) çevirir, Enter ya da Boşluk günü seçer, Escape kapatıp odağı geri verir.'),
+          t('Text that is not a date sets `aria-invalid` and the field\'s edge turns red; its form won\'t submit until it is a date again or empty.', 'Tarih olmayan metin `aria-invalid` koyar ve alanın kenarı kırmızıya döner; yeniden tarih olana ya da boşalana kadar formu gönderilmez.'),
+          t('With reduced motion the calendar opens and closes at once. Without WebGL2 it is a plain frosted field and calendar.', 'Hareketi azalt açıksa takvim anında açılıp kapanır. WebGL2 yoksa düz, buzlu bir alan ve takvimdir.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'toast',
+    group: 'components',
+    title: t('Toast', 'Toast'),
+    name: 'GlassToaster',
+    description: t(
+      'The short message that rises after an action, such as "Saved" or "Could not refresh", on a pane of frosted glass. It stays a few seconds and goes; several gather into a stack that fans out under the pointer.',
+      'Bir eylemden sonra yükselen kısa mesaj ("Kaydedildi", "Yenilenemedi" gibi), buzlu camdan bir pano üstünde. Birkaç saniye kalır ve gider; birkaçı bir yığında toplanır, imleç gelince yelpaze gibi açılır.',
+    ),
+    verb: t('Rise', 'Yüksel'),
+    signature: t('A short message rises on glass after an action, stays a moment and goes.', 'Bir eylemden sonra camın üstünde kısa bir mesaj yükselir, bir an kalır ve gider.'),
+    hero: 'glass-toast-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Saying what an action did once it is done: Saved, Exported, Prices refreshed.', 'Bir eylem bitince ne yaptığını söylemek: Kaydedildi, Dışa aktarıldı, Fiyatlar yenilendi.'),
+          t('An error the person can carry on past, with one way to answer it: Retry, Undo, View.', 'Kişinin geçip gidebileceği, tek bir yanıtı olan bir hata: Yeniden dene, Geri al, Görüntüle.'),
+          t('Something slow that runs in the background: a loading toast that turns into its result.', 'Arka planda süren yavaş bir iş: sonucuna dönüşen bir yükleniyor toast\'ı.'),
+        ],
+        avoid: [
+          t('A question that needs an answer before going on: use a dialog.', 'Devam etmeden önce yanıt isteyen bir soru: bir diyalog kullan.'),
+          t('Something that must stay on screen: a toast goes by itself. Show it on the page, or give the toast `duration: Infinity`.', 'Ekranda kalması gereken bir şey: toast kendiliğinden gider. Sayfada göster ya da toast\'a `duration: Infinity` ver.'),
+          t('A label on a control: use Badge.', 'Bir kontrolün üstündeki etiket: Badge kullan.'),
+        ],
+      },
+      { type: 'install', item: 'toast' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (the queue and its timers, the stack, swiping, the keyboard, and how each toast is announced to screen readers) comes from UI SDK, so Toast needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (kuyruk ve zamanlayıcıları, yığın, kaydırma, klavye ve her toast\'ın ekran okuyuculara nasıl duyurulduğu) UI SDK\'dan gelir; bu yüzden Toast `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'p',
+        text: t(
+          'Place `GlassToaster` once, near your app\'s root, and call `toast()` from anywhere: a click handler, a fetch, code outside React. Both come from `glass-toast` (and from the index).',
+          '`GlassToaster`\'ı bir kez, uygulamanın köküne yakın bir yere koy ve `toast()`\'u her yerden çağır: bir tıklama işleyicisi, bir fetch, React dışındaki kod. İkisi de `glass-toast` dosyasından gelir (index\'ten de).',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassToaster, toast } from '@/components/liquid-glass/glass-toast'
+
+// Once, near the root.
+<GlassToaster />
+
+// Plain, with a line under it and one action.
+toast('Mark saved', {
+  description: 'AAPL at $231.40',
+  action: { label: 'Undo', onAction: undoMark },
+})
+
+// An error: red-tinted glass and a red mark, announced at once.
+toast.error('Could not refresh', { action: { label: 'Retry', onAction: refresh } })
+
+// Loading, then its result, in the same toast.
+toast.promise(refresh, {
+  loading: 'Refreshing prices…',
+  success: 'Prices refreshed',
+  error: 'Could not refresh',
+})`,
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-toast-basic', title: t('After Refresh, Save and Export', 'Yenile, Kaydet ve Dışa aktar sonrası') },
+      {
+        type: 'p',
+        text: t(
+          'A toast comes up from the edge and fades in, stays four seconds here (five by default) and fades out. A new one comes in front and pushes the last one back, smaller, with only its glass peeking out above; three show at once (`maxVisible`) and the rest wait their turn, their timers stopped. Under the pointer or focus the stack fans out, each toast at its own height, and every timer waits. Swipe a toast down or towards the side it sits on to send it away; a short swipe springs back. This example keeps the stack over its own stage with CSS anchor positioning (`position-anchor` on the region); in an app it sits at the window\'s edge.',
+          'Toast kenardan yükselip belirir, burada dört saniye (varsayılan beş) kalır ve söner. Yenisi öne gelir, öncekini geriye, küçülterek iter; ondan yalnızca camı üstte görünür. Aynı anda üçü görünür (`maxVisible`), gerisi sırasını bekler, zamanlayıcıları durur. İmleç ya da odak gelince yığın yelpaze gibi açılır, her toast kendi yüksekliğinde durur ve bütün zamanlayıcılar bekler. Bir toast\'ı göndermek için aşağı ya da durduğu yana kaydır; kısa bir kaydırma geri yaylanır. Bu örnek, yığını CSS anchor positioning ile kendi sahnesinin üstünde tutar (bölgede `position-anchor`); bir uygulamada pencerenin kenarında durur.',
+        ),
+      },
+      {
+        type: 'p',
+        text: t(
+          'Each toast is Card\'s glass: the rim pulls what is behind towards the middle, a 5 px frost (`blur`) and a 70% tint (`tint`), white on a light page and black on a dark one, with a soft shadow. It is a surface, so it takes no light of its own; its action and its × light it where they are pressed. The glass follows the toast as the stack moves and as it is swiped, so it always bends what lies behind it now. An error is the same glass tinted red, pale on a light page and deep on a dark one, with a red mark; a success has a check that draws itself in, a loading toast a turning ring, a warning an amber mark. The type also reaches CSS as `data-type` on each toast.',
+          'Her toast Card\'ın camıdır: kenar arkada kalanı ortaya doğru çeker, 5 px buzlanma (`blur`) ve %70 ton (`tint`), açık sayfada beyaz, koyu sayfada siyah, yumuşak bir gölgeyle. Bir yüzeydir, kendi ışığı yoktur; eylemi ve × basıldıkları yerde onu aydınlatır. Yığın hareket ederken ve kaydırılırken cam toast\'ı izler, böylece her an arkasında kalanı büker. Hata aynı camın kırmızıya çalanıdır (açık sayfada soluk, koyu sayfada derin) ve kırmızı bir işaret taşır; başarıda kendini çizen bir onay, yükleniyor toast\'ında dönen bir halka, uyarıda kehribar bir işaret vardır. Tür, her toast\'ta `data-type` olarak CSS\'e de ulaşır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'toast(title, options?)', type: '(title, options) => string', description: t('Shows a toast and returns its id. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set its type; `toast.promise(promise, { loading, success, error })` turns a loading toast into its result. `toast.update(id, options)` and `toast.dismiss(id?)` change or close one, or every one.', 'Bir toast gösterir ve kimliğini döndürür. `toast.success`, `.error`, `.warning`, `.info` ve `.loading` türünü belirler; `toast.promise(promise, { loading, success, error })` yükleniyor toast\'ını sonucuna dönüştürür. `toast.update(id, options)` ve `toast.dismiss(id?)` birini ya da hepsini değiştirir ya da kapatır.') },
+          { name: 'options.description', type: 'ReactNode', description: t('A line under the title.', 'Başlığın altında bir satır.') },
+          { name: 'options.action', type: '{ label, onAction?, href? }', description: t('One button, like Undo or Retry. A promise from `onAction` keeps the toast open, the button dimmed, until it settles; `href` makes it a link.', 'Geri al ya da Yeniden dene gibi tek bir buton. `onAction`\'ın döndürdüğü promise toast\'ı açık, butonu soluk tutar, ta ki sonuçlanana dek; `href` onu bir bağlantı yapar.') },
+          { name: 'options.duration', type: 'number', default: '5000', description: t('How long it shows, in ms, while nothing pauses it. `Infinity` keeps it until it is dismissed.', 'Hiçbir şey duraklatmazken ne kadar göründüğü, ms olarak. `Infinity` kapatılana dek tutar.') },
+          { name: 'options.dismissible', type: 'boolean', default: 'true', description: t('`false` takes away its ×, the swipe and Escape; its timer still closes it.', '`false` × butonunu, kaydırmayı ve Escape\'i kaldırır; zamanlayıcısı yine kapatır.') },
+          { name: 'options.priority', type: "'polite' | 'assertive'", description: t('How screen readers announce it. Errors are assertive, the rest polite.', 'Ekran okuyucuların onu nasıl duyurduğu. Hatalar assertive, geri kalanı polite.') },
+          { name: 'side / align', type: "'bottom' | 'top' / 'start' | 'center' | 'end'", default: "'bottom' / 'end'", description: t('On `GlassToaster`: where the stack sits. Start and end follow the writing direction.', '`GlassToaster` üzerinde: yığının durduğu yer. Start ve end yazı yönünü izler.') },
+          { name: 'maxVisible / expanded', type: 'number / boolean', default: '3 / false', description: t('How many toasts show at once, and whether the stack stays fanned out.', 'Aynı anda kaç toast görüneceği ve yığının hep açık kalıp kalmayacağı.') },
+          { name: 'toaster', type: 'Toaster', description: t('A queue of its own, from `createToaster()`. Left out, the region shows the toasts of the shared `toast`.', '`createToaster()` ile kendine ait bir kuyruk. Verilmezse bölge, ortak `toast`\'ın toast\'larını gösterir.') },
+          { name: 'tint / blur', type: 'number', default: '0.7 / 5', description: t('The glass, as on Card: how much tint covers the backdrop (0–1), and its frost in px.', 'Cam, Card\'daki gibi: tonun arkayı ne kadar örttüğü (0–1) ve px olarak buzlanması.') },
+          { name: 'closeLabel / aria-label', type: 'string', default: "'Dismiss' / 'Notifications'", description: t('The × button\'s name and the region\'s, in your page\'s language.', '× butonunun ve bölgenin adı, sayfanın dilinde.') },
+          { name: 'shortcut', type: 'string | null', default: "'F6'", description: t('The key that moves focus into the stack and back. `null` turns it off.', 'Odağı yığına taşıyıp geri getiren tuş. `null` kapatır.') },
+          { name: 'style / className', type: 'CSS', description: t('For the region. Its size and spacing are CSS variables: `--glass-toast-width` (22rem), `--glass-toast-offset` from the edge (1rem), `--glass-toast-gap` (8px) and `--glass-toast-peek` (10px).', 'Bölge için. Boyutu ve aralıkları CSS değişkenleridir: `--glass-toast-width` (22rem), kenardan `--glass-toast-offset` (1rem), `--glass-toast-gap` (8px) ve `--glass-toast-peek` (10px).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('Each toast is announced once through live regions, without taking focus: politely by default, at once for an error. The visible stack is not itself a live region, so nothing is read twice.', 'Her toast, odağı almadan, canlı bölgeler üzerinden bir kez duyurulur: varsayılan olarak nazikçe, hata için hemen. Görünen yığının kendisi canlı bölge değildir; hiçbir şey iki kez okunmaz.'),
+          t('While it holds toasts the stack is a landmark named Notifications (`aria-label` to name it in your language). F6 moves focus to the newest toast and back; Tab walks the toasts and their buttons; Escape dismisses the focused one.', 'Toast tuttuğu sürece yığın, Notifications adlı bir işaret bölgesidir (kendi dilinde adlandırmak için `aria-label`). F6 odağı en yeni toast\'a taşır ve geri getirir; Tab toast\'lar ve butonları arasında gezer; Escape odaktakini kapatır.'),
+          t('Timers wait while the pointer or focus is in the stack and while the page is hidden, so a toast is never gone before it can be read. Keep messages short; give one that must stay `duration: Infinity`.', 'İmleç ya da odak yığındayken ve sayfa gizliyken zamanlayıcılar bekler; böylece bir toast okunmadan gitmez. Mesajları kısa tut; kalması gerekene `duration: Infinity` ver.'),
+          t('With reduced motion toasts only fade, and the glass holds still. Without WebGL2 each is a plain frosted panel.', 'Hareketi azalt açıksa toast\'lar yalnızca belirip söner, cam da durur. WebGL2 yoksa her biri düz, buzlu bir paneldir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1860,15 +2284,91 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
-    version: '2.0.5',
+    version: '2.4.1',
     date: '2026-11-25',
     title: t('The focus ring stays on glass controls.', 'Odak halkası cam kontrollerde kalıyor.'),
     changes: [
       {
         kind: 'fixed',
         text: t(
-          'Once its glass had drawn, a control reached with Tab showed no focus ring: the ring was a box-shadow, and the glass clears the shadow of the element it draws on. Button, Action Button, Button Group, Tabs, Slide to Confirm and the triggers of Select, Dropdown Menu, Popover and Menu now draw the same blue ring as an outline, which the glass leaves alone.',
-          'Camı çizildikten sonra Tab ile ulaşılan bir kontrolde odak halkası görünmüyordu: halka bir box-shadow\'du ve cam, üzerine çizdiği öğenin gölgesini siler. Button, Action Button, Button Group, Tabs, Slide to Confirm ile Select, Dropdown Menu, Popover ve Menu tetikleyicileri artık aynı mavi halkayı, camın dokunmadığı bir outline olarak çiziyor.',
+          'Once its glass had drawn, a control reached with Tab showed no focus ring: the ring was a box-shadow, and the glass clears the shadow of the element it draws on. Button, Action Button, Button Group, Tabs, Slide to Confirm and the triggers of Select, Dropdown Menu, Popover and Menu now draw the same blue ring as an outline, which the glass leaves alone. The outline of the Input\'s clear button, a Toast\'s button and a Table\'s sort button never showed at all, and now does.',
+          'Camı çizildikten sonra Tab ile ulaşılan bir kontrolde odak halkası görünmüyordu: halka bir box-shadow\'du ve cam, üzerine çizdiği öğenin gölgesini siler. Button, Action Button, Button Group, Tabs, Slide to Confirm ile Select, Dropdown Menu, Popover ve Menu tetikleyicileri artık aynı mavi halkayı, camın dokunmadığı bir outline olarak çiziyor. Input\'un temizle butonunun, Toast butonunun ve Table sıralama butonunun hiç görünmeyen outline\'ı da artık görünüyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '2.4.0',
+    date: '2026-11-25',
+    title: t('Table.', 'Table.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'table',
+        text: t(
+          'Table: rows of data on one large sheet of glass, for the biggest surface of a dashboard (transactions, months, a budget). The sheet is Card\'s frosted glass, drawn as one glass however many rows it has and never at rest. Inside it is a real HTML table: a header, rows and a totals row, numbers right-aligned in figures of one width. Column heads with a `sortKey` are buttons that sort the rows when pressed and tell screen readers which way with `aria-sort`; `sortRows` sorts your data to match. A table wider than its sheet scrolls sideways inside it, and other glass (Button, Tabs) can sit in its rows.',
+          'Table: tek büyük cam levha üstünde veri satırları; bir panelin en büyük yüzeyi için (hareketler, aylar, bir bütçe). Levha Card\'ın buzlu camıdır; kaç satırı olursa olsun tek bir cam olarak çizilir, dururken asla. İçinde gerçek bir HTML tablosu var: başlık, satırlar ve bir toplam satırı; sayılar sağa yaslı ve eşit genişlikte. `sortKey` verilen sütun başlıkları, basılınca satırları sıralayan butonlardır ve yönü ekran okuyuculara `aria-sort` ile söyler; `sortRows` verini buna göre sıralar. Levhasından geniş bir tablo onun içinde yana kayar; satırlarına başka camlar da (Button, Tabs) konabilir.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Glass that React moves to another place in a list (a row of a sorted table, a reordered card) could stop drawing. The browser reports such a move as gone and back in one batch, and the glass read only the first report: it took itself for hidden and kept showing what lay behind it where it had been. Every glass now reads the newest report.',
+          'React\'in bir listede başka bir yere taşıdığı cam (sıralanan bir tablonun satırı, yeri değişen bir kart) çizilmeyi bırakıyordu. Tarayıcı böyle bir taşımayı tek seferde önce gitti, sonra geri geldi diye bildiriyor; cam yalnız ilk bildirimi okuyup kendini gizli sanıyor, vardığı yerde çizmeyi bırakıyor ve eski yerinin resmini tutuyordu. Artık her cam en yeni bildirimi okuyor.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '2.3.0',
+    date: '2026-11-25',
+    title: t('Toast.', 'Toast.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'toast',
+        text: t(
+          'Toast: the short message that rises after an action, on Card\'s frosted glass. It comes up from the edge, stays a few seconds and goes; several gather into a stack, the newest in front and the rest peeking out behind it, which fans out under the pointer or focus. Swipe one away, press its ×, or Escape. It has a plain form, an error form (red-tinted glass and a red mark), success, warning and loading forms, and one action button. The queue, its timers, swiping, the keyboard and the announcements to screen readers come from UI SDK.',
+          'Toast: bir eylemden sonra Card\'ın buzlu camı üstünde yükselen kısa mesaj. Kenardan yükselir, birkaç saniye kalır ve gider; birkaçı bir yığında toplanır, en yenisi önde, ötekiler arkasından görünür; yığın imleç ya da odak gelince yelpaze gibi açılır. Kaydırarak, × ile ya da Escape ile kapatılır. Düz bir biçimi, bir hata biçimi (kırmızıya çalan cam ve kırmızı bir işaret), başarı, uyarı ve yükleniyor biçimleri ve tek bir eylem butonu vardır. Kuyruk, zamanlayıcılar, kaydırma, klavye ve ekran okuyuculara duyurular UI SDK\'dan gelir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'toast',
+        also: ['card'],
+        text: t(
+          'Glass that holds still (a card, a toast) now follows its element when something else moves it: while a CSS transition carries it, or a swipe writes its position into its style, the glass is drawn on every frame and bends what lies behind it where it is now, instead of carrying a picture of where it was. A change of opacity alone draws nothing more. Buttons are as they were.',
+          'Sabit duran cam (bir kart, bir toast) artık öğesini başka bir şey hareket ettirdiğinde onu izliyor: bir CSS geçişi onu taşırken ya da bir kaydırma konumunu stiline yazarken cam her karede çiziliyor ve arkasında kalanı, olduğu yerin resmini taşımak yerine şu an bulunduğu yerde büküyor. Yalnızca saydamlığın değişmesi fazladan bir şey çizdirmiyor. Butonlar eskisi gibi.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '2.2.0',
+    date: '2026-11-25',
+    title: t('Date Picker.', 'Date Picker.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'date-picker',
+        text: t(
+          'Date Picker: a date field of glass. Type a date in the page\'s language, or press the calendar and a month swells out of the whole field as one body of glass with it, on the neck Select\'s list has. The day chosen is circled and the value is a plain `YYYY-MM-DD` date; two side by side, each bounding the other with `min` and `max`, make a From and To pair. Reading a typed date, the calendar\'s keyboard, focus, positioning, forms and ARIA come from UI SDK.',
+          'Date Picker: camdan bir tarih alanı. Sayfanın dilinde bir tarih yaz ya da takvime bas: bir ay, Select\'in listesindeki boyunla, alanın tamamından onunla tek bir cam gövde olarak şişer. Seçilen gün daire içine alınır, değer yalın bir `YYYY-MM-DD` tarihidir; yan yana iki tane, `min` ve `max` ile birbirini sınırlayarak bir From ve To çifti olur. Yazılan tarihi okumak, takvimin klavyesi, odak, konumlandırma, formlar ve ARIA UI SDK\'dan gelir.',
+        ),
+      },
+    ],
+  },
+  {
+    version: '2.1.0',
+    date: '2026-11-25',
+    title: t('Input.', 'Input.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'input',
+        text: t(
+          'Input: a text field made of glass, with a label above it and a line under it. The page bends at its rim and what you type stays sharp on top, in the glass\'s own tone. As a search field (`type="search"`) it brings a magnifier and a clear button that empties it and gives focus back. It is as tall as Select\'s button and wears the same glass, so the two make a filter row. The label, form and clear behaviour come from UI SDK.',
+          'Input: camdan bir metin alanı, üstünde etiketi, altında bir satırla. Sayfa kenarında bükülür, yazdıkların ise camın kendi tonunda, üstte keskin kalır. Arama alanı olarak (`type="search"`) bir büyüteç ve alanı boşaltıp odağı geri veren bir temizle butonu getirir. Select\'in butonuyla aynı boyda ve aynı camdan, bu yüzden ikisi bir filtre satırı olur. Etiket, form ve temizleme davranışı UI SDK\'dan gelir.',
         ),
       },
     ],

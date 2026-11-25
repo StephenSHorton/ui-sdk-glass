@@ -1438,6 +1438,340 @@ The rim pulls what is behind towards the card's centre, by 6.5% of the viewport,
 
 Source: https://onemorethink.dev/docs/card
 
+# GlassTable
+
+> Rows of data on one large sheet of glass. The sheet is Card's frosted glass, so figures stay readable over any backdrop; inside it is a real HTML table with a header, rows and a totals row, and its column heads sort when pressed.
+
+```tsx
+import { useState } from 'react'
+
+import {
+  GlassTable,
+  GlassTableBody,
+  GlassTableCell,
+  GlassTableFooter,
+  GlassTableHead,
+  GlassTableHeader,
+  GlassTableRow,
+  sortRows,
+  type GlassTableSort,
+} from '@/components/liquid-glass'
+
+// A month's budget on one sheet of glass, over the month itself drawn as a bar chart: flat
+// columns of colour, plain DOM. Press a head to sort by it; press it again to turn it round.
+const budget = [
+  { category: 'Rent', planned: 1850, spent: 1850, colour: '#0a84ff' },
+  { category: 'Groceries', planned: 600, spent: 472.4, colour: '#30d158' },
+  { category: 'Transport', planned: 240, spent: 268.9, colour: '#ff9f0a' },
+  { category: 'Eating out', planned: 300, spent: 341.25, colour: '#ff375f' },
+  { category: 'Utilities', planned: 210, spent: 188.6, colour: '#bf5af2' },
+  { category: 'Software', planned: 120, spent: 96, colour: '#64d2ff' },
+].map((row) => ({ ...row, left: row.planned - row.spent }))
+
+// Heights in px: the taller columns rise above the sheet, the shorter ones stay behind it.
+const bars = [220, 350, 270, 420, 310, 450, 370, 260, 400, 300]
+const barColours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2', '#ffd60a', '#64d2ff', '#ff6b3d', '#5e5ce6', '#30d158']
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+
+export default function Demo() {
+  const [sort, setSort] = useState<GlassTableSort>({ key: 'spent', direction: 'descending' })
+  const total = (key: 'planned' | 'spent' | 'left') => budget.reduce((sum, row) => sum + row[key], 0)
+  return (
+    <div className="relative isolate flex w-full max-w-xl justify-center px-2 pt-28 pb-6">
+      {/* The backdrop: a bar chart of flat columns. Their feet stand behind the sheet, the tallest rise above it. */}
+      <div aria-hidden className="absolute inset-x-0 bottom-12 -z-10 flex items-end justify-center gap-3 overflow-hidden">
+        {bars.map((height, i) => (
+          <span key={i} className="w-9 shrink-0 rounded-t-xl" style={{ height, background: barColours[i] }} />
+        ))}
+      </div>
+
+      <GlassTable aria-label="Budget for November" sort={sort} onSortChange={setSort} className="w-full max-w-[520px]">
+        <GlassTableHeader>
+          <GlassTableRow>
+            <GlassTableHead sortKey="category">Category</GlassTableHead>
+            <GlassTableHead sortKey="planned" numeric>
+              Planned
+            </GlassTableHead>
+            <GlassTableHead sortKey="spent" numeric>
+              Spent
+            </GlassTableHead>
+            <GlassTableHead sortKey="left" numeric>
+              Left
+            </GlassTableHead>
+          </GlassTableRow>
+        </GlassTableHeader>
+        <GlassTableBody>
+          {sortRows(budget, sort).map((row) => (
+            <GlassTableRow key={row.category}>
+              <GlassTableCell className="font-medium">
+                <span className="mr-2.5 inline-block size-2 rounded-full align-middle" style={{ background: row.colour }} />
+                {row.category}
+              </GlassTableCell>
+              <GlassTableCell numeric className="opacity-60">
+                {money.format(row.planned)}
+              </GlassTableCell>
+              <GlassTableCell numeric>{money.format(row.spent)}</GlassTableCell>
+              <GlassTableCell numeric className={row.left < 0 ? 'text-[#d70015] dark:text-[#ff6961]' : ''}>
+                {money.format(row.left)}
+              </GlassTableCell>
+            </GlassTableRow>
+          ))}
+        </GlassTableBody>
+        <GlassTableFooter>
+          <GlassTableRow>
+            <GlassTableCell>Total</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('planned'))}</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('spent'))}</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('left'))}</GlassTableCell>
+          </GlassTableRow>
+        </GlassTableFooter>
+      </GlassTable>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- The big surface of a dashboard: transactions, months, a budget, a list of expenses.
+- Rows people compare and sort, with a total at the foot.
+
+**Not for**
+
+- A few lines of content in a widget: use Card.
+- Layout. A table is for data with columns, never for placing things side by side.
+- Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/table.json
+```
+
+## Usage
+
+```tsx
+import {
+  GlassTable, GlassTableHeader, GlassTableBody, GlassTableFooter,
+  GlassTableRow, GlassTableHead, GlassTableCell, sortRows, type GlassTableSort,
+} from '@/components/liquid-glass'
+
+const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+
+<GlassTable aria-label="Transactions" sort={sort} onSortChange={setSort} className="w-full">
+  <GlassTableHeader>
+    <GlassTableRow>
+      <GlassTableHead sortKey="date">Date</GlassTableHead>
+      <GlassTableHead>Payee</GlassTableHead>
+      <GlassTableHead sortKey="amount" numeric>Amount</GlassTableHead>
+    </GlassTableRow>
+  </GlassTableHeader>
+  <GlassTableBody>
+    {sortRows(rows, sort).map((r) => (
+      <GlassTableRow key={r.id}>
+        <GlassTableCell>{r.date}</GlassTableCell>
+        <GlassTableCell>{r.payee}</GlassTableCell>
+        <GlassTableCell numeric>{r.amount}</GlassTableCell>
+      </GlassTableRow>
+    ))}
+  </GlassTableBody>
+  <GlassTableFooter>
+    <GlassTableRow>
+      <GlassTableCell colSpan={2}>Total</GlassTableCell>
+      <GlassTableCell numeric>{total}</GlassTableCell>
+    </GlassTableRow>
+  </GlassTableFooter>
+</GlassTable>
+```
+
+The table sorts nothing by itself: a head with a `sortKey` is a button, and pressing it hands you the new sort (`onSortChange`). Sort your rows by it with `sortRows`, which compares numbers and dates by value and text as people read it ("Item 2" before "Item 10"), puts empty values last and leaves your array as it is. A new column starts ascending; pressing the sorted one turns it round. Leave out `sort` and give `defaultSort` to let the table keep the sort itself.
+
+## Examples
+
+### A month of transactions
+
+```tsx
+import { Check, Paperclip } from 'lucide-react'
+import { useState } from 'react'
+
+import {
+  GlassButton,
+  GlassTable,
+  GlassTableBody,
+  GlassTableCell,
+  GlassTableFooter,
+  GlassTableHead,
+  GlassTableHeader,
+  GlassTableRow,
+  GlassTabs,
+  sortRows,
+  type GlassTableSort,
+} from '@/components/liquid-glass'
+
+// A month of transactions at dashboard size: one sheet of glass, two dozen rows, a totals
+// footer. Each row holds glass of its own: tabs used as a segmented control that file the
+// expense as personal or business, and a button that attaches a receipt. Sort by any head and
+// the rows, controls and all, move; the business total follows the tabs. On a narrow screen the
+// table scrolls sideways inside its sheet. Behind it: coins of flat colour and the month's
+// balance in large type, plain DOM.
+type Kind = 'personal' | 'business'
+type Transaction = { id: number; date: string; payee: string; category: string; account: string; amount: number; kind: Kind; receipt: boolean }
+
+const transactions: Transaction[] = [
+  { id: 1, date: '2026-11-24', payee: 'Northwind Coffee', category: 'Eating out', account: 'Debit ··4410', amount: -6.8, kind: 'personal', receipt: false },
+  { id: 2, date: '2026-11-24', payee: 'Cloudframe Hosting', category: 'Software', account: 'Credit ··9021', amount: -48, kind: 'business', receipt: true },
+  { id: 3, date: '2026-11-23', payee: 'Greenleaf Market', category: 'Groceries', account: 'Debit ··4410', amount: -84.32, kind: 'personal', receipt: false },
+  { id: 4, date: '2026-11-22', payee: 'Metro Transit', category: 'Transport', account: 'Debit ··4410', amount: -32.5, kind: 'personal', receipt: false },
+  { id: 5, date: '2026-11-21', payee: 'Acme Design Ltd.', category: 'Income', account: 'Checking ··1187', amount: 4200, kind: 'business', receipt: true },
+  { id: 6, date: '2026-11-21', payee: 'Paper & Pixel', category: 'Office', account: 'Credit ··9021', amount: -129.99, kind: 'business', receipt: false },
+  { id: 7, date: '2026-11-20', payee: 'City Power', category: 'Utilities', account: 'Checking ··1187', amount: -96.4, kind: 'personal', receipt: true },
+  { id: 8, date: '2026-11-19', payee: 'Harbor Books', category: 'Education', account: 'Credit ··9021', amount: -38.75, kind: 'business', receipt: false },
+  { id: 9, date: '2026-11-18', payee: 'Sunrise Bakery', category: 'Eating out', account: 'Debit ··4410', amount: -12.2, kind: 'personal', receipt: false },
+  { id: 10, date: '2026-11-17', payee: 'Fieldnote Studio', category: 'Income', account: 'Checking ··1187', amount: 1350, kind: 'business', receipt: true },
+  { id: 11, date: '2026-11-16', payee: 'Railway Express', category: 'Travel', account: 'Credit ··9021', amount: -214.6, kind: 'business', receipt: false },
+  { id: 12, date: '2026-11-15', payee: 'Greenleaf Market', category: 'Groceries', account: 'Debit ··4410', amount: -61.08, kind: 'personal', receipt: false },
+  { id: 13, date: '2026-11-14', payee: 'Linework Fonts', category: 'Software', account: 'Credit ··9021', amount: -79, kind: 'business', receipt: true },
+  { id: 14, date: '2026-11-13', payee: 'Corner Pharmacy', category: 'Health', account: 'Debit ··4410', amount: -23.45, kind: 'personal', receipt: false },
+  { id: 15, date: '2026-11-12', payee: 'Hilltop Hotel', category: 'Travel', account: 'Credit ··9021', amount: -342, kind: 'business', receipt: false },
+  { id: 16, date: '2026-11-11', payee: 'Streamline Music', category: 'Subscriptions', account: 'Credit ··9021', amount: -10.99, kind: 'personal', receipt: true },
+  { id: 17, date: '2026-11-10', payee: 'Northwind Coffee', category: 'Eating out', account: 'Debit ··4410', amount: -18.6, kind: 'business', receipt: false },
+  { id: 18, date: '2026-11-08', payee: 'Bright Fiber', category: 'Utilities', account: 'Checking ··1187', amount: -65, kind: 'business', receipt: true },
+  { id: 19, date: '2026-11-07', payee: 'Ridgeway Gym', category: 'Health', account: 'Debit ··4410', amount: -45, kind: 'personal', receipt: false },
+  { id: 20, date: '2026-11-05', payee: 'Workbench Co-op', category: 'Office', account: 'Credit ··9021', amount: -275, kind: 'business', receipt: true },
+  { id: 21, date: '2026-11-04', payee: 'Metro Transit', category: 'Transport', account: 'Debit ··4410', amount: -32.5, kind: 'personal', receipt: false },
+  { id: 22, date: '2026-11-03', payee: 'Oakline Rentals', category: 'Rent', account: 'Checking ··1187', amount: -1850, kind: 'personal', receipt: true },
+  { id: 23, date: '2026-11-02', payee: 'Taskboard Pro', category: 'Software', account: 'Credit ··9021', amount: -24, kind: 'business', receipt: false },
+  { id: 24, date: '2026-11-01', payee: 'Acme Design Ltd.', category: 'Income', account: 'Checking ··1187', amount: 2800, kind: 'business', receipt: true },
+]
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', signDisplay: 'exceptZero' })
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** "2026-11-24" → "Nov 24", read from the string itself (no time zone can move the day). */
+const day = (iso: string) => `${months[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`
+
+const coins = [
+  { left: '2%', top: '6%', size: 220, colour: '#ffd60a' },
+  { left: '30%', top: '58%', size: 300, colour: '#0a84ff' },
+  { left: '62%', top: '-4%', size: 260, colour: '#ff375f' },
+  { left: '84%', top: '48%', size: 240, colour: '#30d158' },
+  { left: '12%', top: '78%', size: 160, colour: '#bf5af2' },
+]
+
+export default function Demo() {
+  const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+  const [rows, setRows] = useState(transactions)
+  const update = (id: number, change: Partial<Transaction>) => setRows((all) => all.map((r) => (r.id === id ? { ...r, ...change } : r)))
+  const total = rows.reduce((sum, r) => sum + r.amount, 0)
+  const business = rows.filter((r) => r.kind === 'business' && r.amount < 0).reduce((sum, r) => sum + r.amount, 0)
+  return (
+    <div className="relative isolate w-full overflow-hidden rounded-3xl px-3 py-10 sm:px-8 sm:py-14">
+      {/* The backdrop: coins of flat colour and the balance, in type large enough to bend. */}
+      <div aria-hidden className="absolute inset-0 -z-10">
+        {coins.map((c, i) => (
+          <span key={i} className="absolute rounded-full" style={{ left: c.left, top: c.top, width: c.size, height: c.size, background: c.colour }} />
+        ))}
+        <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[160px] leading-none font-bold tracking-[-0.06em] whitespace-nowrap text-black/55 tabular-nums dark:text-white/55">
+          +$4,860
+        </p>
+      </div>
+
+      <GlassTable aria-label="Transactions in November" sort={sort} onSortChange={setSort} className="mx-auto w-full max-w-[1000px]">
+        <GlassTableHeader>
+          <GlassTableRow>
+            <GlassTableHead sortKey="date">Date</GlassTableHead>
+            <GlassTableHead sortKey="payee">Payee</GlassTableHead>
+            <GlassTableHead sortKey="category">Category</GlassTableHead>
+            <GlassTableHead>Account</GlassTableHead>
+            <GlassTableHead sortKey="kind">Expense</GlassTableHead>
+            <GlassTableHead>Receipt</GlassTableHead>
+            <GlassTableHead sortKey="amount" numeric>
+              Amount
+            </GlassTableHead>
+          </GlassTableRow>
+        </GlassTableHeader>
+        <GlassTableBody>
+          {sortRows(rows, sort).map((r) => (
+            <GlassTableRow key={r.id}>
+              <GlassTableCell className="tabular-nums opacity-60">{day(r.date)}</GlassTableCell>
+              <GlassTableCell className="font-medium">{r.payee}</GlassTableCell>
+              <GlassTableCell>{r.category}</GlassTableCell>
+              <GlassTableCell className="tabular-nums opacity-60">{r.account}</GlassTableCell>
+              <GlassTableCell>
+                <GlassTabs
+                  aria-label={`${r.payee}, ${day(r.date)}: expense type`}
+                  size="sm"
+                  value={r.kind}
+                  onValueChange={(kind) => update(r.id, { kind })}
+                  options={[
+                    { value: 'personal', label: 'Personal' },
+                    { value: 'business', label: 'Business' },
+                  ]}
+                />
+              </GlassTableCell>
+              <GlassTableCell>
+                {r.receipt ? (
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium opacity-60">
+                    <Check className="size-3.5" aria-hidden />
+                    Attached
+                  </span>
+                ) : (
+                  <GlassButton size="sm" icon={<Paperclip />} aria-label={`Attach a receipt to ${r.payee}, ${day(r.date)}`} onClick={() => update(r.id, { receipt: true })}>
+                    Attach
+                  </GlassButton>
+                )}
+              </GlassTableCell>
+              <GlassTableCell numeric className={`font-medium ${r.amount > 0 ? 'text-[#248a3d] dark:text-[#30d158]' : ''}`}>
+                {money.format(r.amount)}
+              </GlassTableCell>
+            </GlassTableRow>
+          ))}
+        </GlassTableBody>
+        <GlassTableFooter>
+          <GlassTableRow>
+            <GlassTableCell colSpan={6}>Business expenses</GlassTableCell>
+            <GlassTableCell numeric>{money.format(business)}</GlassTableCell>
+          </GlassTableRow>
+          <GlassTableRow>
+            <GlassTableCell colSpan={6}>Total · {rows.length} transactions</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total)}</GlassTableCell>
+          </GlassTableRow>
+        </GlassTableFooter>
+      </GlassTable>
+    </div>
+  )
+}
+```
+
+A dashboard's table at full size: a thousand pixels wide, two dozen rows and two totals. Each row holds glass of its own, Tabs used as a segmented control to file the expense and a Button to attach a receipt; they bend the sheet and the row behind them. Sort by any head and the rows move, controls and all. Where the page is narrower than the table, as on this page and on a phone, the table scrolls sideways inside its sheet while the glass stays where it is.
+
+The sheet is Card's glass: the rim pulls what is behind towards the centre, the face frosts it with a 5 px blur and covers it with a 70% tint, white on a light page and black on a dark one, and the text takes the tone the glass ends up. However many rows there are, it is one glass, drawn when something changes and never at rest: sorting, scrolling the table sideways and pressing a head add no glass of their own. Thin lines in the text's own colour run between rows, a stronger one sets the totals apart, and `numeric` cells are right-aligned in figures of one width. `className` and `style` belong to the sheet (size, corners, a `bg-*` with `material="tinted"`); every other attribute goes to the `<table>`.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | — | The table's parts: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`. |
+| `sort` | `GlassTableSort \| null` | — | The sort, controlled: `{ key, direction }`, `direction` being `ascending` or `descending`. `null`: not sorted. |
+| `defaultSort` | `GlassTableSort \| null` | `null` | The sort to start with, when the table keeps it itself. |
+| `onSortChange` | `(sort: GlassTableSort) => void` | — | A sortable head was pressed: the new sort. |
+| `material` | `'clear' \| 'tinted'` | `'clear'` | As Card's: clear frosts and bends what is behind; tinted takes the sheet's background colour. |
+| `tint` | `number` | `0.7` | Clear glass only: how much tint covers the backdrop (0–1). |
+| `blur` | `number` | `5` | Clear glass only: the frost, in px like CSS `blur()`. |
+| `live` | `boolean` | `false` | Repaint the backdrop every frame, for content that moves behind the table. |
+| `className / style` | `string / CSSProperties` | — | The sheet's: size, margin, corners (`rounded-*`) and, for tinted glass, colour (`bg-*`). |
+| `…rest` | `table attributes` | — | Passed to the `<table>` (`aria-label`, `id`…). |
+| `GlassTableHead` | `{ sortKey?: string; numeric?: boolean }` | — | A column head (`<th scope="col">`). With `sortKey` it holds a button that sorts by that key. `numeric` right-aligns it, the arrow before the label. |
+| `GlassTableCell` | `{ numeric?: boolean }` | — | A cell (`<td>`). `numeric`: right-aligned, figures of one width. |
+| `sortRows` | `(rows, sort, value?) => rows` | — | Your rows in the order `sort` asks for, as a new array. `value(row, key)` reads a value; by default `row[key]`. |
+
+## Accessibility
+
+- A real `<table>` with `<thead>`, `<tbody>` and `<tfoot>`: screen readers move through it by row and column and read each cell with its head. Name it with `aria-label` or a `GlassTableCaption`.
+- A sortable head is a `<button>` inside its `<th>`, reached with Tab and pressed with Enter or Space. The sorted column carries `aria-sort="ascending"` or `"descending"`, which screen readers announce with the head; the arrow beside the label shows the same.
+- A table wider than its sheet scrolls sideways inside it, with the wheel, a trackpad, touch or the arrow keys once something in it has focus.
+- The glass canvas is `aria-hidden`; only the table is read.
+
+Source: https://onemorethink.dev/docs/table
+
 # RangeSlider
 
 > A range slider with a glass thumb: a small pill at rest that opens into a wide lens while you hold it.
@@ -1850,6 +2184,144 @@ const popup = useGlassPopup()
 - Without WebGL2 it is a plain frosted list.
 
 Source: https://onemorethink.dev/docs/select
+
+# GlassInput
+
+> A text field made of glass, with a label above it. The page bends at its rim while what you type stays sharp on top; as a search field it brings a magnifier and a clear button.
+
+```tsx
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+// A month of spending as flat bars, rising, and a search field laid across them: the bars bend at
+// the field's rim and the words stay sharp on the glass. The field sits 14px below the middle
+// (under its label), where the bars are centred. The first three are shorter than the field, so the label stays clear of them.
+const bars = [
+  { height: 40, colour: '#0a84ff' },
+  { height: 32, colour: '#ff6b3d' },
+  { height: 40, colour: '#30d158' },
+  { height: 118, colour: '#bf5af2' },
+  { height: 150, colour: '#ffd60a' },
+  { height: 196, colour: '#ff375f' },
+  { height: 164, colour: '#64d2ff' },
+  { height: 220, colour: '#ff9f0a' },
+  { height: 180, colour: '#5e5ce6' },
+]
+
+export default function Demo() {
+  return (
+    <div className="relative isolate flex h-80 w-full max-w-xl items-center justify-center">
+      <div aria-hidden className="absolute top-[calc(50%+14px)] left-1/2 -z-10 flex h-56 -translate-x-1/2 -translate-y-1/2 items-center gap-2.5">
+        {bars.map((bar, i) => (
+          <span key={i} className="w-7 shrink-0 rounded-full" style={{ height: bar.height, background: bar.colour }} />
+        ))}
+      </div>
+      <GlassInput label="Merchant" type="search" placeholder="Search merchants" className="w-72" />
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- A search box over a list or a table: `type="search"` adds a magnifier and a clear button.
+- A line of text in a form (a name, an email, a URL), with a label and a description: the value is submitted under `name`.
+- A filter row beside a Select: the two are the same height and the same glass.
+
+**Not for**
+
+- Picking from a known list of values: use Select.
+- Several paragraphs of text: a single line is all it holds.
+- A long form of fields on one page: glass is for the one field people come for, plain fields read faster in bulk.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/input.json
+```
+
+> The behaviour (the label, description and form wiring, the clear button) comes from UI SDK, so Input needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+
+const [query, setQuery] = useState('')
+
+<GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+
+<GlassInput label="Email" type="email" name="email" required description="We send the receipt here." />
+```
+
+The field wears Button's clear glass, the same as Select's button, but it holds still under the pointer: it is a surface you write on, not a button. The text, the caret, the placeholder and the selection are the page's own, drawn over the glass, so they stay sharp, and they follow the glass's tone: dark on light glass, white on dark. The glass is clear, so it needs something behind it to bend.
+
+### A filter row beside a Select
+
+```tsx
+import { useState } from 'react'
+
+import { GlassInput } from '@/components/liquid-glass/glass-input'
+import { GlassSelect } from '@/components/liquid-glass/glass-select'
+
+const categories = [
+  { value: 'all', label: 'All categories' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'meals', label: 'Meals' },
+  { value: 'software', label: 'Software' },
+]
+
+const tiles = ['#ff6b3d', '#ffd60a', '#30d158', '#64d2ff', '#0a84ff', '#5e5ce6', '#bf5af2', '#ff375f', '#ff9f0a', '#30d158', '#0a84ff', '#ffd60a']
+
+// A filter row: the search field and a Select are the same height and the same glass, so they
+// line up. Behind them, one band of flat colour tiles, a little taller than the fields and centred
+// on them, so the labels above stay on the page's own colour.
+export default function Demo() {
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<string | null>('all')
+  return (
+    <div className="flex min-h-80 w-full max-w-2xl flex-col items-center justify-center gap-8 py-10">
+      <div className="relative isolate flex flex-wrap items-end justify-center gap-3">
+        <div aria-hidden className="absolute -inset-x-16 -bottom-1 -z-10 flex h-14 justify-center gap-2 overflow-hidden">
+          {tiles.map((colour, i) => (
+            <span key={i} className="size-14 shrink-0 rounded-2xl" style={{ background: colour }} />
+          ))}
+        </div>
+        <GlassInput label="Merchant" type="search" placeholder="Search merchants" value={query} onValueChange={setQuery} />
+        <GlassSelect label="Category" options={categories} value={category} onValueChange={setCategory} className="w-48" />
+      </div>
+      <p className="text-[13px] font-medium text-neutral-600 tabular-nums dark:text-neutral-400">
+        {query ? `Looking for “${query}”` : 'Every merchant'} · {categories.find((c) => c.value === category)?.label ?? 'All categories'}
+      </p>
+    </div>
+  )
+}
+```
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | — | The label above the field, tied to it. Leave it out only with an `aria-label`. |
+| `description` | `ReactNode` | — | A line under the field, read out as its description. |
+| `type` | `'text' \| 'search' \| 'email' \| 'url' \| 'tel' \| 'password' \| 'number'` | `'text'` | The native input type. `search` adds a magnifier and a clear button that shows while there is text. |
+| `value` | `string` | — | The text (controlled). |
+| `defaultValue` | `string` | — | The starting text when the field keeps its own state. A form reset returns here. |
+| `onValueChange` | `(value: string, details) => void` | — | Called with the new text and why it changed (`details.reason`: typing, the clear button, a reset). |
+| `icon` | `ReactNode` | — | An icon at the start. A search field has a magnifier unless you give one. |
+| `clearLabel` | `string` | `'Clear'` | The clear button's name for screen readers. |
+| `name` | `string` | — | Submits the text with a form under this name. |
+| `disabled` | `boolean` | `false` | Dimmed, not editable and left out of the form. |
+| `tint` | `number` | `0.6` | How much tint covers the backdrop (0–1). |
+| `blur` | `number` | `0` | Frosts what the glass shows, in px like CSS `blur()`. |
+| `className` | `string` | — | Classes for the field (label, glass and description); it is 16rem wide by default. |
+| `...` | `input props` | — | `placeholder`, `required`, `autoComplete`, `aria-label` and any other native input prop go to the input. |
+
+## Accessibility
+
+- A native `<input>`, named by `label` and described by `description`; pressing the label or the magnifier focuses it.
+- The clear button is a real button with its own name (`clearLabel`): it empties the field and gives focus back to it.
+- Focus draws a blue outline around the whole glass; a focused clear button draws its own.
+- Without WebGL2 it is a plain frosted field.
+
+Source: https://onemorethink.dev/docs/input
 
 # GlassButtonGroup
 
@@ -3021,3 +3493,339 @@ Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any co
 - With reduced motion the menu opens and closes at once. Without WebGL2 it is a plain frosted list.
 
 Source: https://onemorethink.dev/docs/menu
+
+# GlassDatePicker
+
+> A date field of glass. Type a date in the page's language, or press the calendar and a month swells out of the whole field as one body of glass with it. The day chosen is circled, and the value is a plain `YYYY-MM-DD` date.
+
+```tsx
+import { useState } from 'react'
+
+import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+/** A timeline behind the glass: each bar a span of days, in its own flat colour. */
+const BARS = [
+  { left: '4%', width: '38%', top: 0, color: 'bg-orange-400' },
+  { left: '30%', width: '44%', top: 26, color: 'bg-sky-500' },
+  { left: '58%', width: '36%', top: 52, color: 'bg-lime-400' },
+  { left: '12%', width: '30%', top: 78, color: 'bg-fuchsia-500' },
+  { left: '48%', width: '40%', top: 104, color: 'bg-amber-300' },
+]
+
+// A From and To pair: each field holds a plain YYYY-MM-DD date, and each keeps the other
+// honest (From can't pass To, To can't come before From). Type a date in the page's language
+// and press Enter, or press the calendar: the month swells out of the whole field as one body
+// of glass, and the arrow keys walk the days. Behind it, a timeline of flat colour to bend.
+export default function Demo() {
+  const [from, setFrom] = useState<string | null>('2026-11-02')
+  const [to, setTo] = useState<string | null>('2026-11-27')
+  return (
+    <div className="relative isolate flex w-full max-w-xl flex-col items-center gap-5 py-8">
+      {/* From the fields' top edge down, clear of their labels. */}
+      <div aria-hidden className="absolute inset-x-0 top-[3.75rem] -z-10 h-32">
+        {BARS.map((b) => (
+          <span key={b.top} className={`absolute h-5 rounded-full ${b.color}`} style={{ left: b.left, width: b.width, top: b.top }} />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-end justify-center gap-3">
+        <GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} className="w-52" />
+        <GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} className="w-52" />
+      </div>
+      <output className="rounded-full bg-white/70 px-3 py-1 font-mono text-xs text-neutral-900 dark:bg-neutral-900/70 dark:text-white">
+        {from ?? '…'} → {to ?? '…'}
+      </output>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- One date in a form: a due date, a birthday, the day of a payment.
+- Two of them side by side for a From and To pair, each keeping the other in bounds with `min` and `max`.
+
+**Not for**
+
+- Picking one of a few named options (Today, This week): use Select or Tabs.
+- A time of day: this holds a date only.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/date-picker.json
+```
+
+> The behaviour (reading a typed date, the calendar's keyboard, focus, positioning, forms, ARIA) comes from UI SDK, so Date Picker needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+const [from, setFrom] = useState<string | null>(null)
+const [to, setTo] = useState<string | null>(null)
+
+<GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} />
+<GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} />
+// from, to: "2026-11-02", "2026-11-27", or null
+```
+
+Type a date and press Enter or leave the field: it reads the order of the page's language (11/02/2026 in English, 02.11.2026 in Turkish), ISO dates, digits without separators and month names, and writes the date back in that format. While the field is empty it shows the format to type. Text that is not a date, or a date past `min` or `max`, stays as typed, is marked invalid and leaves the value as it was. Press the calendar and the month swells out of the whole field, held on by a neck that stretches and snaps, as Select's list does; closing plays it backwards. The field wears Button's glass, the calendar Card's frost, and the day chosen is circled in the surface's ink.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | — | The field's label, a real `<label>` tied to the input. |
+| `value` | `string \| null` | — | The date (controlled), `YYYY-MM-DD`. `null` = none. |
+| `defaultValue` | `string \| null` | — | The starting date when the field keeps its own state. |
+| `onValueChange` | `(value: string \| null) => void` | — | Called with the new date, `YYYY-MM-DD`, when one is picked or a typed one is committed; `null` once the field is emptied. |
+| `min / max` | `string` | — | The earliest and latest dates that can be typed or picked, `YYYY-MM-DD`. The keys and the month steps stop there. |
+| `unavailable` | `DateMatchers` | — | Dates that can't be picked: ISO dates, `{ from, to }`, `{ weekday: [0, 6] }` for weekends, `{ before }`, `{ after }` or a function. They stay focusable and are struck through. |
+| `placeholder` | `string` | — | Shown while the field is empty. Defaults to the format to type, in the page's language. |
+| `name` | `string` | — | Submits the date with a form under this name, as `YYYY-MM-DD`. |
+| `required / disabled` | `boolean` | `false` | `required` keeps an empty field from submitting its form. `disabled` dims it and nothing can be typed or picked. |
+| `locale` | `string` | — | The language of the format and the month and day names. Defaults to the page's `lang`. |
+| `labels` | `{ open?: string; previous?: string; next?: string }` | — | What screen readers hear for the calendar button and the month steps, in your language. English by default. |
+| `className` | `string` | — | Classes for the field (label and input); it is 16rem wide by default. |
+
+## Accessibility
+
+- A text input named by `label` and described by the format to type, with a button that opens a dialog holding the month as a `grid` (the WAI-ARIA date picker dialog). The button is named by the date chosen.
+- In the calendar the arrow keys move a day or a week, Home and End go to the week's ends, Page Up and Page Down turn the month (with Shift, the year), Enter or Space picks the day and Escape closes and returns focus.
+- Text that is not a date sets `aria-invalid` and the field's edge turns red; its form won't submit until it is a date again or empty.
+- With reduced motion the calendar opens and closes at once. Without WebGL2 it is a plain frosted field and calendar.
+
+Source: https://onemorethink.dev/docs/date-picker
+
+# GlassToaster
+
+> The short message that rises after an action, such as "Saved" or "Could not refresh", on a pane of frosted glass. It stays a few seconds and goes; several gather into a stack that fans out under the pointer.
+
+```tsx
+import { Download, RefreshCw, Bookmark } from 'lucide-react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+
+import { GlassButton } from '@/components/liquid-glass'
+import { GlassToaster, createToaster } from '@/components/liquid-glass/glass-toast'
+
+// A month of prices as bars of flat colour, and the three things a dashboard says afterwards:
+// Refresh (a loading toast that turns into its result), Save mark (a plain toast with Undo) and
+// Export (an error with Retry). Press them a few times: the toasts gather into a stack over the
+// bars, fan out under the pointer, and go after four seconds.
+const bars = [38, 52, 46, 61, 57, 70, 64, 78, 72, 85, 80, 92, 88, 74, 82, 96]
+const colours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2']
+
+const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+export default function Demo() {
+  // In your app: one <GlassToaster /> near the root, and `toast` from the same file. Here the
+  // demo keeps a queue of its own, so its toasts never mix with another demo's.
+  const [toast] = useState(() => createToaster({ duration: 4000 }))
+  useEffect(() => () => void toast.dismiss(), [toast])
+  // The toasts rise over this stage (CSS anchor positioning); where a browser lacks it, they
+  // sit at the bottom of the window, as they would in an app.
+  const anchor = `--toasts-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  const [exports, setExports] = useState(0)
+
+  const refresh = () =>
+    toast.promise(() => wait(1400), { loading: 'Refreshing prices…', success: 'Prices refreshed', error: 'Could not refresh' })
+  const save = () =>
+    toast('Mark saved', {
+      description: 'AAPL at $231.40',
+      action: { label: 'Undo', onAction: () => void toast('Mark removed') },
+    })
+  // Every other export fails, so both outcomes show.
+  const exportCsv = () => {
+    const fails = exports % 2 === 0
+    setExports((n) => n + 1)
+    if (!fails) return void toast.success('Exported', { description: 'prices-november.csv' })
+    toast.error('Could not export', {
+      description: 'The file server did not answer.',
+      action: { label: 'Retry', onAction: () => void toast.success('Exported', { description: 'prices-november.csv' }) },
+    })
+  }
+
+  return (
+    <div className="relative isolate flex h-[30rem] w-full max-w-xl flex-col items-center overflow-hidden pt-14" style={{ anchorName: anchor } as CSSProperties}>
+      {/* The backdrop the glass bends: flat bars and a price, plain DOM. */}
+      <div aria-hidden className="absolute inset-x-6 bottom-0 -z-10 flex h-64 items-end gap-1.5">
+        {bars.map((height, i) => (
+          <span key={i} className="flex-1 rounded-t-md" style={{ height: `${height}%`, background: colours[i % colours.length] }} />
+        ))}
+      </div>
+      <p aria-hidden className="text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$48,210.32</p>
+      <p aria-hidden className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Portfolio · November</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+        <GlassButton icon={<RefreshCw />} onClick={refresh}>
+          Refresh
+        </GlassButton>
+        <GlassButton icon={<Bookmark />} onClick={save}>
+          Save mark
+        </GlassButton>
+        <GlassButton icon={<Download />} onClick={exportCsv}>
+          Export
+        </GlassButton>
+      </div>
+      <GlassToaster
+        toaster={toast}
+        align="center"
+        style={{ positionAnchor: anchor, bottom: 'anchor(bottom)', left: 'anchor(center)' } as CSSProperties}
+      />
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- Saying what an action did once it is done: Saved, Exported, Prices refreshed.
+- An error the person can carry on past, with one way to answer it: Retry, Undo, View.
+- Something slow that runs in the background: a loading toast that turns into its result.
+
+**Not for**
+
+- A question that needs an answer before going on: use a dialog.
+- Something that must stay on screen: a toast goes by itself. Show it on the page, or give the toast `duration: Infinity`.
+- A label on a control: use Badge.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/toast.json
+```
+
+> The behaviour (the queue and its timers, the stack, swiping, the keyboard, and how each toast is announced to screen readers) comes from UI SDK, so Toast needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+Place `GlassToaster` once, near your app's root, and call `toast()` from anywhere: a click handler, a fetch, code outside React. Both come from `glass-toast` (and from the index).
+
+```tsx
+import { GlassToaster, toast } from '@/components/liquid-glass/glass-toast'
+
+// Once, near the root.
+<GlassToaster />
+
+// Plain, with a line under it and one action.
+toast('Mark saved', {
+  description: 'AAPL at $231.40',
+  action: { label: 'Undo', onAction: undoMark },
+})
+
+// An error: red-tinted glass and a red mark, announced at once.
+toast.error('Could not refresh', { action: { label: 'Retry', onAction: refresh } })
+
+// Loading, then its result, in the same toast.
+toast.promise(refresh, {
+  loading: 'Refreshing prices…',
+  success: 'Prices refreshed',
+  error: 'Could not refresh',
+})
+```
+
+## Examples
+
+### After Refresh, Save and Export
+
+```tsx
+import { Download, RefreshCw, Bookmark } from 'lucide-react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+
+import { GlassButton } from '@/components/liquid-glass'
+import { GlassToaster, createToaster } from '@/components/liquid-glass/glass-toast'
+
+// A month of prices as bars of flat colour, and the three things a dashboard says afterwards:
+// Refresh (a loading toast that turns into its result), Save mark (a plain toast with Undo) and
+// Export (an error with Retry). Press them a few times: the toasts gather into a stack over the
+// bars, fan out under the pointer, and go after four seconds.
+const bars = [38, 52, 46, 61, 57, 70, 64, 78, 72, 85, 80, 92, 88, 74, 82, 96]
+const colours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2']
+
+const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+export default function Demo() {
+  // In your app: one <GlassToaster /> near the root, and `toast` from the same file. Here the
+  // demo keeps a queue of its own, so its toasts never mix with another demo's.
+  const [toast] = useState(() => createToaster({ duration: 4000 }))
+  useEffect(() => () => void toast.dismiss(), [toast])
+  // The toasts rise over this stage (CSS anchor positioning); where a browser lacks it, they
+  // sit at the bottom of the window, as they would in an app.
+  const anchor = `--toasts-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  const [exports, setExports] = useState(0)
+
+  const refresh = () =>
+    toast.promise(() => wait(1400), { loading: 'Refreshing prices…', success: 'Prices refreshed', error: 'Could not refresh' })
+  const save = () =>
+    toast('Mark saved', {
+      description: 'AAPL at $231.40',
+      action: { label: 'Undo', onAction: () => void toast('Mark removed') },
+    })
+  // Every other export fails, so both outcomes show.
+  const exportCsv = () => {
+    const fails = exports % 2 === 0
+    setExports((n) => n + 1)
+    if (!fails) return void toast.success('Exported', { description: 'prices-november.csv' })
+    toast.error('Could not export', {
+      description: 'The file server did not answer.',
+      action: { label: 'Retry', onAction: () => void toast.success('Exported', { description: 'prices-november.csv' }) },
+    })
+  }
+
+  return (
+    <div className="relative isolate flex h-[30rem] w-full max-w-xl flex-col items-center overflow-hidden pt-14" style={{ anchorName: anchor } as CSSProperties}>
+      {/* The backdrop the glass bends: flat bars and a price, plain DOM. */}
+      <div aria-hidden className="absolute inset-x-6 bottom-0 -z-10 flex h-64 items-end gap-1.5">
+        {bars.map((height, i) => (
+          <span key={i} className="flex-1 rounded-t-md" style={{ height: `${height}%`, background: colours[i % colours.length] }} />
+        ))}
+      </div>
+      <p aria-hidden className="text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$48,210.32</p>
+      <p aria-hidden className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Portfolio · November</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+        <GlassButton icon={<RefreshCw />} onClick={refresh}>
+          Refresh
+        </GlassButton>
+        <GlassButton icon={<Bookmark />} onClick={save}>
+          Save mark
+        </GlassButton>
+        <GlassButton icon={<Download />} onClick={exportCsv}>
+          Export
+        </GlassButton>
+      </div>
+      <GlassToaster
+        toaster={toast}
+        align="center"
+        style={{ positionAnchor: anchor, bottom: 'anchor(bottom)', left: 'anchor(center)' } as CSSProperties}
+      />
+    </div>
+  )
+}
+```
+
+A toast comes up from the edge and fades in, stays four seconds here (five by default) and fades out. A new one comes in front and pushes the last one back, smaller, with only its glass peeking out above; three show at once (`maxVisible`) and the rest wait their turn, their timers stopped. Under the pointer or focus the stack fans out, each toast at its own height, and every timer waits. Swipe a toast down or towards the side it sits on to send it away; a short swipe springs back. This example keeps the stack over its own stage with CSS anchor positioning (`position-anchor` on the region); in an app it sits at the window's edge.
+
+Each toast is Card's glass: the rim pulls what is behind towards the middle, a 5 px frost (`blur`) and a 70% tint (`tint`), white on a light page and black on a dark one, with a soft shadow. It is a surface, so it takes no light of its own; its action and its × light it where they are pressed. The glass follows the toast as the stack moves and as it is swiped, so it always bends what lies behind it now. An error is the same glass tinted red, pale on a light page and deep on a dark one, with a red mark; a success has a check that draws itself in, a loading toast a turning ring, a warning an amber mark. The type also reaches CSS as `data-type` on each toast.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `toast(title, options?)` | `(title, options) => string` | — | Shows a toast and returns its id. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set its type; `toast.promise(promise, { loading, success, error })` turns a loading toast into its result. `toast.update(id, options)` and `toast.dismiss(id?)` change or close one, or every one. |
+| `options.description` | `ReactNode` | — | A line under the title. |
+| `options.action` | `{ label, onAction?, href? }` | — | One button, like Undo or Retry. A promise from `onAction` keeps the toast open, the button dimmed, until it settles; `href` makes it a link. |
+| `options.duration` | `number` | `5000` | How long it shows, in ms, while nothing pauses it. `Infinity` keeps it until it is dismissed. |
+| `options.dismissible` | `boolean` | `true` | `false` takes away its ×, the swipe and Escape; its timer still closes it. |
+| `options.priority` | `'polite' \| 'assertive'` | — | How screen readers announce it. Errors are assertive, the rest polite. |
+| `side / align` | `'bottom' \| 'top' / 'start' \| 'center' \| 'end'` | `'bottom' / 'end'` | On `GlassToaster`: where the stack sits. Start and end follow the writing direction. |
+| `maxVisible / expanded` | `number / boolean` | `3 / false` | How many toasts show at once, and whether the stack stays fanned out. |
+| `toaster` | `Toaster` | — | A queue of its own, from `createToaster()`. Left out, the region shows the toasts of the shared `toast`. |
+| `tint / blur` | `number` | `0.7 / 5` | The glass, as on Card: how much tint covers the backdrop (0–1), and its frost in px. |
+| `closeLabel / aria-label` | `string` | `'Dismiss' / 'Notifications'` | The × button's name and the region's, in your page's language. |
+| `shortcut` | `string \| null` | `'F6'` | The key that moves focus into the stack and back. `null` turns it off. |
+| `style / className` | `CSS` | — | For the region. Its size and spacing are CSS variables: `--glass-toast-width` (22rem), `--glass-toast-offset` from the edge (1rem), `--glass-toast-gap` (8px) and `--glass-toast-peek` (10px). |
+
+## Accessibility
+
+- Each toast is announced once through live regions, without taking focus: politely by default, at once for an error. The visible stack is not itself a live region, so nothing is read twice.
+- While it holds toasts the stack is a landmark named Notifications (`aria-label` to name it in your language). F6 moves focus to the newest toast and back; Tab walks the toasts and their buttons; Escape dismisses the focused one.
+- Timers wait while the pointer or focus is in the stack and while the page is hidden, so a toast is never gone before it can be read. Keep messages short; give one that must stay `duration: Infinity`.
+- With reduced motion toasts only fade, and the glass holds still. Without WebGL2 each is a plain frosted panel.
+
+Source: https://onemorethink.dev/docs/toast

@@ -1860,6 +1860,29 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '2.0.3',
+    date: '2026-11-25',
+    title: t('Card: far less to paint, upload and copy on every frame.', 'Card: her karede boyanan, yüklenen ve kopyalanan çok daha az.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'A Card kept room under its glass for a drop shadow it does not cast (its shadow is CSS): close to half of its canvas was empty, and was still painted, uploaded, shaded and copied on every frame. Glass that casts no shadow now keeps no room for one. The rows that went were all empty.',
+          'Card, camının altında atmadığı bir gölge için yer tutuyordu (gölgesi CSS): tuvalinin yarıya yakını boştu ve yine de her karede boyanıyor, yükleniyor, gölgelendiriliyor ve kopyalanıyordu. Gölge atmayan cam artık gölge için yer tutmuyor. Giden satırların hepsi boştu.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'Glass frosted all over never reads the page at full size: every reading is a few mip levels up. The page is now painted that much smaller to begin with (a quarter or a sixteenth of the pixels), so there is that much less to paint, upload and build mipmaps from, which counts most on a phone. A 176 px live card on a double-density screen sent 256,000 pixels of the page to the GPU on every frame and now sends 11,000. Against the full picture the glass differs by 3 levels in 255 at most.',
+          'Baştan sona buzlu cam, sayfayı hiçbir zaman tam boyutta okumaz: her okuma birkaç mip seviyesi yukarıdandır. Sayfa artık baştan o kadar küçük boyanıyor (piksellerin dörtte biri ya da on altıda biri); boyanacak, yüklenecek ve mipmap\'i kurulacak o kadar az şey kalıyor. Bu en çok telefonda fark eder. Çift yoğunluklu ekranda 176 px\'lik canlı bir kart her karede sayfanın 256.000 pikselini GPU\'ya yolluyordu, şimdi 11.000. Tam resimle karşılaştırıldığında cam 255 üzerinden en çok 3 seviye farklı.',
+        ),
+      },
+    ],
+  },
+  {
     version: '2.0.2',
     date: '2026-11-25',
     title: t('The engine does less: nothing at rest, and far less for the GPU.', 'Motor daha az iş yapıyor: boştayken hiç, çizerken GPU\'ya çok daha az.'),

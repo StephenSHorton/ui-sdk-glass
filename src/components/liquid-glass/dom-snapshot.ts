@@ -531,10 +531,12 @@ let scratch: HTMLCanvasElement | undefined
 function blurBackdrop(ctx: CanvasRenderingContext2D, box: Box, radius: number, blurPx: number) {
   const matrix = ctx.getTransform()
   const scale = matrix.a
+  // (A context may be scaled a hair differently each way: the engine fits a small picture to its canvas.)
+  const scaleY = matrix.d
   const left = Math.max(0, Math.floor(box.x * scale + matrix.e))
-  const top = Math.max(0, Math.floor(box.y * scale + matrix.f))
+  const top = Math.max(0, Math.floor(box.y * scaleY + matrix.f))
   const w = Math.min(ctx.canvas.width, Math.ceil((box.x + box.w) * scale + matrix.e)) - left
-  const h = Math.min(ctx.canvas.height, Math.ceil((box.y + box.h) * scale + matrix.f)) - top
+  const h = Math.min(ctx.canvas.height, Math.ceil((box.y + box.h) * scaleY + matrix.f)) - top
   if (w < 1 || h < 1) return
   const pad = Math.ceil(blurPx * scale * 3)
   scratch ??= document.createElement('canvas')

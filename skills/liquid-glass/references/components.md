@@ -1201,9 +1201,9 @@ function Row({ shift, seconds, reverse = false }: { shift: number; seconds: numb
 }
 
 // The rows fade in at both sides through a mask: an SVG ramp, clear at the edges and solid
-// from 16% in, stretched over the whole width.
+// from 10% in, stretched over the whole width (narrow enough to stay clear of the cards).
 const FADE = `url("data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 1" preserveAspectRatio="none"><linearGradient id="f"><stop offset="0" stop-opacity="0"/><stop offset=".16"/><stop offset=".84"/><stop offset="1" stop-opacity="0"/></linearGradient><rect width="100" height="1" fill="url(#f)"/></svg>',
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 1" preserveAspectRatio="none"><linearGradient id="f"><stop offset="0" stop-opacity="0"/><stop offset=".1"/><stop offset=".9"/><stop offset="1" stop-opacity="0"/></linearGradient><rect width="100" height="1" fill="url(#f)"/></svg>',
 )}")`
 const fade: CSSProperties = {
   maskImage: FADE,

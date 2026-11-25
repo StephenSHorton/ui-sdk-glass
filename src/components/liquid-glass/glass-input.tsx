@@ -46,7 +46,7 @@ export type GlassInputProps = {
 // The look before the glass draws (first paint, and the permanent look without WebGL2): GlassSelect's
 // button. Text follows the glass's own tone once it draws, so it reads on any backdrop.
 const fallback =
-  'border border-black/10 bg-white/60 text-neutral-900 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900'
+  'border border-black/10 bg-white/60 text-neutral-900 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900'
 
 // The focus ring is an outline on the glass, not a ring: once the glass draws, the host's own
 // box-shadow is cleared (GLASS_CSS), and a ring is a box-shadow. A focused clear button keeps its own.
@@ -55,7 +55,7 @@ const focus = 'has-[input:focus-visible]:outline-2 has-[input:focus-visible]:out
 // Placeholder, caret and selection follow the text colour, which follows the glass's tone.
 // The native search field's own clear button is hidden: InputClear is the one.
 const field =
-  'h-full min-w-0 flex-1 bg-transparent text-inherit outline-none caret-current placeholder:text-current/60 selection:bg-[#3291FF]/35 selection:text-current disabled:cursor-not-allowed [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none'
+  'h-full min-w-0 flex-1 bg-transparent text-inherit outline-none caret-current placeholder:text-current/65 selection:bg-[#3291FF]/35 selection:text-current disabled:cursor-not-allowed [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none'
 
 const magnifier = (
   <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

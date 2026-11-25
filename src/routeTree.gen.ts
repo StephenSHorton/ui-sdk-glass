@@ -23,6 +23,7 @@ import { Route as Char123LocaleChar125PopoverLabRouteImport } from './routes/{-$
 import { Route as Char123LocaleChar125PopupLabRouteImport } from './routes/{-$locale}/popup-lab'
 import { Route as Char123LocaleChar125PullLabRouteImport } from './routes/{-$locale}/pull-lab'
 import { Route as Char123LocaleChar125SelectLabRouteImport } from './routes/{-$locale}/select-lab'
+import { Route as Char123LocaleChar125TableLabRouteImport } from './routes/{-$locale}/table-lab'
 import { Route as Char123LocaleChar125TuneRouteImport } from './routes/{-$locale}/tune'
 import { Route as Char123LocaleChar125DocsIndexRouteImport } from './routes/{-$locale}/docs/index'
 import { Route as Char123LocaleChar125DocsSlugRouteImport } from './routes/{-$locale}/docs/$slug'
@@ -110,6 +111,12 @@ const Char123LocaleChar125SelectLabRoute =
     path: '/select-lab',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125TableLabRoute =
+  Char123LocaleChar125TableLabRouteImport.update({
+    id: '/table-lab',
+    path: '/table-lab',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125TuneRoute =
   Char123LocaleChar125TuneRouteImport.update({
     id: '/tune',
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/popup-lab': typeof Char123LocaleChar125PopupLabRoute
   '/{-$locale}/pull-lab': typeof Char123LocaleChar125PullLabRoute
   '/{-$locale}/select-lab': typeof Char123LocaleChar125SelectLabRoute
+  '/{-$locale}/table-lab': typeof Char123LocaleChar125TableLabRoute
   '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/{-$locale}/popup-lab': typeof Char123LocaleChar125PopupLabRoute
   '/{-$locale}/pull-lab': typeof Char123LocaleChar125PullLabRoute
   '/{-$locale}/select-lab': typeof Char123LocaleChar125SelectLabRoute
+  '/{-$locale}/table-lab': typeof Char123LocaleChar125TableLabRoute
   '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/{-$locale}/popup-lab': typeof Char123LocaleChar125PopupLabRoute
   '/{-$locale}/pull-lab': typeof Char123LocaleChar125PullLabRoute
   '/{-$locale}/select-lab': typeof Char123LocaleChar125SelectLabRoute
+  '/{-$locale}/table-lab': typeof Char123LocaleChar125TableLabRoute
   '/{-$locale}/tune': typeof Char123LocaleChar125TuneRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/docs/$slug': typeof Char123LocaleChar125DocsSlugRoute
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/popup-lab'
     | '/{-$locale}/pull-lab'
     | '/{-$locale}/select-lab'
+    | '/{-$locale}/table-lab'
     | '/{-$locale}/tune'
     | '/{-$locale}/'
     | '/{-$locale}/docs/$slug'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/popup-lab'
     | '/{-$locale}/pull-lab'
     | '/{-$locale}/select-lab'
+    | '/{-$locale}/table-lab'
     | '/{-$locale}/tune'
     | '/{-$locale}'
     | '/{-$locale}/docs/$slug'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/popup-lab'
     | '/{-$locale}/pull-lab'
     | '/{-$locale}/select-lab'
+    | '/{-$locale}/table-lab'
     | '/{-$locale}/tune'
     | '/{-$locale}/'
     | '/{-$locale}/docs/$slug'
@@ -347,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125SelectLabRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/table-lab': {
+      id: '/{-$locale}/table-lab'
+      path: '/table-lab'
+      fullPath: '/{-$locale}/table-lab'
+      preLoaderRoute: typeof Char123LocaleChar125TableLabRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/tune': {
       id: '/{-$locale}/tune'
       path: '/tune'
@@ -400,6 +420,7 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125PopupLabRoute: typeof Char123LocaleChar125PopupLabRoute
   Char123LocaleChar125PullLabRoute: typeof Char123LocaleChar125PullLabRoute
   Char123LocaleChar125SelectLabRoute: typeof Char123LocaleChar125SelectLabRoute
+  Char123LocaleChar125TableLabRoute: typeof Char123LocaleChar125TableLabRoute
   Char123LocaleChar125TuneRoute: typeof Char123LocaleChar125TuneRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
 }
@@ -419,6 +440,7 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125PopupLabRoute: Char123LocaleChar125PopupLabRoute,
     Char123LocaleChar125PullLabRoute: Char123LocaleChar125PullLabRoute,
     Char123LocaleChar125SelectLabRoute: Char123LocaleChar125SelectLabRoute,
+    Char123LocaleChar125TableLabRoute: Char123LocaleChar125TableLabRoute,
     Char123LocaleChar125TuneRoute: Char123LocaleChar125TuneRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
   }

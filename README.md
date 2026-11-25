@@ -1,16 +1,24 @@
-# Liquid Glass UI
+# ui-sdk-glass
 
-**Docs:** https://onemorethink.dev · [Türkçe](https://onemorethink.dev/tr) · **For AI:** [llms.txt](https://onemorethink.dev/llms.txt)
+**ui-sdk-glass is Stephen Horton's fork of [Liquid Glass UI](https://github.com/bilalgursen/liquid-glass) by Bilal Gürşen.** The original kit, its engine, its components and its docs ([onemorethink.dev](https://onemorethink.dev)) are Bilal's work, released under the MIT license; this fork keeps that license and its copyright line (see `LICENSE`).
 
-Glass components for React, drawn in WebGL2, with behaviour from UI SDK. Each is named for the one thing it does: **press**, **merge**, **travel**, **flow**, **drag**, **hold**. Copy a file, get exactly what the demo shows. MIT.
+Glass components for React, drawn in WebGL2, with behaviour from [UI SDK](https://github.com/vercel-labs/ui). Each is named for the one thing it does: **press**, **merge**, **travel**, **flow**, **drag**, **hold**. Copy a file, get exactly what the demo shows.
+
+## What this fork adds
+
+- **The newest UI SDK beta.** `@ui-sdk/core` and `@ui-sdk/react` are pinned to `0.1.0-beta.17` (the original pins `0.1.0-beta.13`), the version used by the finance dashboard this fork is built for.
+- **Components for a finance dashboard.** The fork exists to add the components a whole glass dashboard needs; they land here as they are built.
+
+The docs site at onemorethink.dev, the `/r/…` registry and the `liquid-glass` agent skill belong to the original project and describe the original's files, not this fork's.
 
 ## Install
 
-```sh
-npx shadcn@latest add https://onemorethink.dev/r/liquid-glass.json
-```
+Copy `src/components/liquid-glass/` from this repo into your project as `components/liquid-glass/`. Requirements: React 19, Tailwind CSS v4, an `@/` alias. Components marked "Needs …" below also need those packages; for UI SDK use the exact versions this repo pins:
 
-or copy `src/components/liquid-glass/` into your project as `components/liquid-glass/`. Requirements: React 19, Tailwind CSS v4, an `@/` alias.
+```sh
+pnpm add @ui-sdk/core@0.1.0-beta.17 @ui-sdk/react@0.1.0-beta.17
+pnpm add three   # only for RangeSlider, Switch and Checkbox
+```
 
 ```tsx
 import { GlassButton } from '@/components/liquid-glass'
@@ -41,17 +49,11 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Stretch | `GlassSelect` | Select whose list swells out of its button as one body of glass, on a neck that stretches and snaps. Ships `GlassPopup` for your own menu or popover. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 
-No npm dependencies, except the components marked "Needs …". Every component has its own docs page with live examples, the exact demo source, "use it for / not for", props and an install command.
+No npm dependencies, except the components marked "Needs …". Every component has a page with live examples, the exact demo source, "use it for / not for" and props in this repo's docs site (`pnpm dev`); the original's pages are at onemorethink.dev.
 
 ## AI assistants
 
-Point your assistant at `llms.txt`, or install the skill:
-
-```sh
-npx skills add bilalgursen/liquid-glass
-```
-
-The skill (`skills/liquid-glass/`) tells agents which component to use, how to install it, and to copy files verbatim instead of re-implementing the glass.
+`pnpm build` writes `llms.txt` and `llms-full.txt` into `public/` for this repo's own docs. The `skills/liquid-glass/` skill in this repo is the original project's: it installs from onemorethink.dev and the original GitHub repo, so for this fork tell your agent to copy `src/components/liquid-glass/` from here instead.
 
 ## Develop
 
@@ -65,4 +67,4 @@ See `AGENTS.md` for the repo layout and rules. Deploys to Cloudflare Pages (`.ou
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see `LICENSE`. Copyright (c) 2026 Bilal Abdullah Gürşen, the original author; changes in this fork are released under the same license.

@@ -1438,6 +1438,340 @@ The rim pulls what is behind towards the card's centre, by 6.5% of the viewport,
 
 Source: https://onemorethink.dev/docs/card
 
+# GlassTable
+
+> Rows of data on one large sheet of glass. The sheet is Card's frosted glass, so figures stay readable over any backdrop; inside it is a real HTML table with a header, rows and a totals row, and its column heads sort when pressed.
+
+```tsx
+import { useState } from 'react'
+
+import {
+  GlassTable,
+  GlassTableBody,
+  GlassTableCell,
+  GlassTableFooter,
+  GlassTableHead,
+  GlassTableHeader,
+  GlassTableRow,
+  sortRows,
+  type GlassTableSort,
+} from '@/components/liquid-glass'
+
+// A month's budget on one sheet of glass, over the month itself drawn as a bar chart: flat
+// columns of colour, plain DOM. Press a head to sort by it; press it again to turn it round.
+const budget = [
+  { category: 'Rent', planned: 1850, spent: 1850, colour: '#0a84ff' },
+  { category: 'Groceries', planned: 600, spent: 472.4, colour: '#30d158' },
+  { category: 'Transport', planned: 240, spent: 268.9, colour: '#ff9f0a' },
+  { category: 'Eating out', planned: 300, spent: 341.25, colour: '#ff375f' },
+  { category: 'Utilities', planned: 210, spent: 188.6, colour: '#bf5af2' },
+  { category: 'Software', planned: 120, spent: 96, colour: '#64d2ff' },
+].map((row) => ({ ...row, left: row.planned - row.spent }))
+
+// Heights in px: the taller columns rise above the sheet, the shorter ones stay behind it.
+const bars = [220, 350, 270, 420, 310, 450, 370, 260, 400, 300]
+const barColours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2', '#ffd60a', '#64d2ff', '#ff6b3d', '#5e5ce6', '#30d158']
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+
+export default function Demo() {
+  const [sort, setSort] = useState<GlassTableSort>({ key: 'spent', direction: 'descending' })
+  const total = (key: 'planned' | 'spent' | 'left') => budget.reduce((sum, row) => sum + row[key], 0)
+  return (
+    <div className="relative isolate flex w-full max-w-xl justify-center px-2 pt-28 pb-6">
+      {/* The backdrop: a bar chart of flat columns. Their feet stand behind the sheet, the tallest rise above it. */}
+      <div aria-hidden className="absolute inset-x-0 bottom-12 -z-10 flex items-end justify-center gap-3 overflow-hidden">
+        {bars.map((height, i) => (
+          <span key={i} className="w-9 shrink-0 rounded-t-xl" style={{ height, background: barColours[i] }} />
+        ))}
+      </div>
+
+      <GlassTable aria-label="Budget for November" sort={sort} onSortChange={setSort} className="w-full max-w-[520px]">
+        <GlassTableHeader>
+          <GlassTableRow>
+            <GlassTableHead sortKey="category">Category</GlassTableHead>
+            <GlassTableHead sortKey="planned" numeric>
+              Planned
+            </GlassTableHead>
+            <GlassTableHead sortKey="spent" numeric>
+              Spent
+            </GlassTableHead>
+            <GlassTableHead sortKey="left" numeric>
+              Left
+            </GlassTableHead>
+          </GlassTableRow>
+        </GlassTableHeader>
+        <GlassTableBody>
+          {sortRows(budget, sort).map((row) => (
+            <GlassTableRow key={row.category}>
+              <GlassTableCell className="font-medium">
+                <span className="mr-2.5 inline-block size-2 rounded-full align-middle" style={{ background: row.colour }} />
+                {row.category}
+              </GlassTableCell>
+              <GlassTableCell numeric className="opacity-60">
+                {money.format(row.planned)}
+              </GlassTableCell>
+              <GlassTableCell numeric>{money.format(row.spent)}</GlassTableCell>
+              <GlassTableCell numeric className={row.left < 0 ? 'text-[#d70015] dark:text-[#ff6961]' : ''}>
+                {money.format(row.left)}
+              </GlassTableCell>
+            </GlassTableRow>
+          ))}
+        </GlassTableBody>
+        <GlassTableFooter>
+          <GlassTableRow>
+            <GlassTableCell>Total</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('planned'))}</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('spent'))}</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total('left'))}</GlassTableCell>
+          </GlassTableRow>
+        </GlassTableFooter>
+      </GlassTable>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- The big surface of a dashboard: transactions, months, a budget, a list of expenses.
+- Rows people compare and sort, with a total at the foot.
+
+**Not for**
+
+- A few lines of content in a widget: use Card.
+- Layout. A table is for data with columns, never for placing things side by side.
+- Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/table.json
+```
+
+## Usage
+
+```tsx
+import {
+  GlassTable, GlassTableHeader, GlassTableBody, GlassTableFooter,
+  GlassTableRow, GlassTableHead, GlassTableCell, sortRows, type GlassTableSort,
+} from '@/components/liquid-glass'
+
+const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+
+<GlassTable aria-label="Transactions" sort={sort} onSortChange={setSort} className="w-full">
+  <GlassTableHeader>
+    <GlassTableRow>
+      <GlassTableHead sortKey="date">Date</GlassTableHead>
+      <GlassTableHead>Payee</GlassTableHead>
+      <GlassTableHead sortKey="amount" numeric>Amount</GlassTableHead>
+    </GlassTableRow>
+  </GlassTableHeader>
+  <GlassTableBody>
+    {sortRows(rows, sort).map((r) => (
+      <GlassTableRow key={r.id}>
+        <GlassTableCell>{r.date}</GlassTableCell>
+        <GlassTableCell>{r.payee}</GlassTableCell>
+        <GlassTableCell numeric>{r.amount}</GlassTableCell>
+      </GlassTableRow>
+    ))}
+  </GlassTableBody>
+  <GlassTableFooter>
+    <GlassTableRow>
+      <GlassTableCell colSpan={2}>Total</GlassTableCell>
+      <GlassTableCell numeric>{total}</GlassTableCell>
+    </GlassTableRow>
+  </GlassTableFooter>
+</GlassTable>
+```
+
+The table sorts nothing by itself: a head with a `sortKey` is a button, and pressing it hands you the new sort (`onSortChange`). Sort your rows by it with `sortRows`, which compares numbers and dates by value and text as people read it ("Item 2" before "Item 10"), puts empty values last and leaves your array as it is. A new column starts ascending; pressing the sorted one turns it round. Leave out `sort` and give `defaultSort` to let the table keep the sort itself.
+
+## Examples
+
+### A month of transactions
+
+```tsx
+import { Check, Paperclip } from 'lucide-react'
+import { useState } from 'react'
+
+import {
+  GlassButton,
+  GlassTable,
+  GlassTableBody,
+  GlassTableCell,
+  GlassTableFooter,
+  GlassTableHead,
+  GlassTableHeader,
+  GlassTableRow,
+  GlassTabs,
+  sortRows,
+  type GlassTableSort,
+} from '@/components/liquid-glass'
+
+// A month of transactions at dashboard size: one sheet of glass, two dozen rows, a totals
+// footer. Each row holds glass of its own: tabs used as a segmented control that file the
+// expense as personal or business, and a button that attaches a receipt. Sort by any head and
+// the rows, controls and all, move; the business total follows the tabs. On a narrow screen the
+// table scrolls sideways inside its sheet. Behind it: coins of flat colour and the month's
+// balance in large type, plain DOM.
+type Kind = 'personal' | 'business'
+type Transaction = { id: number; date: string; payee: string; category: string; account: string; amount: number; kind: Kind; receipt: boolean }
+
+const transactions: Transaction[] = [
+  { id: 1, date: '2026-11-24', payee: 'Northwind Coffee', category: 'Eating out', account: 'Debit ··4410', amount: -6.8, kind: 'personal', receipt: false },
+  { id: 2, date: '2026-11-24', payee: 'Cloudframe Hosting', category: 'Software', account: 'Credit ··9021', amount: -48, kind: 'business', receipt: true },
+  { id: 3, date: '2026-11-23', payee: 'Greenleaf Market', category: 'Groceries', account: 'Debit ··4410', amount: -84.32, kind: 'personal', receipt: false },
+  { id: 4, date: '2026-11-22', payee: 'Metro Transit', category: 'Transport', account: 'Debit ··4410', amount: -32.5, kind: 'personal', receipt: false },
+  { id: 5, date: '2026-11-21', payee: 'Acme Design Ltd.', category: 'Income', account: 'Checking ··1187', amount: 4200, kind: 'business', receipt: true },
+  { id: 6, date: '2026-11-21', payee: 'Paper & Pixel', category: 'Office', account: 'Credit ··9021', amount: -129.99, kind: 'business', receipt: false },
+  { id: 7, date: '2026-11-20', payee: 'City Power', category: 'Utilities', account: 'Checking ··1187', amount: -96.4, kind: 'personal', receipt: true },
+  { id: 8, date: '2026-11-19', payee: 'Harbor Books', category: 'Education', account: 'Credit ··9021', amount: -38.75, kind: 'business', receipt: false },
+  { id: 9, date: '2026-11-18', payee: 'Sunrise Bakery', category: 'Eating out', account: 'Debit ··4410', amount: -12.2, kind: 'personal', receipt: false },
+  { id: 10, date: '2026-11-17', payee: 'Fieldnote Studio', category: 'Income', account: 'Checking ··1187', amount: 1350, kind: 'business', receipt: true },
+  { id: 11, date: '2026-11-16', payee: 'Railway Express', category: 'Travel', account: 'Credit ··9021', amount: -214.6, kind: 'business', receipt: false },
+  { id: 12, date: '2026-11-15', payee: 'Greenleaf Market', category: 'Groceries', account: 'Debit ··4410', amount: -61.08, kind: 'personal', receipt: false },
+  { id: 13, date: '2026-11-14', payee: 'Linework Fonts', category: 'Software', account: 'Credit ··9021', amount: -79, kind: 'business', receipt: true },
+  { id: 14, date: '2026-11-13', payee: 'Corner Pharmacy', category: 'Health', account: 'Debit ··4410', amount: -23.45, kind: 'personal', receipt: false },
+  { id: 15, date: '2026-11-12', payee: 'Hilltop Hotel', category: 'Travel', account: 'Credit ··9021', amount: -342, kind: 'business', receipt: false },
+  { id: 16, date: '2026-11-11', payee: 'Streamline Music', category: 'Subscriptions', account: 'Credit ··9021', amount: -10.99, kind: 'personal', receipt: true },
+  { id: 17, date: '2026-11-10', payee: 'Northwind Coffee', category: 'Eating out', account: 'Debit ··4410', amount: -18.6, kind: 'business', receipt: false },
+  { id: 18, date: '2026-11-08', payee: 'Bright Fiber', category: 'Utilities', account: 'Checking ··1187', amount: -65, kind: 'business', receipt: true },
+  { id: 19, date: '2026-11-07', payee: 'Ridgeway Gym', category: 'Health', account: 'Debit ··4410', amount: -45, kind: 'personal', receipt: false },
+  { id: 20, date: '2026-11-05', payee: 'Workbench Co-op', category: 'Office', account: 'Credit ··9021', amount: -275, kind: 'business', receipt: true },
+  { id: 21, date: '2026-11-04', payee: 'Metro Transit', category: 'Transport', account: 'Debit ··4410', amount: -32.5, kind: 'personal', receipt: false },
+  { id: 22, date: '2026-11-03', payee: 'Oakline Rentals', category: 'Rent', account: 'Checking ··1187', amount: -1850, kind: 'personal', receipt: true },
+  { id: 23, date: '2026-11-02', payee: 'Taskboard Pro', category: 'Software', account: 'Credit ··9021', amount: -24, kind: 'business', receipt: false },
+  { id: 24, date: '2026-11-01', payee: 'Acme Design Ltd.', category: 'Income', account: 'Checking ··1187', amount: 2800, kind: 'business', receipt: true },
+]
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', signDisplay: 'exceptZero' })
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** "2026-11-24" → "Nov 24", read from the string itself (no time zone can move the day). */
+const day = (iso: string) => `${months[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`
+
+const coins = [
+  { left: '2%', top: '6%', size: 220, colour: '#ffd60a' },
+  { left: '30%', top: '58%', size: 300, colour: '#0a84ff' },
+  { left: '62%', top: '-4%', size: 260, colour: '#ff375f' },
+  { left: '84%', top: '48%', size: 240, colour: '#30d158' },
+  { left: '12%', top: '78%', size: 160, colour: '#bf5af2' },
+]
+
+export default function Demo() {
+  const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+  const [rows, setRows] = useState(transactions)
+  const update = (id: number, change: Partial<Transaction>) => setRows((all) => all.map((r) => (r.id === id ? { ...r, ...change } : r)))
+  const total = rows.reduce((sum, r) => sum + r.amount, 0)
+  const business = rows.filter((r) => r.kind === 'business' && r.amount < 0).reduce((sum, r) => sum + r.amount, 0)
+  return (
+    <div className="relative isolate w-full overflow-hidden rounded-3xl px-3 py-10 sm:px-8 sm:py-14">
+      {/* The backdrop: coins of flat colour and the balance, in type large enough to bend. */}
+      <div aria-hidden className="absolute inset-0 -z-10">
+        {coins.map((c, i) => (
+          <span key={i} className="absolute rounded-full" style={{ left: c.left, top: c.top, width: c.size, height: c.size, background: c.colour }} />
+        ))}
+        <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[160px] leading-none font-bold tracking-[-0.06em] whitespace-nowrap text-black/55 tabular-nums dark:text-white/55">
+          +$4,860
+        </p>
+      </div>
+
+      <GlassTable aria-label="Transactions in November" sort={sort} onSortChange={setSort} className="mx-auto w-full max-w-[1000px]">
+        <GlassTableHeader>
+          <GlassTableRow>
+            <GlassTableHead sortKey="date">Date</GlassTableHead>
+            <GlassTableHead sortKey="payee">Payee</GlassTableHead>
+            <GlassTableHead sortKey="category">Category</GlassTableHead>
+            <GlassTableHead>Account</GlassTableHead>
+            <GlassTableHead sortKey="kind">Expense</GlassTableHead>
+            <GlassTableHead>Receipt</GlassTableHead>
+            <GlassTableHead sortKey="amount" numeric>
+              Amount
+            </GlassTableHead>
+          </GlassTableRow>
+        </GlassTableHeader>
+        <GlassTableBody>
+          {sortRows(rows, sort).map((r) => (
+            <GlassTableRow key={r.id}>
+              <GlassTableCell className="tabular-nums opacity-60">{day(r.date)}</GlassTableCell>
+              <GlassTableCell className="font-medium">{r.payee}</GlassTableCell>
+              <GlassTableCell>{r.category}</GlassTableCell>
+              <GlassTableCell className="tabular-nums opacity-60">{r.account}</GlassTableCell>
+              <GlassTableCell>
+                <GlassTabs
+                  aria-label={`${r.payee}, ${day(r.date)}: expense type`}
+                  size="sm"
+                  value={r.kind}
+                  onValueChange={(kind) => update(r.id, { kind })}
+                  options={[
+                    { value: 'personal', label: 'Personal' },
+                    { value: 'business', label: 'Business' },
+                  ]}
+                />
+              </GlassTableCell>
+              <GlassTableCell>
+                {r.receipt ? (
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium opacity-60">
+                    <Check className="size-3.5" aria-hidden />
+                    Attached
+                  </span>
+                ) : (
+                  <GlassButton size="sm" icon={<Paperclip />} aria-label={`Attach a receipt to ${r.payee}, ${day(r.date)}`} onClick={() => update(r.id, { receipt: true })}>
+                    Attach
+                  </GlassButton>
+                )}
+              </GlassTableCell>
+              <GlassTableCell numeric className={`font-medium ${r.amount > 0 ? 'text-[#248a3d] dark:text-[#30d158]' : ''}`}>
+                {money.format(r.amount)}
+              </GlassTableCell>
+            </GlassTableRow>
+          ))}
+        </GlassTableBody>
+        <GlassTableFooter>
+          <GlassTableRow>
+            <GlassTableCell colSpan={6}>Business expenses</GlassTableCell>
+            <GlassTableCell numeric>{money.format(business)}</GlassTableCell>
+          </GlassTableRow>
+          <GlassTableRow>
+            <GlassTableCell colSpan={6}>Total · {rows.length} transactions</GlassTableCell>
+            <GlassTableCell numeric>{money.format(total)}</GlassTableCell>
+          </GlassTableRow>
+        </GlassTableFooter>
+      </GlassTable>
+    </div>
+  )
+}
+```
+
+A dashboard's table at full size: a thousand pixels wide, two dozen rows and two totals. Each row holds glass of its own, Tabs used as a segmented control to file the expense and a Button to attach a receipt; they bend the sheet and the row behind them. Sort by any head and the rows move, controls and all. Where the page is narrower than the table, as on this page and on a phone, the table scrolls sideways inside its sheet while the glass stays where it is.
+
+The sheet is Card's glass: the rim pulls what is behind towards the centre, the face frosts it with a 5 px blur and covers it with a 70% tint, white on a light page and black on a dark one, and the text takes the tone the glass ends up. However many rows there are, it is one glass, drawn when something changes and never at rest: sorting, scrolling the table sideways and pressing a head add no glass of their own. Thin lines in the text's own colour run between rows, a stronger one sets the totals apart, and `numeric` cells are right-aligned in figures of one width. `className` and `style` belong to the sheet (size, corners, a `bg-*` with `material="tinted"`); every other attribute goes to the `<table>`.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | — | The table's parts: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`. |
+| `sort` | `GlassTableSort \| null` | — | The sort, controlled: `{ key, direction }`, `direction` being `ascending` or `descending`. `null`: not sorted. |
+| `defaultSort` | `GlassTableSort \| null` | `null` | The sort to start with, when the table keeps it itself. |
+| `onSortChange` | `(sort: GlassTableSort) => void` | — | A sortable head was pressed: the new sort. |
+| `material` | `'clear' \| 'tinted'` | `'clear'` | As Card's: clear frosts and bends what is behind; tinted takes the sheet's background colour. |
+| `tint` | `number` | `0.7` | Clear glass only: how much tint covers the backdrop (0–1). |
+| `blur` | `number` | `5` | Clear glass only: the frost, in px like CSS `blur()`. |
+| `live` | `boolean` | `false` | Repaint the backdrop every frame, for content that moves behind the table. |
+| `className / style` | `string / CSSProperties` | — | The sheet's: size, margin, corners (`rounded-*`) and, for tinted glass, colour (`bg-*`). |
+| `…rest` | `table attributes` | — | Passed to the `<table>` (`aria-label`, `id`…). |
+| `GlassTableHead` | `{ sortKey?: string; numeric?: boolean }` | — | A column head (`<th scope="col">`). With `sortKey` it holds a button that sorts by that key. `numeric` right-aligns it, the arrow before the label. |
+| `GlassTableCell` | `{ numeric?: boolean }` | — | A cell (`<td>`). `numeric`: right-aligned, figures of one width. |
+| `sortRows` | `(rows, sort, value?) => rows` | — | Your rows in the order `sort` asks for, as a new array. `value(row, key)` reads a value; by default `row[key]`. |
+
+## Accessibility
+
+- A real `<table>` with `<thead>`, `<tbody>` and `<tfoot>`: screen readers move through it by row and column and read each cell with its head. Name it with `aria-label` or a `GlassTableCaption`.
+- A sortable head is a `<button>` inside its `<th>`, reached with Tab and pressed with Enter or Space. The sorted column carries `aria-sort="ascending"` or `"descending"`, which screen readers announce with the head; the arrow beside the label shows the same.
+- A table wider than its sheet scrolls sideways inside it, with the wheel, a trackpad, touch or the arrow keys once something in it has focus.
+- The glass canvas is `aria-hidden`; only the table is read.
+
+Source: https://onemorethink.dev/docs/table
+
 # RangeSlider
 
 > A range slider with a glass thumb: a small pill at rest that opens into a wide lens while you hold it.

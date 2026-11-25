@@ -213,7 +213,9 @@ export function GlassBadge({ children, dotColor, speed = 0.4, tint = 0.82, class
       view.dirty = true
       engine.wake()
     }
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       dirty()
     })

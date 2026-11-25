@@ -284,6 +284,7 @@ const EXAMPLES_HIDDEN = true
 const EXAMPLES_SHOWN: Record<string, 'all' | string[]> = {
   'slide-to-confirm': 'all',
   button: ['glass-button-props'],
+  table: 'all',
 }
 
 /** Drops each Examples section (or all of it but the demos its page shows): its heading and everything up to the next one. */

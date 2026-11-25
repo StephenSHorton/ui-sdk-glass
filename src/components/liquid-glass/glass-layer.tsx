@@ -736,7 +736,9 @@ export function GlassLayer({
     target.addEventListener('pointercancel', onUp)
     target.addEventListener('pointerenter', onEnter)
     target.addEventListener('pointerleave', onLeave)
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       dirty()
     })

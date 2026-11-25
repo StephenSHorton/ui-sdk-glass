@@ -72,7 +72,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard, GlassTable and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('index.ts')],
     dependencies: ['@ui-sdk/core'],
     docs: 'introduction',
@@ -97,6 +97,12 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassCard',
     description: 'Hold: a frosted glass card that holds your content while its rim bends what slides behind.',
     entries: [liquid('glass-card.tsx')],
+  },
+  {
+    name: 'table',
+    title: 'GlassTable',
+    description: 'Sort: rows of data on one large sheet of glass, with a header, a totals row and column heads that sort when pressed.',
+    entries: [liquid('glass-table.tsx')],
   },
   {
     name: 'button-group',
@@ -914,6 +920,122 @@ const [view, setView] = useState('week')
           t('A plain `<div>`: when the card stands for one thing, name it (`role="group"` with an `aria-label`).', 'Sade bir `<div>`: kart tek bir şeyi temsil ediyorsa adlandır (`role="group"` ve bir `aria-label`).'),
           t('The glass canvas is `aria-hidden`; only your content is read.', 'Cam tuvali `aria-hidden`; yalnız senin içeriğin okunur.'),
           t('Content that moves behind it should respect reduced motion: the rows above stop.', 'Arkasında hareket eden içerik hareketi azalt tercihine uymalı: yukarıdaki sıralar durur.'),
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'table',
+    group: 'components',
+    title: t('Table', 'Table'),
+    name: 'GlassTable',
+    description: t(
+      'Rows of data on one large sheet of glass. The sheet is Card\'s frosted glass, so figures stay readable over any backdrop; inside it is a real HTML table with a header, rows and a totals row, and its column heads sort when pressed.',
+      'Tek büyük cam levha üstünde veri satırları. Levha Card\'ın buzlu camıdır; rakamlar her zeminde okunur kalır. İçinde gerçek bir HTML tablosu var: başlık, satırlar ve bir toplam satırı; sütun başlıkları basılınca sıralar.',
+    ),
+    verb: t('Sort', 'Sırala'),
+    signature: t('One sheet of glass under rows of data; its heads sort them.', 'Veri satırlarının altında tek cam levha; başlıkları onları sıralar.'),
+    hero: 'glass-table-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('The big surface of a dashboard: transactions, months, a budget, a list of expenses.', 'Bir panelin büyük yüzeyi: hareketler, aylar, bir bütçe, bir gider listesi.'),
+          t('Rows people compare and sort, with a total at the foot.', 'İnsanların karşılaştırıp sıraladığı, altında bir toplamı olan satırlar.'),
+        ],
+        avoid: [
+          t('A few lines of content in a widget: use Card.', 'Bir widget\'ta birkaç satırlık içerik: Card kullan.'),
+          t('Layout. A table is for data with columns, never for placing things side by side.', 'Yerleşim. Tablo sütunlu veri içindir, öğeleri yan yana dizmek için değil.'),
+          t('Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.', 'Binlerce satır: bir seferde bir sayfa göster; tablo ne kadar uzun olursa olsun cam tek levhadır, ama sayfa yine de her satırı yerleştirmek zorunda.'),
+        ],
+      },
+      { type: 'install', item: 'table' },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import {
+  GlassTable, GlassTableHeader, GlassTableBody, GlassTableFooter,
+  GlassTableRow, GlassTableHead, GlassTableCell, sortRows, type GlassTableSort,
+} from '@/components/liquid-glass'
+
+const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
+
+<GlassTable aria-label="Transactions" sort={sort} onSortChange={setSort} className="w-full">
+  <GlassTableHeader>
+    <GlassTableRow>
+      <GlassTableHead sortKey="date">Date</GlassTableHead>
+      <GlassTableHead>Payee</GlassTableHead>
+      <GlassTableHead sortKey="amount" numeric>Amount</GlassTableHead>
+    </GlassTableRow>
+  </GlassTableHeader>
+  <GlassTableBody>
+    {sortRows(rows, sort).map((r) => (
+      <GlassTableRow key={r.id}>
+        <GlassTableCell>{r.date}</GlassTableCell>
+        <GlassTableCell>{r.payee}</GlassTableCell>
+        <GlassTableCell numeric>{r.amount}</GlassTableCell>
+      </GlassTableRow>
+    ))}
+  </GlassTableBody>
+  <GlassTableFooter>
+    <GlassTableRow>
+      <GlassTableCell colSpan={2}>Total</GlassTableCell>
+      <GlassTableCell numeric>{total}</GlassTableCell>
+    </GlassTableRow>
+  </GlassTableFooter>
+</GlassTable>`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'The table sorts nothing by itself: a head with a `sortKey` is a button, and pressing it hands you the new sort (`onSortChange`). Sort your rows by it with `sortRows`, which compares numbers and dates by value and text as people read it ("Item 2" before "Item 10"), puts empty values last and leaves your array as it is. A new column starts ascending; pressing the sorted one turns it round. Leave out `sort` and give `defaultSort` to let the table keep the sort itself.',
+          'Tablo kendiliğinden hiçbir şeyi sıralamaz: `sortKey` verilen bir başlık bir butondur ve basılınca sana yeni sıralamayı verir (`onSortChange`). Satırlarını `sortRows` ile ona göre sırala: sayıları ve tarihleri değerine, yazıyı insanların okuduğu gibi karşılaştırır ("Item 2", "Item 10"dan önce), boş değerleri sona koyar ve dizine dokunmaz. Yeni bir sütun artan sırayla başlar; sıralı olana yeniden basmak yönünü çevirir. `sort` vermeyip `defaultSort` verirsen sıralamayı tablo kendisi tutar.',
+        ),
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-table-transactions', title: t('A month of transactions', 'Bir ayın hareketleri') },
+      {
+        type: 'p',
+        text: t(
+          'A dashboard\'s table at full size: a thousand pixels wide, two dozen rows and two totals. Each row holds glass of its own, Tabs used as a segmented control to file the expense and a Button to attach a receipt; they bend the sheet and the row behind them. Sort by any head and the rows move, controls and all. Where the page is narrower than the table, as on this page and on a phone, the table scrolls sideways inside its sheet while the glass stays where it is.',
+          'Tam boyutta bir panel tablosu: bin piksel genişliğinde, iki düzine satır ve iki toplam. Her satırın kendi camı var: gideri sınıflandırmak için segmentli kontrol olarak kullanılan Tabs ve fiş eklemek için bir Button; arkalarındaki levhayı ve satırı bükerler. Herhangi bir başlığa göre sırala; satırlar kontrolleriyle birlikte yer değiştirir. Sayfa tablodan darsa, bu sayfadaki ve telefondaki gibi, tablo levhasının içinde yana kayar, cam ise yerinde kalır.',
+        ),
+      },
+      {
+        type: 'p',
+        text: t(
+          'The sheet is Card\'s glass: the rim pulls what is behind towards the centre, the face frosts it with a 5 px blur and covers it with a 70% tint, white on a light page and black on a dark one, and the text takes the tone the glass ends up. However many rows there are, it is one glass, drawn when something changes and never at rest: sorting, scrolling the table sideways and pressing a head add no glass of their own. Thin lines in the text\'s own colour run between rows, a stronger one sets the totals apart, and `numeric` cells are right-aligned in figures of one width. `className` and `style` belong to the sheet (size, corners, a `bg-*` with `material="tinted"`); every other attribute goes to the `<table>`.',
+          'Levha Card\'ın camıdır: kenar arkada kalanı merkeze çeker, yüz onu 5 px bulanıklıkla buzlar ve %70\'lik bir tonla örter (açık sayfada beyaz, koyu sayfada siyah), yazı da camın vardığı tonu alır. Kaç satır olursa olsun tek bir camdır; bir şey değişince çizilir, dururken asla: sıralamak, tabloyu yana kaydırmak ve bir başlığa basmak kendi camını eklemez. Satırların arasında yazının kendi renginde ince çizgiler, toplamları ayıran daha güçlü bir çizgi var; `numeric` hücreler sağa yaslanır ve rakamları eşit genişliktedir. `className` ve `style` levhanındır (boyut, köşeler, `material="tinted"` ile bir `bg-*`); diğer her öznitelik `<table>`\'a gider.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'children', type: 'ReactNode', description: t('The table\'s parts: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`.', 'Tablonun parçaları: `GlassTableHeader`, `GlassTableBody`, `GlassTableFooter`, `GlassTableCaption`.') },
+          { name: 'sort', type: 'GlassTableSort | null', description: t('The sort, controlled: `{ key, direction }`, `direction` being `ascending` or `descending`. `null`: not sorted.', 'Kontrollü sıralama: `{ key, direction }`; `direction` `ascending` ya da `descending`. `null`: sıralı değil.') },
+          { name: 'defaultSort', type: 'GlassTableSort | null', default: 'null', description: t('The sort to start with, when the table keeps it itself.', 'Sıralamayı tablo kendisi tutarken başlangıç sıralaması.') },
+          { name: 'onSortChange', type: '(sort: GlassTableSort) => void', description: t('A sortable head was pressed: the new sort.', 'Sıralanabilir bir başlığa basıldı: yeni sıralama.') },
+          { name: 'material', type: "'clear' | 'tinted'", default: "'clear'", description: t('As Card\'s: clear frosts and bends what is behind; tinted takes the sheet\'s background colour.', 'Card\'daki gibi: clear arkasını buzlar ve büker; tinted levhanın arka plan rengini alır.') },
+          { name: 'tint', type: 'number', default: '0.7', description: t('Clear glass only: how much tint covers the backdrop (0–1).', 'Yalnız clear: tonun arkayı ne kadar örttüğü (0–1).') },
+          { name: 'blur', type: 'number', default: '5', description: t('Clear glass only: the frost, in px like CSS `blur()`.', 'Yalnız clear: buzlanma, CSS `blur()` gibi px.') },
+          { name: 'live', type: 'boolean', default: 'false', description: t('Repaint the backdrop every frame, for content that moves behind the table.', 'Tablonun arkasında hareket eden içerik için arkayı her karede yeniden boya.') },
+          { name: 'className / style', type: 'string / CSSProperties', description: t('The sheet\'s: size, margin, corners (`rounded-*`) and, for tinted glass, colour (`bg-*`).', 'Levhanın: boyut, dış boşluk, köşeler (`rounded-*`) ve renkli camda renk (`bg-*`).') },
+          { name: '…rest', type: 'table attributes', description: t('Passed to the `<table>` (`aria-label`, `id`…).', '`<table>`\'a aktarılır (`aria-label`, `id`…).') },
+          { name: 'GlassTableHead', type: '{ sortKey?: string; numeric?: boolean }', description: t('A column head (`<th scope="col">`). With `sortKey` it holds a button that sorts by that key. `numeric` right-aligns it, the arrow before the label.', 'Bir sütun başlığı (`<th scope="col">`). `sortKey` ile o anahtara göre sıralayan bir buton taşır. `numeric` onu sağa yaslar, ok yazının önüne geçer.') },
+          { name: 'GlassTableCell', type: '{ numeric?: boolean }', description: t('A cell (`<td>`). `numeric`: right-aligned, figures of one width.', 'Bir hücre (`<td>`). `numeric`: sağa yaslı, eşit genişlikte rakamlar.') },
+          { name: 'sortRows', type: '(rows, sort, value?) => rows', description: t('Your rows in the order `sort` asks for, as a new array. `value(row, key)` reads a value; by default `row[key]`.', 'Satırların `sort`un istediği sırada, yeni bir dizi olarak. `value(row, key)` bir değeri okur; varsayılan `row[key]`.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A real `<table>` with `<thead>`, `<tbody>` and `<tfoot>`: screen readers move through it by row and column and read each cell with its head. Name it with `aria-label` or a `GlassTableCaption`.', '`<thead>`, `<tbody>` ve `<tfoot>` ile gerçek bir `<table>`: ekran okuyucular satır ve sütun boyunca gezer, her hücreyi başlığıyla okur. `aria-label` ya da bir `GlassTableCaption` ile adlandır.'),
+          t('A sortable head is a `<button>` inside its `<th>`, reached with Tab and pressed with Enter or Space. The sorted column carries `aria-sort="ascending"` or `"descending"`, which screen readers announce with the head; the arrow beside the label shows the same.', 'Sıralanabilir başlık, `<th>` içinde bir `<button>`dır; Tab ile ulaşılır, Enter ya da Space ile basılır. Sıralı sütun `aria-sort="ascending"` ya da `"descending"` taşır, ekran okuyucular bunu başlıkla birlikte okur; yazının yanındaki ok aynısını gösterir.'),
+          t('A table wider than its sheet scrolls sideways inside it, with the wheel, a trackpad, touch or the arrow keys once something in it has focus.', 'Levhasından geniş bir tablo onun içinde yana kayar: tekerlek, dokunmatik yüzey, dokunma ya da içinde odaklı bir şey varken ok tuşlarıyla.'),
+          t('The glass canvas is `aria-hidden`; only the table is read.', 'Cam tuvali `aria-hidden`; yalnız tablo okunur.'),
         ],
       },
     ],
@@ -1859,6 +1981,28 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.1.0',
+    date: '2026-11-25',
+    title: t('Table.', 'Table.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'table',
+        text: t(
+          'Table: rows of data on one large sheet of glass, for the biggest surface of a dashboard (transactions, months, a budget). The sheet is Card\'s frosted glass, drawn as one glass however many rows it has and never at rest. Inside it is a real HTML table: a header, rows and a totals row, numbers right-aligned in figures of one width. Column heads with a `sortKey` are buttons that sort the rows when pressed and tell screen readers which way with `aria-sort`; `sortRows` sorts your data to match. A table wider than its sheet scrolls sideways inside it, and other glass (Button, Tabs) can sit in its rows.',
+          'Table: tek büyük cam levha üstünde veri satırları; bir panelin en büyük yüzeyi için (hareketler, aylar, bir bütçe). Levha Card\'ın buzlu camıdır; kaç satırı olursa olsun tek bir cam olarak çizilir, dururken asla. İçinde gerçek bir HTML tablosu var: başlık, satırlar ve bir toplam satırı; sayılar sağa yaslı ve eşit genişlikte. `sortKey` verilen sütun başlıkları, basılınca satırları sıralayan butonlardır ve yönü ekran okuyuculara `aria-sort` ile söyler; `sortRows` verini buna göre sıralar. Levhasından geniş bir tablo onun içinde yana kayar; satırlarına başka camlar da (Button, Tabs) konabilir.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Glass that React moves to another place in a list (a row of a sorted table, a reordered card) could stop drawing. The browser reports such a move as gone and back in one batch, and the glass read only the first report: it took itself for hidden and kept showing what lay behind it where it had been. Every glass now reads the newest report.',
+          'React\'in bir listede başka bir yere taşıdığı cam (sıralanan bir tablonun satırı, yeri değişen bir kart) çizilmeyi bırakıyordu. Tarayıcı böyle bir taşımayı tek seferde önce gitti, sonra geri geldi diye bildiriyor; cam yalnız ilk bildirimi okuyup kendini gizli sanıyor, vardığı yerde çizmeyi bırakıyor ve eski yerinin resmini tutuyordu. Artık her cam en yeni bildirimi okuyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.0.4',
     date: '2026-11-25',

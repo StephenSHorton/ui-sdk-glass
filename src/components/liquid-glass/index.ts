@@ -9,12 +9,29 @@
 //   GlassSlideToConfirm drag  — drag the glass thumb to the end to confirm
 //   GlassCard          hold    — a card of glass: holds your content, its rim bends what slides behind
 //   GlassButtonGroup   share   — related actions share one body of glass
+//   GlassTable         sort    — rows of data on one large sheet of glass; its headers sort
 export { GlassButton, type GlassButtonProps, type GlassButtonSize } from './glass-button'
 export { GlassActionButton, type GlassActionButtonProps, type GlassActionState } from './glass-action-button'
 export { GlassTabs, type GlassTabsProps, type GlassTabOption } from './glass-tabs'
 export { GlassBadge, type GlassBadgeProps } from './glass-badge'
 export { GlassSlideToConfirm, type GlassSlideToConfirmProps, type GlassSlideState, type GlassSlideSize } from './glass-slide-to-confirm'
 export { GlassCard, type GlassCardProps } from './glass-card'
+export {
+  GlassTable,
+  GlassTableHeader,
+  GlassTableBody,
+  GlassTableFooter,
+  GlassTableRow,
+  GlassTableHead,
+  GlassTableCell,
+  GlassTableCaption,
+  sortRows,
+  type GlassTableProps,
+  type GlassTableHeadProps,
+  type GlassTableCellProps,
+  type GlassTableSort,
+  type GlassTableSortDirection,
+} from './glass-table'
 export {
   GlassButtonGroup,
   GlassButtonGroupItem,

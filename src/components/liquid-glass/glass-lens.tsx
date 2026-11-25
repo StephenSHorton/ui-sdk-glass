@@ -427,7 +427,9 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
     root.addEventListener('pointerdown', onDown)
     const touchAction = root.style.touchAction
     root.style.touchAction = 'pan-y'
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
     })
     io.observe(root)

@@ -1304,7 +1304,9 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
     el.addEventListener('pointercancel', onUp)
     el.addEventListener('pointerenter', onEnter)
     el.addEventListener('pointerleave', onLeave)
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       dirty()
     })
@@ -1477,7 +1479,9 @@ function createMorph(matchWidth: boolean, opening: GlassPopupOpening, from: Glas
     mo.observe(el, { attributes: true, attributeOldValue: true, attributeFilter: ['data-open', 'data-closed', 'data-ending-style', 'data-side', 'style'] })
     const ro = new ResizeObserver(dirty)
     ro.observe(el)
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       dirty()
     })

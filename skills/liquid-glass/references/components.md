@@ -3159,3 +3159,105 @@ Menu is built on `GlassPopup`: `useGlassPopup({ opening: 'grow' })` gives any co
 - With reduced motion the menu opens and closes at once. Without WebGL2 it is a plain frosted list.
 
 Source: https://onemorethink.dev/docs/menu
+
+# GlassDatePicker
+
+> A date field of glass. Type a date in the page's language, or press the calendar and a month swells out of the whole field as one body of glass with it. The day chosen is circled, and the value is a plain `YYYY-MM-DD` date.
+
+```tsx
+import { useState } from 'react'
+
+import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+/** A timeline behind the glass: each bar a span of days, in its own flat colour. */
+const BARS = [
+  { left: '4%', width: '38%', top: 0, color: 'bg-orange-400' },
+  { left: '30%', width: '44%', top: 26, color: 'bg-sky-500' },
+  { left: '58%', width: '36%', top: 52, color: 'bg-lime-400' },
+  { left: '12%', width: '30%', top: 78, color: 'bg-fuchsia-500' },
+  { left: '48%', width: '40%', top: 104, color: 'bg-amber-300' },
+]
+
+// A From and To pair: each field holds a plain YYYY-MM-DD date, and each keeps the other
+// honest (From can't pass To, To can't come before From). Type a date in the page's language
+// and press Enter, or press the calendar: the month swells out of the whole field as one body
+// of glass, and the arrow keys walk the days. Behind it, a timeline of flat colour to bend.
+export default function Demo() {
+  const [from, setFrom] = useState<string | null>('2026-11-02')
+  const [to, setTo] = useState<string | null>('2026-11-27')
+  return (
+    <div className="relative isolate flex w-full max-w-xl flex-col items-center gap-5 py-8">
+      {/* From the fields' top edge down, clear of their labels. */}
+      <div aria-hidden className="absolute inset-x-0 top-[3.75rem] -z-10 h-32">
+        {BARS.map((b) => (
+          <span key={b.top} className={`absolute h-5 rounded-full ${b.color}`} style={{ left: b.left, width: b.width, top: b.top }} />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-end justify-center gap-3">
+        <GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} className="w-52" />
+        <GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} className="w-52" />
+      </div>
+      <output className="rounded-full bg-white/70 px-3 py-1 font-mono text-xs text-neutral-900 dark:bg-neutral-900/70 dark:text-white">
+        {from ?? '…'} → {to ?? '…'}
+      </output>
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- One date in a form: a due date, a birthday, the day of a payment.
+- Two of them side by side for a From and To pair, each keeping the other in bounds with `min` and `max`.
+
+**Not for**
+
+- Picking one of a few named options (Today, This week): use Select or Tabs.
+- A time of day: this holds a date only.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/date-picker.json
+```
+
+> The behaviour (reading a typed date, the calendar's keyboard, focus, positioning, forms, ARIA) comes from UI SDK, so Date Picker needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+```tsx
+import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+const [from, setFrom] = useState<string | null>(null)
+const [to, setTo] = useState<string | null>(null)
+
+<GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} />
+<GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} />
+// from, to: "2026-11-02", "2026-11-27", or null
+```
+
+Type a date and press Enter or leave the field: it reads the order of the page's language (11/02/2026 in English, 02.11.2026 in Turkish), ISO dates, digits without separators and month names, and writes the date back in that format. While the field is empty it shows the format to type. Text that is not a date, or a date past `min` or `max`, stays as typed, is marked invalid and leaves the value as it was. Press the calendar and the month swells out of the whole field, held on by a neck that stretches and snaps, as Select's list does; closing plays it backwards. The field wears Button's glass, the calendar Card's frost, and the day chosen is circled in the surface's ink.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | — | The field's label, a real `<label>` tied to the input. |
+| `value` | `string \| null` | — | The date (controlled), `YYYY-MM-DD`. `null` = none. |
+| `defaultValue` | `string \| null` | — | The starting date when the field keeps its own state. |
+| `onValueChange` | `(value: string \| null) => void` | — | Called with the new date, `YYYY-MM-DD`, when one is picked or a typed one is committed; `null` once the field is emptied. |
+| `min / max` | `string` | — | The earliest and latest dates that can be typed or picked, `YYYY-MM-DD`. The keys and the month steps stop there. |
+| `unavailable` | `DateMatchers` | — | Dates that can't be picked: ISO dates, `{ from, to }`, `{ weekday: [0, 6] }` for weekends, `{ before }`, `{ after }` or a function. They stay focusable and are struck through. |
+| `placeholder` | `string` | — | Shown while the field is empty. Defaults to the format to type, in the page's language. |
+| `name` | `string` | — | Submits the date with a form under this name, as `YYYY-MM-DD`. |
+| `required / disabled` | `boolean` | `false` | `required` keeps an empty field from submitting its form. `disabled` dims it and nothing can be typed or picked. |
+| `locale` | `string` | — | The language of the format and the month and day names. Defaults to the page's `lang`. |
+| `labels` | `{ open?: string; previous?: string; next?: string }` | — | What screen readers hear for the calendar button and the month steps, in your language. English by default. |
+| `className` | `string` | — | Classes for the field (label and input); it is 16rem wide by default. |
+
+## Accessibility
+
+- A text input named by `label` and described by the format to type, with a button that opens a dialog holding the month as a `grid` (the WAI-ARIA date picker dialog). The button is named by the date chosen.
+- In the calendar the arrow keys move a day or a week, Home and End go to the week's ends, Page Up and Page Down turn the month (with Shift, the year), Enter or Space picks the day and Escape closes and returns focus.
+- Text that is not a date sets `aria-invalid` and the field's edge turns red; its form won't submit until it is a date again or empty.
+- With reduced motion the calendar opens and closes at once. Without WebGL2 it is a plain frosted field and calendar.
+
+Source: https://onemorethink.dev/docs/date-picker

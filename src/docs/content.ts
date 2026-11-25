@@ -143,6 +143,13 @@ export const REGISTRY: RegistryItem[] = [
     entries: [liquid('glass-menu.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
+  {
+    name: 'date-picker',
+    title: 'GlassDatePicker',
+    description: 'Circle: a date field to type into, whose calendar swells out of the whole field as one body of glass; the value is a plain YYYY-MM-DD date (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-date-picker.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
 ]
 
 // ── Pages ───────────────────────────────────────────────────────────────────
@@ -1918,6 +1925,88 @@ const popup = useGlassPopup({ opening: 'morph' })
       },
     ],
   },
+  {
+    slug: 'date-picker',
+    group: 'components',
+    title: t('Date Picker', 'Date Picker'),
+    name: 'GlassDatePicker',
+    description: t(
+      'A date field of glass. Type a date in the page\'s language, or press the calendar and a month swells out of the whole field as one body of glass with it. The day chosen is circled, and the value is a plain `YYYY-MM-DD` date.',
+      'Camdan bir tarih alanı. Sayfanın dilinde bir tarih yaz ya da takvime bas: bir ay, alanın tamamından onunla tek bir cam gövde olarak şişer. Seçilen gün daire içine alınır, değer de yalın bir `YYYY-MM-DD` tarihidir.',
+    ),
+    verb: t('Circle', 'Çevrele'),
+    signature: t('Type a date or circle one on a month that swells out of the field.', 'Bir tarih yaz ya da alandan şişen bir ayda birini daire içine al.'),
+    hero: 'glass-date-picker-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('One date in a form: a due date, a birthday, the day of a payment.', 'Formda tek bir tarih: son ödeme günü, doğum günü, bir ödemenin günü.'),
+          t('Two of them side by side for a From and To pair, each keeping the other in bounds with `min` and `max`.', 'From ve To çifti için yan yana iki tane; her biri `min` ve `max` ile ötekini sınırda tutar.'),
+        ],
+        avoid: [
+          t('Picking one of a few named options (Today, This week): use Select or Tabs.', 'Birkaç adlandırılmış seçenekten birini seçmek (Bugün, Bu hafta): Select ya da Tabs kullan.'),
+          t('A time of day: this holds a date only.', 'Günün bir saati: bu yalnızca tarih tutar.'),
+        ],
+      },
+      { type: 'install', item: 'date-picker' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (reading a typed date, the calendar\'s keyboard, focus, positioning, forms, ARIA) comes from UI SDK, so Date Picker needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (yazılan tarihi okumak, takvimin klavyesi, odak, konumlandırma, formlar, ARIA) UI SDK\'dan gelir; bu yüzden Date Picker `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'code',
+        title: 'export.tsx',
+        code: `import { GlassDatePicker } from '@/components/liquid-glass/glass-date-picker'
+
+const [from, setFrom] = useState<string | null>(null)
+const [to, setTo] = useState<string | null>(null)
+
+<GlassDatePicker label="From" value={from} onValueChange={setFrom} max={to ?? undefined} />
+<GlassDatePicker label="To" value={to} onValueChange={setTo} min={from ?? undefined} />
+// from, to: "2026-11-02", "2026-11-27", or null`,
+      },
+      {
+        type: 'p',
+        text: t(
+          'Type a date and press Enter or leave the field: it reads the order of the page\'s language (11/02/2026 in English, 02.11.2026 in Turkish), ISO dates, digits without separators and month names, and writes the date back in that format. While the field is empty it shows the format to type. Text that is not a date, or a date past `min` or `max`, stays as typed, is marked invalid and leaves the value as it was. Press the calendar and the month swells out of the whole field, held on by a neck that stretches and snaps, as Select\'s list does; closing plays it backwards. The field wears Button\'s glass, the calendar Card\'s frost, and the day chosen is circled in the surface\'s ink.',
+          'Bir tarih yaz ve Enter\'a bas ya da alandan çık: sayfanın dilindeki sırayı (İngilizcede 11/02/2026, Türkçede 02.11.2026), ISO tarihlerini, ayraçsız rakamları ve ay adlarını okur, tarihi o biçimde geri yazar. Alan boşken yazılacak biçimi gösterir. Tarih olmayan bir metin ya da `min` veya `max` dışında kalan bir tarih yazıldığı gibi kalır, geçersiz olarak işaretlenir ve değer olduğu gibi kalır. Takvime bas: ay, alanın tamamından şişer, Select\'in listesindeki gibi esneyip kopan bir boyunla ona tutunur; kapanış bunun tersidir. Alan Button\'ın camını, takvim Card\'ın buzlu camını taşır; seçilen gün yüzeyin mürekkebiyle daire içine alınır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'label', type: 'ReactNode', description: t('The field\'s label, a real `<label>` tied to the input.', 'Alanın etiketi; girişe bağlı gerçek bir `<label>`.') },
+          { name: 'value', type: 'string | null', description: t('The date (controlled), `YYYY-MM-DD`. `null` = none.', 'Tarih (kontrollü), `YYYY-MM-DD`. `null` = yok.') },
+          { name: 'defaultValue', type: 'string | null', description: t('The starting date when the field keeps its own state.', 'Alan kendi durumunu tutarken başlangıç tarihi.') },
+          { name: 'onValueChange', type: '(value: string | null) => void', description: t('Called with the new date, `YYYY-MM-DD`, when one is picked or a typed one is committed; `null` once the field is emptied.', 'Bir tarih seçildiğinde ya da yazılan onaylandığında yeni tarihle (`YYYY-MM-DD`) çağrılır; alan boşaltılınca `null` ile.') },
+          { name: 'min / max', type: 'string', description: t('The earliest and latest dates that can be typed or picked, `YYYY-MM-DD`. The keys and the month steps stop there.', 'Yazılabilecek ya da seçilebilecek en erken ve en geç tarih, `YYYY-MM-DD`. Tuşlar ve ay adımları orada durur.') },
+          { name: 'unavailable', type: 'DateMatchers', description: t('Dates that can\'t be picked: ISO dates, `{ from, to }`, `{ weekday: [0, 6] }` for weekends, `{ before }`, `{ after }` or a function. They stay focusable and are struck through.', 'Seçilemeyen tarihler: ISO tarihleri, `{ from, to }`, hafta sonu için `{ weekday: [0, 6] }`, `{ before }`, `{ after }` ya da bir fonksiyon. Odaklanabilir kalırlar ve üstleri çizilir.') },
+          { name: 'placeholder', type: 'string', description: t('Shown while the field is empty. Defaults to the format to type, in the page\'s language.', 'Alan boşken görünür. Varsayılanı, sayfanın dilinde yazılacak biçimdir.') },
+          { name: 'name', type: 'string', description: t('Submits the date with a form under this name, as `YYYY-MM-DD`.', 'Tarihi formla bu adla `YYYY-MM-DD` olarak gönderir.') },
+          { name: 'required / disabled', type: 'boolean', default: 'false', description: t('`required` keeps an empty field from submitting its form. `disabled` dims it and nothing can be typed or picked.', '`required` boş alanın formunu göndermesini engeller. `disabled` onu soluklaştırır; hiçbir şey yazılamaz ya da seçilemez.') },
+          { name: 'locale', type: 'string', description: t('The language of the format and the month and day names. Defaults to the page\'s `lang`.', 'Biçimin, ay ve gün adlarının dili. Varsayılanı sayfanın `lang` değeridir.') },
+          { name: 'labels', type: '{ open?: string; previous?: string; next?: string }', description: t('What screen readers hear for the calendar button and the month steps, in your language. English by default.', 'Ekran okuyucuların takvim butonu ve ay adımları için duyduğu adlar, senin dilinde. Varsayılanı İngilizce.') },
+          { name: 'className', type: 'string', description: t('Classes for the field (label and input); it is 16rem wide by default.', 'Alan (etiket ve giriş) için sınıflar; varsayılan genişlik 16rem.') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('A text input named by `label` and described by the format to type, with a button that opens a dialog holding the month as a `grid` (the WAI-ARIA date picker dialog). The button is named by the date chosen.', '`label` ile adlandırılan ve yazılacak biçimle açıklanan bir metin girişi; yanında ayı bir `grid` olarak tutan bir diyalog açan buton (WAI-ARIA tarih seçici diyaloğu). Buton seçilen tarihle adlandırılır.'),
+          t('In the calendar the arrow keys move a day or a week, Home and End go to the week\'s ends, Page Up and Page Down turn the month (with Shift, the year), Enter or Space picks the day and Escape closes and returns focus.', 'Takvimde ok tuşları bir gün ya da bir hafta gider, Home ve End haftanın uçlarına, Page Up ve Page Down ayı (Shift ile yılı) çevirir, Enter ya da Boşluk günü seçer, Escape kapatıp odağı geri verir.'),
+          t('Text that is not a date sets `aria-invalid` and the field\'s edge turns red; its form won\'t submit until it is a date again or empty.', 'Tarih olmayan metin `aria-invalid` koyar ve alanın kenarı kırmızıya döner; yeniden tarih olana ya da boşalana kadar formu gönderilmez.'),
+          t('With reduced motion the calendar opens and closes at once. Without WebGL2 it is a plain frosted field and calendar.', 'Hareketi azalt açıksa takvim anında açılıp kapanır. WebGL2 yoksa düz, buzlu bir alan ve takvimdir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1952,6 +2041,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.2.0',
+    date: '2026-11-25',
+    title: t('Date Picker.', 'Date Picker.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'date-picker',
+        text: t(
+          'Date Picker: a date field of glass. Type a date in the page\'s language, or press the calendar and a month swells out of the whole field as one body of glass with it, on the neck Select\'s list has. The day chosen is circled and the value is a plain `YYYY-MM-DD` date; two side by side, each bounding the other with `min` and `max`, make a From and To pair. Reading a typed date, the calendar\'s keyboard, focus, positioning, forms and ARIA come from UI SDK.',
+          'Date Picker: camdan bir tarih alanı. Sayfanın dilinde bir tarih yaz ya da takvime bas: bir ay, Select\'in listesindeki boyunla, alanın tamamından onunla tek bir cam gövde olarak şişer. Seçilen gün daire içine alınır, değer yalın bir `YYYY-MM-DD` tarihidir; yan yana iki tane, `min` ve `max` ile birbirini sınırlayarak bir From ve To çifti olur. Yazılan tarihi okumak, takvimin klavyesi, odak, konumlandırma, formlar ve ARIA UI SDK\'dan gelir.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.1.0',
     date: '2026-11-25',

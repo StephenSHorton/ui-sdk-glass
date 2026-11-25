@@ -44,6 +44,7 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Open | `GlassDropdownMenu` | Menu of actions that swells out of its button, or out of a whole `GlassButtonGroup`, as one body of glass. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 | Unfold | `GlassPopover` | Small surface its button unfolds into, right where the button is. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 | Grow | `GlassMenu` | Menu its button grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
+| Rise | `GlassToaster` | A short message on frosted glass after an action (Saved, Could not refresh): it rises, stays a moment and goes, and several gather into a stack. Plain and error forms, one action. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 | Slide | `RangeSlider` | Range slider whose glass pill opens into a wide lens that bends the track while it is held. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Flip | `Switch` | On/off switch whose knob swells into clear glass as it crosses the track. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |

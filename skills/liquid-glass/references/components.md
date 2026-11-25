@@ -3261,3 +3261,237 @@ Type a date and press Enter or leave the field: it reads the order of the page's
 - With reduced motion the calendar opens and closes at once. Without WebGL2 it is a plain frosted field and calendar.
 
 Source: https://onemorethink.dev/docs/date-picker
+
+# GlassToaster
+
+> The short message that rises after an action, such as "Saved" or "Could not refresh", on a pane of frosted glass. It stays a few seconds and goes; several gather into a stack that fans out under the pointer.
+
+```tsx
+import { Download, RefreshCw, Bookmark } from 'lucide-react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+
+import { GlassButton } from '@/components/liquid-glass'
+import { GlassToaster, createToaster } from '@/components/liquid-glass/glass-toast'
+
+// A month of prices as bars of flat colour, and the three things a dashboard says afterwards:
+// Refresh (a loading toast that turns into its result), Save mark (a plain toast with Undo) and
+// Export (an error with Retry). Press them a few times: the toasts gather into a stack over the
+// bars, fan out under the pointer, and go after four seconds.
+const bars = [38, 52, 46, 61, 57, 70, 64, 78, 72, 85, 80, 92, 88, 74, 82, 96]
+const colours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2']
+
+const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+export default function Demo() {
+  // In your app: one <GlassToaster /> near the root, and `toast` from the same file. Here the
+  // demo keeps a queue of its own, so its toasts never mix with another demo's.
+  const [toast] = useState(() => createToaster({ duration: 4000 }))
+  useEffect(() => () => void toast.dismiss(), [toast])
+  // The toasts rise over this stage (CSS anchor positioning); where a browser lacks it, they
+  // sit at the bottom of the window, as they would in an app.
+  const anchor = `--toasts-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  const [exports, setExports] = useState(0)
+
+  const refresh = () =>
+    toast.promise(() => wait(1400), { loading: 'Refreshing prices…', success: 'Prices refreshed', error: 'Could not refresh' })
+  const save = () =>
+    toast('Mark saved', {
+      description: 'AAPL at $231.40',
+      action: { label: 'Undo', onAction: () => void toast('Mark removed') },
+    })
+  // Every other export fails, so both outcomes show.
+  const exportCsv = () => {
+    const fails = exports % 2 === 0
+    setExports((n) => n + 1)
+    if (!fails) return void toast.success('Exported', { description: 'prices-november.csv' })
+    toast.error('Could not export', {
+      description: 'The file server did not answer.',
+      action: { label: 'Retry', onAction: () => void toast.success('Exported', { description: 'prices-november.csv' }) },
+    })
+  }
+
+  return (
+    <div className="relative isolate flex h-[30rem] w-full max-w-xl flex-col items-center overflow-hidden pt-14" style={{ anchorName: anchor } as CSSProperties}>
+      {/* The backdrop the glass bends: flat bars and a price, plain DOM. */}
+      <div aria-hidden className="absolute inset-x-6 bottom-0 -z-10 flex h-64 items-end gap-1.5">
+        {bars.map((height, i) => (
+          <span key={i} className="flex-1 rounded-t-md" style={{ height: `${height}%`, background: colours[i % colours.length] }} />
+        ))}
+      </div>
+      <p aria-hidden className="text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$48,210.32</p>
+      <p aria-hidden className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Portfolio · November</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+        <GlassButton icon={<RefreshCw />} onClick={refresh}>
+          Refresh
+        </GlassButton>
+        <GlassButton icon={<Bookmark />} onClick={save}>
+          Save mark
+        </GlassButton>
+        <GlassButton icon={<Download />} onClick={exportCsv}>
+          Export
+        </GlassButton>
+      </div>
+      <GlassToaster
+        toaster={toast}
+        align="center"
+        style={{ positionAnchor: anchor, bottom: 'anchor(bottom)', left: 'anchor(center)' } as CSSProperties}
+      />
+    </div>
+  )
+}
+```
+
+**Use it for**
+
+- Saying what an action did once it is done: Saved, Exported, Prices refreshed.
+- An error the person can carry on past, with one way to answer it: Retry, Undo, View.
+- Something slow that runs in the background: a loading toast that turns into its result.
+
+**Not for**
+
+- A question that needs an answer before going on: use a dialog.
+- Something that must stay on screen: a toast goes by itself. Show it on the page, or give the toast `duration: Infinity`.
+- A label on a control: use Badge.
+
+```bash
+npx shadcn@latest add https://onemorethink.dev/r/toast.json
+```
+
+> The behaviour (the queue and its timers, the stack, swiping, the keyboard, and how each toast is announced to screen readers) comes from UI SDK, so Toast needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.
+
+## Usage
+
+Place `GlassToaster` once, near your app's root, and call `toast()` from anywhere: a click handler, a fetch, code outside React. Both come from `glass-toast` (and from the index).
+
+```tsx
+import { GlassToaster, toast } from '@/components/liquid-glass/glass-toast'
+
+// Once, near the root.
+<GlassToaster />
+
+// Plain, with a line under it and one action.
+toast('Mark saved', {
+  description: 'AAPL at $231.40',
+  action: { label: 'Undo', onAction: undoMark },
+})
+
+// An error: red-tinted glass and a red mark, announced at once.
+toast.error('Could not refresh', { action: { label: 'Retry', onAction: refresh } })
+
+// Loading, then its result, in the same toast.
+toast.promise(refresh, {
+  loading: 'Refreshing prices…',
+  success: 'Prices refreshed',
+  error: 'Could not refresh',
+})
+```
+
+## Examples
+
+### After Refresh, Save and Export
+
+```tsx
+import { Download, RefreshCw, Bookmark } from 'lucide-react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+
+import { GlassButton } from '@/components/liquid-glass'
+import { GlassToaster, createToaster } from '@/components/liquid-glass/glass-toast'
+
+// A month of prices as bars of flat colour, and the three things a dashboard says afterwards:
+// Refresh (a loading toast that turns into its result), Save mark (a plain toast with Undo) and
+// Export (an error with Retry). Press them a few times: the toasts gather into a stack over the
+// bars, fan out under the pointer, and go after four seconds.
+const bars = [38, 52, 46, 61, 57, 70, 64, 78, 72, 85, 80, 92, 88, 74, 82, 96]
+const colours = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2']
+
+const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+export default function Demo() {
+  // In your app: one <GlassToaster /> near the root, and `toast` from the same file. Here the
+  // demo keeps a queue of its own, so its toasts never mix with another demo's.
+  const [toast] = useState(() => createToaster({ duration: 4000 }))
+  useEffect(() => () => void toast.dismiss(), [toast])
+  // The toasts rise over this stage (CSS anchor positioning); where a browser lacks it, they
+  // sit at the bottom of the window, as they would in an app.
+  const anchor = `--toasts-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  const [exports, setExports] = useState(0)
+
+  const refresh = () =>
+    toast.promise(() => wait(1400), { loading: 'Refreshing prices…', success: 'Prices refreshed', error: 'Could not refresh' })
+  const save = () =>
+    toast('Mark saved', {
+      description: 'AAPL at $231.40',
+      action: { label: 'Undo', onAction: () => void toast('Mark removed') },
+    })
+  // Every other export fails, so both outcomes show.
+  const exportCsv = () => {
+    const fails = exports % 2 === 0
+    setExports((n) => n + 1)
+    if (!fails) return void toast.success('Exported', { description: 'prices-november.csv' })
+    toast.error('Could not export', {
+      description: 'The file server did not answer.',
+      action: { label: 'Retry', onAction: () => void toast.success('Exported', { description: 'prices-november.csv' }) },
+    })
+  }
+
+  return (
+    <div className="relative isolate flex h-[30rem] w-full max-w-xl flex-col items-center overflow-hidden pt-14" style={{ anchorName: anchor } as CSSProperties}>
+      {/* The backdrop the glass bends: flat bars and a price, plain DOM. */}
+      <div aria-hidden className="absolute inset-x-6 bottom-0 -z-10 flex h-64 items-end gap-1.5">
+        {bars.map((height, i) => (
+          <span key={i} className="flex-1 rounded-t-md" style={{ height: `${height}%`, background: colours[i % colours.length] }} />
+        ))}
+      </div>
+      <p aria-hidden className="text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums dark:text-white">$48,210.32</p>
+      <p aria-hidden className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Portfolio · November</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+        <GlassButton icon={<RefreshCw />} onClick={refresh}>
+          Refresh
+        </GlassButton>
+        <GlassButton icon={<Bookmark />} onClick={save}>
+          Save mark
+        </GlassButton>
+        <GlassButton icon={<Download />} onClick={exportCsv}>
+          Export
+        </GlassButton>
+      </div>
+      <GlassToaster
+        toaster={toast}
+        align="center"
+        style={{ positionAnchor: anchor, bottom: 'anchor(bottom)', left: 'anchor(center)' } as CSSProperties}
+      />
+    </div>
+  )
+}
+```
+
+A toast comes up from the edge and fades in, stays four seconds here (five by default) and fades out. A new one comes in front and pushes the last one back, smaller, with only its glass peeking out above; three show at once (`maxVisible`) and the rest wait their turn, their timers stopped. Under the pointer or focus the stack fans out, each toast at its own height, and every timer waits. Swipe a toast down or towards the side it sits on to send it away; a short swipe springs back. This example keeps the stack over its own stage with CSS anchor positioning (`position-anchor` on the region); in an app it sits at the window's edge.
+
+Each toast is Card's glass: the rim pulls what is behind towards the middle, a 5 px frost (`blur`) and a 70% tint (`tint`), white on a light page and black on a dark one, with a soft shadow. It is a surface, so it takes no light of its own; its action and its × light it where they are pressed. The glass follows the toast as the stack moves and as it is swiped, so it always bends what lies behind it now. An error is the same glass tinted red, pale on a light page and deep on a dark one, with a red mark; a success has a check that draws itself in, a loading toast a turning ring, a warning an amber mark. The type also reaches CSS as `data-type` on each toast.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `toast(title, options?)` | `(title, options) => string` | — | Shows a toast and returns its id. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set its type; `toast.promise(promise, { loading, success, error })` turns a loading toast into its result. `toast.update(id, options)` and `toast.dismiss(id?)` change or close one, or every one. |
+| `options.description` | `ReactNode` | — | A line under the title. |
+| `options.action` | `{ label, onAction?, href? }` | — | One button, like Undo or Retry. A promise from `onAction` keeps the toast open, the button dimmed, until it settles; `href` makes it a link. |
+| `options.duration` | `number` | `5000` | How long it shows, in ms, while nothing pauses it. `Infinity` keeps it until it is dismissed. |
+| `options.dismissible` | `boolean` | `true` | `false` takes away its ×, the swipe and Escape; its timer still closes it. |
+| `options.priority` | `'polite' \| 'assertive'` | — | How screen readers announce it. Errors are assertive, the rest polite. |
+| `side / align` | `'bottom' \| 'top' / 'start' \| 'center' \| 'end'` | `'bottom' / 'end'` | On `GlassToaster`: where the stack sits. Start and end follow the writing direction. |
+| `maxVisible / expanded` | `number / boolean` | `3 / false` | How many toasts show at once, and whether the stack stays fanned out. |
+| `toaster` | `Toaster` | — | A queue of its own, from `createToaster()`. Left out, the region shows the toasts of the shared `toast`. |
+| `tint / blur` | `number` | `0.7 / 5` | The glass, as on Card: how much tint covers the backdrop (0–1), and its frost in px. |
+| `closeLabel / aria-label` | `string` | `'Dismiss' / 'Notifications'` | The × button's name and the region's, in your page's language. |
+| `shortcut` | `string \| null` | `'F6'` | The key that moves focus into the stack and back. `null` turns it off. |
+| `style / className` | `CSS` | — | For the region. Its size and spacing are CSS variables: `--glass-toast-width` (22rem), `--glass-toast-offset` from the edge (1rem), `--glass-toast-gap` (8px) and `--glass-toast-peek` (10px). |
+
+## Accessibility
+
+- Each toast is announced once through live regions, without taking focus: politely by default, at once for an error. The visible stack is not itself a live region, so nothing is read twice.
+- While it holds toasts the stack is a landmark named Notifications (`aria-label` to name it in your language). F6 moves focus to the newest toast and back; Tab walks the toasts and their buttons; Escape dismisses the focused one.
+- Timers wait while the pointer or focus is in the stack and while the page is hidden, so a toast is never gone before it can be read. Keep messages short; give one that must stay `duration: Infinity`.
+- With reduced motion toasts only fade, and the glass holds still. Without WebGL2 each is a plain frosted panel.
+
+Source: https://onemorethink.dev/docs/toast

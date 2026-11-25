@@ -40,6 +40,7 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Flow | `GlassBadge` | One-word badge with its text flowing through the glass. |
 | Drag | `GlassSlideToConfirm` | Slide-to-confirm track: drag the glass thumb to the end to run one deliberate action (Sending… → Sent ✓); let go early and it springs back. |
 | Hold | `GlassCard` | A frosted glass card that holds your content while its rim bends what slides behind. `live` for moving backdrops. |
+| Sort | `GlassTable` | Rows of data on one large sheet of glass: a header, a totals row, heads that sort when pressed, sideways scroll inside. |
 | Share | `GlassButtonGroup` | Related actions in one body of glass, side by side or stacked, with separators and text. The whole body swells under the pointer. |
 | Open | `GlassDropdownMenu` | Menu of actions that swells out of its button, or out of a whole `GlassButtonGroup`, as one body of glass. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 | Unfold | `GlassPopover` | Small surface its button unfolds into, right where the button is. Needs `@ui-sdk/core` and `@ui-sdk/react`. |

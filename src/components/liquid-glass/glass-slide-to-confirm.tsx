@@ -800,7 +800,9 @@ export function GlassSlideToConfirm({
     root.addEventListener('keydown', onKeyDown)
     root.addEventListener('keyup', onKeyUp)
     root.addEventListener('blur', letGo)
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       // The thumb is glass at rest too: white, then the fill's colour once confirmed.
       if (view.visible) {

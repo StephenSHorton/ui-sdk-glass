@@ -70,7 +70,7 @@ export function GlassTabs<T extends string>({
             key={o.value}
             value={o.value}
             aria-label={o['aria-label']}
-            className={`relative inline-flex cursor-pointer items-center justify-center rounded-full font-semibold whitespace-nowrap transition-colors duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-[#3291FF] [&_svg]:shrink-0 ${sizes[size]} ${
+            className={`relative inline-flex cursor-pointer items-center justify-center rounded-full font-semibold whitespace-nowrap transition-colors duration-200 outline-none select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[#3291FF] [&_svg]:shrink-0 ${sizes[size]} ${
               selected
                 ? 'text-neutral-900 dark:text-white [[data-glass-traveling]_&]:text-neutral-500 dark:[[data-glass-traveling]_&]:text-neutral-400'
                 : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'

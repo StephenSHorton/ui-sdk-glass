@@ -94,7 +94,7 @@ export function GlassInput({
           <InputClear
             aria-label={clearLabel}
             data-glass-in=""
-            className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-current/12 outline-none transition-[background-color,scale] duration-150 hover:bg-current/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#3291FF] motion-safe:active:scale-90"
+            className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-current/12 outline-none transition-[background-color,scale] duration-150 hover:bg-current/20 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-[#3291FF] motion-safe:active:scale-90"
           >
             <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-3.5">
               <path d="M18 6 6 18M6 6l12 12" />

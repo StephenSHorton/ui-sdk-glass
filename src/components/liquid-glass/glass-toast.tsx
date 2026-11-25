@@ -151,7 +151,7 @@ const FILL = {
 }
 
 const BUTTON =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-[background-color,opacity,scale] duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] active:scale-[0.96]'
+  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-[background-color,opacity,scale] duration-150 select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] active:scale-[0.96]'
 
 /**
  * Shows the toasts. Place it once (near your app's root) and call `toast()` from anywhere. For a

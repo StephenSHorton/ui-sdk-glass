@@ -190,7 +190,7 @@ export function GlassTableHead({ sortKey, numeric = false, className = '', child
         type="button"
         onClick={() => ctx.press(sortKey)}
         // On a column of numbers the arrow goes first, so the label lines up with the figures.
-        className={`group/sort -mx-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 font-semibold whitespace-nowrap outline-none select-none focus-visible:ring-2 focus-visible:ring-[#3291FF] ${
+        className={`group/sort -mx-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 font-semibold whitespace-nowrap outline-none select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[#3291FF] ${
           numeric ? 'flex-row-reverse' : ''
         } ${active ? '' : 'opacity-60 hover:opacity-100'} transition-opacity duration-150`}
       >

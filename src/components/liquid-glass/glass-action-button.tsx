@@ -223,7 +223,7 @@ export function GlassActionButton({
       disabled={disabled}
       onClick={run}
       style={{ paddingRight: s.merged }}
-      className={`inline-flex shrink-0 cursor-pointer items-center rounded-full font-semibold whitespace-nowrap outline-none select-none focus-visible:ring-2 focus-visible:ring-[#3291FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-default ${s.host} ${fallback[material]} ${className}`}
+      className={`inline-flex shrink-0 cursor-pointer items-center rounded-full font-semibold whitespace-nowrap outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-default ${s.host} ${fallback[material]} ${className}`}
       {...rest}
     >
       <GlassLayer material={material} tint={tint} droplet={state === 'idle' ? 'apart' : 'merged'} pulse={landed} pulseHold={swollen} />

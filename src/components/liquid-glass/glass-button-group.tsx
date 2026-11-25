@@ -137,7 +137,7 @@ export function GlassButtonGroup({
 export function GlassButtonGroupItem({ children, asChild = false, className = '', type = 'button', ...rest }: GlassButtonGroupItemProps) {
   const { size } = useContext(GroupContext)
   // No fill of its own, under the pointer either: the glass answers for the whole group.
-  const classes = `inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full ${items[size]} outline-none focus-visible:ring-2 focus-visible:ring-[#3291FF] disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:shrink-0`
+  const classes = `inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full ${items[size]} outline-none focus-visible:outline-2 focus-visible:outline-[#3291FF] disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:shrink-0`
   if (asChild) {
     const child = Children.only(children) as ReactElement<{ className?: string }>
     return cloneElement(child, { ...rest, className: `${classes} ${child.props.className ?? ''} ${className}` } as Record<string, unknown>)

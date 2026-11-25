@@ -27,40 +27,18 @@ function Row({ shift, seconds, reverse = false }: { shift: number; seconds: numb
   )
 }
 
-type ProgressiveBlurProps = {
-  className?: string
-  backgroundColor?: string
-  position?: 'left' | 'right'
-  width?: string
-  blurAmount?: string
-}
-
-/** A progressive blur at one end of the rows: the stage colour over a backdrop blur, fading towards the middle. */
-function ProgressiveBlur({
-  className = '',
-  backgroundColor = 'var(--stage, #ececee)',
-  position = 'left',
-  width = '150px',
-  blurAmount = '4px',
-}: ProgressiveBlurProps) {
-  const isLeft = position === 'left'
-  return (
-    <div
-      aria-hidden
-      className={`pointer-events-none absolute top-0 h-full select-none ${className}`}
-      style={{
-        [isLeft ? 'left' : 'right']: 0,
-        width,
-        background: `linear-gradient(to ${isLeft ? 'left' : 'right'}, transparent, ${backgroundColor})`,
-        maskImage: `linear-gradient(to ${isLeft ? 'right' : 'left'}, #000 50%, transparent)`,
-        WebkitMaskImage: `linear-gradient(to ${isLeft ? 'right' : 'left'}, #000 50%, transparent)`,
-        WebkitBackdropFilter: `blur(${blurAmount})`,
-        backdropFilter: `blur(${blurAmount})`,
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-      }}
-    />
-  )
+// The rows fade in at both sides through a mask: an SVG ramp, clear at the edges and solid
+// from 10% in, stretched over the whole width (narrow enough to stay clear of the cards).
+const FADE = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 1" preserveAspectRatio="none"><linearGradient id="f"><stop offset="0" stop-opacity="0"/><stop offset=".1"/><stop offset=".9"/><stop offset="1" stop-opacity="0"/></linearGradient><rect width="100" height="1" fill="url(#f)"/></svg>',
+)}")`
+const fade: CSSProperties = {
+  maskImage: FADE,
+  WebkitMaskImage: FADE,
+  maskSize: '100% 100%',
+  WebkitMaskSize: '100% 100%',
+  maskRepeat: 'no-repeat',
+  WebkitMaskRepeat: 'no-repeat',
 }
 
 /** Today, read after mount so a prerendered page doesn't freeze the day it was built. */
@@ -78,15 +56,11 @@ export default function Demo() {
   ]
   return (
     // Where the two cards do not fit side by side (a phone), only the first one shows, centred on the two rows.
-    <div className="@container relative flex w-full items-center justify-center gap-5 py-14">
-      <div
-        aria-hidden
-        className="absolute inset-0 flex flex-col justify-center gap-3 overflow-hidden"
-      >
+    // The rows run from one side of the stage to the other (`data-bleed`: the site's stages drop their side padding for it).
+    <div data-bleed className="@container relative flex w-full items-center justify-center gap-5 py-14">
+      <div aria-hidden className="absolute inset-0 flex flex-col justify-center gap-3 overflow-hidden" style={fade}>
         <Row shift={0} seconds={40} />
         <Row shift={3} seconds={48} reverse />
-        <ProgressiveBlur position="left" />
-        <ProgressiveBlur position="right" />
       </div>
 
       <GlassCard live className="flex size-44 flex-col justify-between p-4">

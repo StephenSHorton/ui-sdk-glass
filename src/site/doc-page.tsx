@@ -125,7 +125,8 @@ export function Preview({ id, locale, title, className = '' }: { id: string; loc
       </div>
       {/* The preview stays mounted so the glass keeps its state when you peek at the code. */}
       <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden">
-        <Stage className="min-h-[340px] p-6 sm:p-12">
+        {/* A demo marked data-bleed runs from one side of the stage to the other: no padding at the sides. */}
+        <Stage className="min-h-[340px] p-6 sm:p-12 has-[>[data-bleed]]:px-0!">
           <Component />
         </Stage>
       </TabsContent>

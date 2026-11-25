@@ -3297,10 +3297,12 @@ export const VERSION = minorOf(LATEST.version)
 const isComponent = (slug?: string) => CATALOG.some((p) => p.slug === slug)
 
 /**
- * The news. Only a release that adds a component is announced to visitors ("What's new",
- * the New pills); everything shipped after it is a patch release and lives in the changelog.
+ * The news. Only a release that adds a component, or one that opens a new major version
+ * (2.0.0), is announced to visitors ("What's new", the New pills); everything shipped after
+ * it is a patch release and lives in the changelog.
  */
-export const FEATURED = RELEASES.find((r) => r.changes.some((c) => c.kind === 'new' && isComponent(c.page))) ?? LATEST
+const isAnnounced = (r: Release) => /^\d+\.0\.0$/.test(r.version) || r.changes.some((c) => c.kind === 'new' && isComponent(c.page))
+export const FEATURED = RELEASES.find(isAnnounced) ?? LATEST
 
 /** Changes about one docs page, newest first, each with its release. */
 export const newsOf = (slug: string) =>

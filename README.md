@@ -40,6 +40,7 @@ One verb each. Nothing overlaps, so picking one takes a second.
 | Flip | `Switch` | On/off switch whose knob swells into clear glass as it crosses the track. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Tick | `Checkbox` | Checkbox under a cap of clear glass, at rest too. Needs `three`, `@ui-sdk/core` and `@ui-sdk/react`. |
 | Stretch | `GlassSelect` | Select whose list swells out of its button as one body of glass, on a neck that stretches and snaps. Ships `GlassPopup` for your own menu or popover. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
+| Circle | `GlassDatePicker` | Date field to type into, whose calendar swells out of the whole field as one body of glass; the value is a plain `YYYY-MM-DD` date. Two side by side make a From and To pair. Needs `@ui-sdk/core` and `@ui-sdk/react`. |
 
 No npm dependencies, except the components marked "Needs …". Every component has its own docs page with live examples, the exact demo source, "use it for / not for", props and an install command.
 

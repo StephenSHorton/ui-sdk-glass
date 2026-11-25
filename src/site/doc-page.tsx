@@ -276,19 +276,28 @@ function BlockView({ block, locale }: { block: Block; locale: Locale }) {
  * The Examples sections are held back for now: the site leaves them out, heading and
  * all, and promises nothing in their place. The blocks stay in content.ts (and in the
  * Markdown and llms files); set this to false to bring them back. Pages listed in
- * EXAMPLES_SHOWN (by slug) show theirs already.
+ * EXAMPLES_SHOWN (by slug) show theirs already: all of them, or only the demos named
+ * (each with the text that follows it, up to the next demo).
  */
 const EXAMPLES_HIDDEN = true
-const EXAMPLES_SHOWN = new Set(['slide-to-confirm'])
+const EXAMPLES_SHOWN: Record<string, 'all' | string[]> = {
+  'slide-to-confirm': 'all',
+  button: ['glass-button-props'],
+}
 
-/** Drops each Examples section: its heading and everything up to the next one. */
+/** Drops each Examples section (or all of it but the demos its page shows): its heading and everything up to the next one. */
 function withoutExamples(blocks: Block[], slug: string): Block[] {
-  if (!EXAMPLES_HIDDEN || EXAMPLES_SHOWN.has(slug)) return blocks
+  const shown = EXAMPLES_SHOWN[slug]
+  if (!EXAMPLES_HIDDEN || shown === 'all') return blocks
   const out: Block[] = []
-  let skipping = false
+  let inExamples = false
+  let keep = true
   for (const b of blocks) {
-    if (b.type === 'h' || b.type === 'install') skipping = b.type === 'h' && b.text.en === 'Examples'
-    if (!skipping) out.push(b)
+    if (b.type === 'h' || b.type === 'install') {
+      inExamples = b.type === 'h' && b.text.en === 'Examples'
+      keep = !inExamples || !!shown
+    } else if (inExamples && b.type === 'demo') keep = !!shown && shown.includes(b.id)
+    if (keep) out.push(b)
   }
   return out
 }

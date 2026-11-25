@@ -341,6 +341,14 @@ and do not modify the files in components/liquid-glass/.`,
 </GlassButton>`,
       },
       h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-button-props', title: t('Every prop, side by side', 'Bütün prop\'lar yan yana') },
+      {
+        type: 'p',
+        text: t(
+          'One row per prop, its values next to each other: `material` (clear glass and three colours of tinted glass), `tint` at 0 and 1 over flat colour, the four of `size`, `icon` with `iconPosition`, and `pull`. The buttons of a row sit 10 px apart: hold one and pull it towards its neighbour, and the two melt into one body.',
+          'Her prop için bir satır, değerleri yan yana: `material` (berrak cam ve üç renkte renkli cam), düz renk üstünde 0 ve 1 değerleriyle `tint`, dört `size`, `iconPosition` ile `icon` ve `pull`. Bir satırdaki butonlar arasında 10 px var: birini basılı tutup komşusuna doğru çek, ikisi tek gövdede kaynaşır.',
+        ),
+      },
       { type: 'demo', id: 'glass-button-tinted', title: t('Tinted colours and sizes', 'Renkli cam ve boyutlar') },
       {
         type: 'p',
@@ -1851,6 +1859,21 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.0.1',
+    date: '2026-11-25',
+    title: t('Button: an example with every prop side by side.', 'Button: bütün prop\'ların yan yana durduğu bir örnek.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'button',
+        text: t(
+          'The Examples section is back on this page with one example, "Every prop, side by side": one row per prop (`material`, `tint`, `size`, `icon`, `pull`), with clear and tinted buttons of different colours next to each other, close enough to melt into one another when you pull one.',
+          'Örnekler bölümü tek bir örnekle bu sayfaya geri geldi, "Bütün prop\'lar yan yana": her prop için bir satır (`material`, `tint`, `size`, `icon`, `pull`), farklı renklerde berrak ve renkli butonlar yan yana, birini çekince birbirine kaynaşacak kadar yakın.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.0.0',
     date: '2026-11-24',

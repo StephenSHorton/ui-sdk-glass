@@ -9,6 +9,7 @@
 //   GlassSlideToConfirm drag  — drag the glass thumb to the end to confirm
 //   GlassCard          hold    — a card of glass: holds your content, its rim bends what slides behind
 //   GlassButtonGroup   share   — related actions share one body of glass
+//   GlassToaster       rise    — a short message rises on frosted glass after an action, stays a moment and goes
 export { GlassButton, type GlassButtonProps, type GlassButtonSize } from './glass-button'
 export { GlassActionButton, type GlassActionButtonProps, type GlassActionState } from './glass-action-button'
 export { GlassTabs, type GlassTabsProps, type GlassTabOption } from './glass-tabs'
@@ -25,6 +26,7 @@ export {
   type GlassButtonGroupSize,
   type GlassButtonGroupOrientation,
 } from './glass-button-group'
+export { GlassToaster, createToaster, toast, type GlassToasterProps, type Toaster, type ToastData, type ToastType } from './glass-toast'
 // Building blocks: GlassLens puts the travelling lens on your own tabs (Radix Tabs, a radiogroup).
 export { GlassLens, type GlassLensProps } from './glass-lens'
 // GlassPopup makes a popup (a select's list, a menu, a popover) one body with the control that opens it: on a neck (`stretch`), over the control (`morph`) or grown out of it (`grow`).

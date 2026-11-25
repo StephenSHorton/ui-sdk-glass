@@ -72,7 +72,7 @@ export const REGISTRY: RegistryItem[] = [
   {
     name: 'liquid-glass',
     title: 'Liquid Glass (everything)',
-    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard and GlassButtonGroup on one WebGL2 engine. GlassButton and GlassTabs need @ui-sdk/core and @ui-sdk/react.',
+    description: 'GlassButton, GlassActionButton, GlassTabs, GlassBadge, GlassSlideToConfirm, GlassCard, GlassButtonGroup and GlassToaster on one WebGL2 engine. GlassButton, GlassTabs and GlassToaster need @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('index.ts')],
     dependencies: ['@ui-sdk/core'],
     docs: 'introduction',
@@ -134,6 +134,13 @@ export const REGISTRY: RegistryItem[] = [
     title: 'GlassMenu',
     description: 'Grow: a menu its button (or a whole GlassButtonGroup) grows into, on any side, with submenus, checkbox and radio items, groups and shortcuts (GlassPopup included). Needs @ui-sdk/core and @ui-sdk/react.',
     entries: [liquid('glass-menu.tsx')],
+    dependencies: ['@ui-sdk/core'],
+  },
+  {
+    name: 'toast',
+    title: 'GlassToaster',
+    description: 'Rise: a short message on frosted glass after an action, which stays a moment and goes; several gather into a stack. Plain, error and loading forms, one action. Needs @ui-sdk/core and @ui-sdk/react.',
+    entries: [liquid('glass-toast.tsx')],
     dependencies: ['@ui-sdk/core'],
   },
 ]
@@ -1825,6 +1832,119 @@ const popup = useGlassPopup({ opening: 'morph' })
       },
     ],
   },
+  {
+    slug: 'toast',
+    group: 'components',
+    title: t('Toast', 'Toast'),
+    name: 'GlassToaster',
+    description: t(
+      'The short message that rises after an action, such as "Saved" or "Could not refresh", on a pane of frosted glass. It stays a few seconds and goes; several gather into a stack that fans out under the pointer.',
+      'Bir eylemden sonra yükselen kısa mesaj ("Kaydedildi", "Yenilenemedi" gibi), buzlu camdan bir pano üstünde. Birkaç saniye kalır ve gider; birkaçı bir yığında toplanır, imleç gelince yelpaze gibi açılır.',
+    ),
+    verb: t('Rise', 'Yüksel'),
+    signature: t('A short message rises on glass after an action, stays a moment and goes.', 'Bir eylemden sonra camın üstünde kısa bir mesaj yükselir, bir an kalır ve gider.'),
+    hero: 'glass-toast-basic',
+    blocks: [
+      {
+        type: 'when',
+        use: [
+          t('Saying what an action did once it is done: Saved, Exported, Prices refreshed.', 'Bir eylem bitince ne yaptığını söylemek: Kaydedildi, Dışa aktarıldı, Fiyatlar yenilendi.'),
+          t('An error the person can carry on past, with one way to answer it: Retry, Undo, View.', 'Kişinin geçip gidebileceği, tek bir yanıtı olan bir hata: Yeniden dene, Geri al, Görüntüle.'),
+          t('Something slow that runs in the background: a loading toast that turns into its result.', 'Arka planda süren yavaş bir iş: sonucuna dönüşen bir yükleniyor toast\'ı.'),
+        ],
+        avoid: [
+          t('A question that needs an answer before going on: use a dialog.', 'Devam etmeden önce yanıt isteyen bir soru: bir diyalog kullan.'),
+          t('Something that must stay on screen: a toast goes by itself. Show it on the page, or give the toast `duration: Infinity`.', 'Ekranda kalması gereken bir şey: toast kendiliğinden gider. Sayfada göster ya da toast\'a `duration: Infinity` ver.'),
+          t('A label on a control: use Badge.', 'Bir kontrolün üstündeki etiket: Badge kullan.'),
+        ],
+      },
+      { type: 'install', item: 'toast' },
+      {
+        type: 'note',
+        text: t(
+          'The behaviour (the queue and its timers, the stack, swiping, the keyboard, and how each toast is announced to screen readers) comes from UI SDK, so Toast needs `@ui-sdk/core` and `@ui-sdk/react`. The install command adds them at the exact version this was built on: UI SDK is in beta and its API may still change.',
+          'Davranış (kuyruk ve zamanlayıcıları, yığın, kaydırma, klavye ve her toast\'ın ekran okuyuculara nasıl duyurulduğu) UI SDK\'dan gelir; bu yüzden Toast `@ui-sdk/core` ve `@ui-sdk/react` paketlerine ihtiyaç duyar. Kurulum komutu onları, bileşenin yazıldığı tam sürümle ekler: UI SDK beta aşamasında ve API\'si hâlâ değişebilir.',
+        ),
+      },
+      h('Usage', 'Kullanım'),
+      {
+        type: 'p',
+        text: t(
+          'Place `GlassToaster` once, near your app\'s root, and call `toast()` from anywhere: a click handler, a fetch, code outside React. Both come from `glass-toast` (and from the index).',
+          '`GlassToaster`\'ı bir kez, uygulamanın köküne yakın bir yere koy ve `toast()`\'u her yerden çağır: bir tıklama işleyicisi, bir fetch, React dışındaki kod. İkisi de `glass-toast` dosyasından gelir (index\'ten de).',
+        ),
+      },
+      {
+        type: 'code',
+        title: 'app.tsx',
+        code: `import { GlassToaster, toast } from '@/components/liquid-glass/glass-toast'
+
+// Once, near the root.
+<GlassToaster />
+
+// Plain, with a line under it and one action.
+toast('Mark saved', {
+  description: 'AAPL at $231.40',
+  action: { label: 'Undo', onAction: undoMark },
+})
+
+// An error: red-tinted glass and a red mark, announced at once.
+toast.error('Could not refresh', { action: { label: 'Retry', onAction: refresh } })
+
+// Loading, then its result, in the same toast.
+toast.promise(refresh, {
+  loading: 'Refreshing prices…',
+  success: 'Prices refreshed',
+  error: 'Could not refresh',
+})`,
+      },
+      h('Examples', 'Örnekler'),
+      { type: 'demo', id: 'glass-toast-basic', title: t('After Refresh, Save and Export', 'Yenile, Kaydet ve Dışa aktar sonrası') },
+      {
+        type: 'p',
+        text: t(
+          'A toast comes up from the edge and fades in, stays four seconds here (five by default) and fades out. A new one comes in front and pushes the last one back, smaller, with only its glass peeking out above; three show at once (`maxVisible`) and the rest wait their turn, their timers stopped. Under the pointer or focus the stack fans out, each toast at its own height, and every timer waits. Swipe a toast down or towards the side it sits on to send it away; a short swipe springs back. This example keeps the stack over its own stage with CSS anchor positioning (`position-anchor` on the region); in an app it sits at the window\'s edge.',
+          'Toast kenardan yükselip belirir, burada dört saniye (varsayılan beş) kalır ve söner. Yenisi öne gelir, öncekini geriye, küçülterek iter; ondan yalnızca camı üstte görünür. Aynı anda üçü görünür (`maxVisible`), gerisi sırasını bekler, zamanlayıcıları durur. İmleç ya da odak gelince yığın yelpaze gibi açılır, her toast kendi yüksekliğinde durur ve bütün zamanlayıcılar bekler. Bir toast\'ı göndermek için aşağı ya da durduğu yana kaydır; kısa bir kaydırma geri yaylanır. Bu örnek, yığını CSS anchor positioning ile kendi sahnesinin üstünde tutar (bölgede `position-anchor`); bir uygulamada pencerenin kenarında durur.',
+        ),
+      },
+      {
+        type: 'p',
+        text: t(
+          'Each toast is Card\'s glass: the rim pulls what is behind towards the middle, a 5 px frost (`blur`) and a 70% tint (`tint`), white on a light page and black on a dark one, with a soft shadow. It is a surface, so it takes no light of its own; its action and its × light it where they are pressed. The glass follows the toast as the stack moves and as it is swiped, so it always bends what lies behind it now. An error is the same glass tinted red, pale on a light page and deep on a dark one, with a red mark; a success has a check that draws itself in, a loading toast a turning ring, a warning an amber mark. The type also reaches CSS as `data-type` on each toast.',
+          'Her toast Card\'ın camıdır: kenar arkada kalanı ortaya doğru çeker, 5 px buzlanma (`blur`) ve %70 ton (`tint`), açık sayfada beyaz, koyu sayfada siyah, yumuşak bir gölgeyle. Bir yüzeydir, kendi ışığı yoktur; eylemi ve × basıldıkları yerde onu aydınlatır. Yığın hareket ederken ve kaydırılırken cam toast\'ı izler, böylece her an arkasında kalanı büker. Hata aynı camın kırmızıya çalanıdır (açık sayfada soluk, koyu sayfada derin) ve kırmızı bir işaret taşır; başarıda kendini çizen bir onay, yükleniyor toast\'ında dönen bir halka, uyarıda kehribar bir işaret vardır. Tür, her toast\'ta `data-type` olarak CSS\'e de ulaşır.',
+        ),
+      },
+      h('API reference', 'API referansı'),
+      {
+        type: 'props',
+        rows: [
+          { name: 'toast(title, options?)', type: '(title, options) => string', description: t('Shows a toast and returns its id. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set its type; `toast.promise(promise, { loading, success, error })` turns a loading toast into its result. `toast.update(id, options)` and `toast.dismiss(id?)` change or close one, or every one.', 'Bir toast gösterir ve kimliğini döndürür. `toast.success`, `.error`, `.warning`, `.info` ve `.loading` türünü belirler; `toast.promise(promise, { loading, success, error })` yükleniyor toast\'ını sonucuna dönüştürür. `toast.update(id, options)` ve `toast.dismiss(id?)` birini ya da hepsini değiştirir ya da kapatır.') },
+          { name: 'options.description', type: 'ReactNode', description: t('A line under the title.', 'Başlığın altında bir satır.') },
+          { name: 'options.action', type: '{ label, onAction?, href? }', description: t('One button, like Undo or Retry. A promise from `onAction` keeps the toast open, the button dimmed, until it settles; `href` makes it a link.', 'Geri al ya da Yeniden dene gibi tek bir buton. `onAction`\'ın döndürdüğü promise toast\'ı açık, butonu soluk tutar, ta ki sonuçlanana dek; `href` onu bir bağlantı yapar.') },
+          { name: 'options.duration', type: 'number', default: '5000', description: t('How long it shows, in ms, while nothing pauses it. `Infinity` keeps it until it is dismissed.', 'Hiçbir şey duraklatmazken ne kadar göründüğü, ms olarak. `Infinity` kapatılana dek tutar.') },
+          { name: 'options.dismissible', type: 'boolean', default: 'true', description: t('`false` takes away its ×, the swipe and Escape; its timer still closes it.', '`false` × butonunu, kaydırmayı ve Escape\'i kaldırır; zamanlayıcısı yine kapatır.') },
+          { name: 'options.priority', type: "'polite' | 'assertive'", description: t('How screen readers announce it. Errors are assertive, the rest polite.', 'Ekran okuyucuların onu nasıl duyurduğu. Hatalar assertive, geri kalanı polite.') },
+          { name: 'side / align', type: "'bottom' | 'top' / 'start' | 'center' | 'end'", default: "'bottom' / 'end'", description: t('On `GlassToaster`: where the stack sits. Start and end follow the writing direction.', '`GlassToaster` üzerinde: yığının durduğu yer. Start ve end yazı yönünü izler.') },
+          { name: 'maxVisible / expanded', type: 'number / boolean', default: '3 / false', description: t('How many toasts show at once, and whether the stack stays fanned out.', 'Aynı anda kaç toast görüneceği ve yığının hep açık kalıp kalmayacağı.') },
+          { name: 'toaster', type: 'Toaster', description: t('A queue of its own, from `createToaster()`. Left out, the region shows the toasts of the shared `toast`.', '`createToaster()` ile kendine ait bir kuyruk. Verilmezse bölge, ortak `toast`\'ın toast\'larını gösterir.') },
+          { name: 'tint / blur', type: 'number', default: '0.7 / 5', description: t('The glass, as on Card: how much tint covers the backdrop (0–1), and its frost in px.', 'Cam, Card\'daki gibi: tonun arkayı ne kadar örttüğü (0–1) ve px olarak buzlanması.') },
+          { name: 'closeLabel / aria-label', type: 'string', default: "'Dismiss' / 'Notifications'", description: t('The × button\'s name and the region\'s, in your page\'s language.', '× butonunun ve bölgenin adı, sayfanın dilinde.') },
+          { name: 'shortcut', type: 'string | null', default: "'F6'", description: t('The key that moves focus into the stack and back. `null` turns it off.', 'Odağı yığına taşıyıp geri getiren tuş. `null` kapatır.') },
+          { name: 'style / className', type: 'CSS', description: t('For the region. Its size and spacing are CSS variables: `--glass-toast-width` (22rem), `--glass-toast-offset` from the edge (1rem), `--glass-toast-gap` (8px) and `--glass-toast-peek` (10px).', 'Bölge için. Boyutu ve aralıkları CSS değişkenleridir: `--glass-toast-width` (22rem), kenardan `--glass-toast-offset` (1rem), `--glass-toast-gap` (8px) ve `--glass-toast-peek` (10px).') },
+        ],
+      },
+      h('Accessibility', 'Erişilebilirlik'),
+      {
+        type: 'list',
+        items: [
+          t('Each toast is announced once through live regions, without taking focus: politely by default, at once for an error. The visible stack is not itself a live region, so nothing is read twice.', 'Her toast, odağı almadan, canlı bölgeler üzerinden bir kez duyurulur: varsayılan olarak nazikçe, hata için hemen. Görünen yığının kendisi canlı bölge değildir; hiçbir şey iki kez okunmaz.'),
+          t('While it holds toasts the stack is a landmark named Notifications (`aria-label` to name it in your language). F6 moves focus to the newest toast and back; Tab walks the toasts and their buttons; Escape dismisses the focused one.', 'Toast tuttuğu sürece yığın, Notifications adlı bir işaret bölgesidir (kendi dilinde adlandırmak için `aria-label`). F6 odağı en yeni toast\'a taşır ve geri getirir; Tab toast\'lar ve butonları arasında gezer; Escape odaktakini kapatır.'),
+          t('Timers wait while the pointer or focus is in the stack and while the page is hidden, so a toast is never gone before it can be read. Keep messages short; give one that must stay `duration: Infinity`.', 'İmleç ya da odak yığındayken ve sayfa gizliyken zamanlayıcılar bekler; böylece bir toast okunmadan gitmez. Mesajları kısa tut; kalması gerekene `duration: Infinity` ver.'),
+          t('With reduced motion toasts only fade, and the glass holds still. Without WebGL2 each is a plain frosted panel.', 'Hareketi azalt açıksa toast\'lar yalnızca belirip söner, cam da durur. WebGL2 yoksa her biri düz, buzlu bir paneldir.'),
+        ],
+      },
+    ],
+  },
 ]
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug)
@@ -1859,6 +1979,30 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.1.0',
+    date: '2026-11-25',
+    title: t('Toast.', 'Toast.'),
+    changes: [
+      {
+        kind: 'new',
+        page: 'toast',
+        text: t(
+          'Toast: the short message that rises after an action, on Card\'s frosted glass. It comes up from the edge, stays a few seconds and goes; several gather into a stack, the newest in front and the rest peeking out behind it, which fans out under the pointer or focus. Swipe one away, press its ×, or Escape. It has a plain form, an error form (red-tinted glass and a red mark), success, warning and loading forms, and one action button. The queue, its timers, swiping, the keyboard and the announcements to screen readers come from UI SDK.',
+          'Toast: bir eylemden sonra Card\'ın buzlu camı üstünde yükselen kısa mesaj. Kenardan yükselir, birkaç saniye kalır ve gider; birkaçı bir yığında toplanır, en yenisi önde, ötekiler arkasından görünür; yığın imleç ya da odak gelince yelpaze gibi açılır. Kaydırarak, × ile ya da Escape ile kapatılır. Düz bir biçimi, bir hata biçimi (kırmızıya çalan cam ve kırmızı bir işaret), başarı, uyarı ve yükleniyor biçimleri ve tek bir eylem butonu vardır. Kuyruk, zamanlayıcılar, kaydırma, klavye ve ekran okuyuculara duyurular UI SDK\'dan gelir.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'toast',
+        also: ['card'],
+        text: t(
+          'Glass that holds still (a card, a toast) now follows its element when something else moves it: while a CSS transition carries it, or a swipe writes its position into its style, the glass is drawn on every frame and bends what lies behind it where it is now, instead of carrying a picture of where it was. A change of opacity alone draws nothing more. Buttons are as they were.',
+          'Sabit duran cam (bir kart, bir toast) artık öğesini başka bir şey hareket ettirdiğinde onu izliyor: bir CSS geçişi onu taşırken ya da bir kaydırma konumunu stiline yazarken cam her karede çiziliyor ve arkasında kalanı, olduğu yerin resmini taşımak yerine şu an bulunduğu yerde büküyor. Yalnızca saydamlığın değişmesi fazladan bir şey çizdirmiyor. Butonlar eskisi gibi.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.0.4',
     date: '2026-11-25',

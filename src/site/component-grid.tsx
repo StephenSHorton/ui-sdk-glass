@@ -17,7 +17,8 @@ function Tile({ page, locale, wide = false, inspector = false }: { page: DocPage
   return (
     <article className={`group/tile @container relative flex min-w-0 flex-col overflow-hidden rounded-[28px] bg-stage ${wide ? 'sm:col-span-2' : ''}`}>
       <div
-        className={`flex w-full flex-1 items-center justify-center pt-16 pb-2 sm:py-24 ${
+        // (A demo marked data-bleed runs edge to edge in any tile.)
+        className={`flex w-full flex-1 items-center justify-center pt-16 pb-2 sm:py-24 has-[>[data-bleed]]:px-0! ${
           // A wide tile without notes runs its demo edge to edge (the glass cards' rows of colour).
           wide && !inspector ? 'min-h-[320px] sm:min-h-[460px]' : wide ? 'min-h-[360px] px-5 sm:min-h-[520px] sm:px-6' : 'min-h-[280px] px-5 sm:min-h-[420px] sm:px-6'
         }`}

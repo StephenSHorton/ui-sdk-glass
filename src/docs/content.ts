@@ -1860,6 +1860,21 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '2.0.4',
+    date: '2026-11-25',
+    title: t('Card: the rows behind it run edge to edge.', 'Card: arkasındaki sıralar kenardan kenara uzanıyor.'),
+    changes: [
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'In the Card example the rows of colour run from one side of the stage to the other, with no padding at the sides, and fade in at both ends through an SVG mask instead of a progressive blur.',
+          'Card örneğinde renk sıraları sahnenin bir yanından öbür yanına, yanlarda boşluk olmadan uzanıyor ve iki uçta kademeli bulanıklık yerine bir SVG maskeyle beliriyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '2.0.3',
     date: '2026-11-25',
     title: t('Card: far less to paint, upload and copy on every frame.', 'Card: her karede boyanan, yüklenen ve kopyalanan çok daha az.'),

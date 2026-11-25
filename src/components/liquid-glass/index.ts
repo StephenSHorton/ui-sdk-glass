@@ -1,5 +1,5 @@
 // Liquid Glass — glass components (React 19 + Tailwind CSS v4), drawn by one dependency-free engine.
-// GlassButton and GlassTabs take their behaviour from UI SDK (@ui-sdk/core, @ui-sdk/react).
+// GlassButton, GlassTabs and GlassInput take their behaviour from UI SDK (@ui-sdk/core, @ui-sdk/react).
 // Copy the whole `liquid-glass/` folder, or install with the shadcn CLI (see README).
 //
 //   GlassButton        press   — swells under the pointer, bends the page behind it
@@ -9,12 +9,31 @@
 //   GlassSlideToConfirm drag  — drag the glass thumb to the end to confirm
 //   GlassCard          hold    — a card of glass: holds your content, its rim bends what slides behind
 //   GlassButtonGroup   share   — related actions share one body of glass
+//   GlassInput         type    — a field of glass you type on; search adds a magnifier and a clear button
+//   GlassToaster       rise    — a short message rises on frosted glass after an action, stays a moment and goes
+//   GlassTable         sort    — rows of data on one large sheet of glass; its headers sort
 export { GlassButton, type GlassButtonProps, type GlassButtonSize } from './glass-button'
 export { GlassActionButton, type GlassActionButtonProps, type GlassActionState } from './glass-action-button'
 export { GlassTabs, type GlassTabsProps, type GlassTabOption } from './glass-tabs'
 export { GlassBadge, type GlassBadgeProps } from './glass-badge'
 export { GlassSlideToConfirm, type GlassSlideToConfirmProps, type GlassSlideState, type GlassSlideSize } from './glass-slide-to-confirm'
 export { GlassCard, type GlassCardProps } from './glass-card'
+export {
+  GlassTable,
+  GlassTableHeader,
+  GlassTableBody,
+  GlassTableFooter,
+  GlassTableRow,
+  GlassTableHead,
+  GlassTableCell,
+  GlassTableCaption,
+  sortRows,
+  type GlassTableProps,
+  type GlassTableHeadProps,
+  type GlassTableCellProps,
+  type GlassTableSort,
+  type GlassTableSortDirection,
+} from './glass-table'
 export {
   GlassButtonGroup,
   GlassButtonGroupItem,
@@ -25,6 +44,8 @@ export {
   type GlassButtonGroupSize,
   type GlassButtonGroupOrientation,
 } from './glass-button-group'
+export { GlassInput, type GlassInputProps } from './glass-input'
+export { GlassToaster, createToaster, toast, type GlassToasterProps, type Toaster, type ToastData, type ToastType } from './glass-toast'
 // Building blocks: GlassLens puts the travelling lens on your own tabs (Radix Tabs, a radiogroup).
 export { GlassLens, type GlassLensProps } from './glass-lens'
 // GlassPopup makes a popup (a select's list, a menu, a popover) one body with the control that opens it: on a neck (`stretch`), over the control (`morph`) or grown out of it (`grow`).

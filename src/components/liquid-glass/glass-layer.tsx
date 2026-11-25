@@ -338,6 +338,12 @@ export function GlassLayer({
       else host.style.removeProperty('--glass-bend')
     }
     const maxScale = () => 1 + (2 * MAX_GROW_PX) / Math.max(w, 1)
+    // Still glass its owner moves (a toast in its stack): while a CSS transition carries the host
+    // (anything but its opacity), the glass is drawn on every frame, so it bends what lies behind
+    // it where it is now. A move written straight into the host's style (a swipe) is heard below.
+    let following = false
+    const travelling = () =>
+      host.getAnimations().some((a) => a.playState === 'running' && a instanceof CSSTransition && a.transitionProperty !== 'opacity')
     const view: GlassView = {
       canvas,
       ctx,
@@ -392,7 +398,8 @@ export function GlassLayer({
         view.grow = scale.x
         const fading = 1 - colorT > 0.004
         colorT = fading ? colorT + (1 - colorT) * Math.min(1, dt * 14) : 1
-        return a || b || c || d || e || greeting || nodding || nodDue || bend > 0 || fading || (clear && live && view.visible)
+        if (following) following = travelling()
+        return a || b || c || d || e || greeting || nodding || nodDue || bend > 0 || fading || following || (clear && live && view.visible)
       },
       lens: (refresh) => {
         if (refresh) {
@@ -736,7 +743,9 @@ export function GlassLayer({
     target.addEventListener('pointercancel', onUp)
     target.addEventListener('pointerenter', onEnter)
     target.addEventListener('pointerleave', onLeave)
-    const io = new IntersectionObserver(([entry]) => {
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       view.visible = entry.isIntersecting
       dirty()
     })
@@ -748,8 +757,16 @@ export function GlassLayer({
     mo.observe(host, {
       childList: true,
       attributes: true,
-      attributeFilter: ['class', 'disabled', 'aria-pressed', 'aria-checked', 'aria-selected', 'aria-expanded', 'data-state'],
+      // Still glass also hears its host's style: its owner may move it there (a swipe), and
+      // nothing of the kit writes to it (a button's swell and pull do, so they are left out).
+      attributeFilter: ['class', 'disabled', 'aria-pressed', 'aria-checked', 'aria-selected', 'aria-expanded', 'data-state', ...(swell ? [] : ['style'])],
     })
+    const onTransition = (e: TransitionEvent) => {
+      if (swell || e.target !== host || e.propertyName === 'opacity') return
+      following = true
+      dirty()
+    }
+    host.addEventListener('transitionrun', onTransition)
     // A scroll changes what lies behind, never the glass: sizes and colours are not read again.
     const onScroll = () => {
       view.repaint = true
@@ -764,6 +781,7 @@ export function GlassLayer({
       io.disconnect()
       ro.disconnect()
       mo.disconnect()
+      host.removeEventListener('transitionrun', onTransition)
       removeEventListener('scroll', onScroll, { capture: true })
       target.removeEventListener('pointerdown', onDown)
       target.removeEventListener('pointerup', onUp)

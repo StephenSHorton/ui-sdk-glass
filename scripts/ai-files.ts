@@ -133,7 +133,7 @@ function llmsIndex(): string {
   const lines = [
     '# Liquid Glass UI',
     '',
-    '> Glass React components drawn by one WebGL2 shader, with behaviour from UI SDK (`@ui-sdk/core`, `@ui-sdk/react`) where a component needs it, one verb each: press (GlassButton), merge (GlassActionButton), travel (GlassTabs), flow (GlassBadge), drag (GlassSlideToConfirm), hold (GlassCard), slide (RangeSlider), flip (Switch), tick (Checkbox; these three need `three`), stretch (GlassSelect; needs `@ui-sdk/core` and `@ui-sdk/react`). Copy-paste components (shadcn registry), MIT.',
+    '> Glass React components drawn in WebGL2, with behaviour from UI SDK (`@ui-sdk/core`, `@ui-sdk/react`) where a component needs it, one verb each: press (GlassButton), merge (GlassActionButton), travel (GlassTabs), flow (GlassBadge), drag (GlassSlideToConfirm), hold (GlassCard), slide (RangeSlider), flip (Switch), tick (Checkbox; these three need `three`), stretch (GlassSelect; needs `@ui-sdk/core` and `@ui-sdk/react`). Copy-paste components (shadcn registry), MIT.',
     '',
     RULES,
     '',

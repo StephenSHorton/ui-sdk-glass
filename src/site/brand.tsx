@@ -48,7 +48,7 @@ const COPY = {
     type: 'Three typefaces, each with one job. All three are open source and load from Google Fonts.',
     faces: {
       display: { role: 'Display', use: 'Page titles and landing headings. One weight, so never bold.', sample: 'Glass that bends the page.' },
-      sans: { role: 'Text', use: 'Everything you read: running text, navigation, controls.', sample: 'React components drawn by one WebGL2 shader.' },
+      sans: { role: 'Text', use: 'Everything you read: running text, navigation, controls.', sample: 'React components drawn in WebGL2.' },
       mono: { role: 'Mono', use: 'Code, versions and small labels.', sample: 'pnpm dlx shadcn@latest add button' },
     },
     scale: 'The type scale',
@@ -102,7 +102,7 @@ const COPY = {
     type: 'Üç yazı tipi, her birinin tek bir işi var. Üçü de açık kaynak ve Google Fonts\'tan yüklenir.',
     faces: {
       display: { role: 'Başlık', use: 'Sayfa başlıkları ve ana sayfa başlıkları. Tek ağırlık; asla kalın yapılmaz.', sample: 'Sayfayı büken cam.' },
-      sans: { role: 'Metin', use: 'Okunan her şey: akan metin, gezinme, kontroller.', sample: 'Tek bir WebGL2 gölgelendiricisiyle çizilen React bileşenleri.' },
+      sans: { role: 'Metin', use: 'Okunan her şey: akan metin, gezinme, kontroller.', sample: 'WebGL2 ile çizilen React bileşenleri.' },
       mono: { role: 'Eş aralıklı', use: 'Kod, sürüm numaraları ve küçük etiketler.', sample: 'pnpm dlx shadcn@latest add button' },
     },
     scale: 'Yazı ölçeği',

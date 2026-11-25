@@ -2,7 +2,7 @@
 
 **Docs:** https://onemorethink.dev · [Türkçe](https://onemorethink.dev/tr) · **For AI:** [llms.txt](https://onemorethink.dev/llms.txt)
 
-Glass components for React, drawn by one WebGL2 shader, with behaviour from UI SDK. Each is named for the one thing it does: **press**, **merge**, **travel**, **flow**, **drag**, **hold**. Copy a file, get exactly what the demo shows. MIT.
+Glass components for React, drawn in WebGL2, with behaviour from UI SDK. Each is named for the one thing it does: **press**, **merge**, **travel**, **flow**, **drag**, **hold**. Copy a file, get exactly what the demo shows. MIT.
 
 ## Install
 

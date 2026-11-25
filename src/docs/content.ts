@@ -157,8 +157,8 @@ export const PAGES: DocPage[] = [
       {
         type: 'p',
         text: t(
-          'Liquid Glass UI is a set of React components drawn by one WebGL2 glass shader. Each does one thing the others don\'t. There is no npm package: you copy the files into your project, and they are yours.',
-          'Liquid Glass UI, tek bir WebGL2 cam gölgelendiricisiyle çizilen React bileşenleridir. Her biri, diğerlerinin yapmadığı tek bir işi yapar. npm paketi yok: dosyaları projene kopyalarsın ve artık senindir.',
+          'Liquid Glass UI is a set of React components drawn in WebGL2. Each does one thing the others don\'t. There is no npm package: you copy the files into your project, and they are yours.',
+          'Liquid Glass UI, WebGL2 ile çizilen React bileşenleridir. Her biri, diğerlerinin yapmadığı tek bir işi yapar. npm paketi yok: dosyaları projene kopyalarsın ve artık senindir.',
         ),
       },
       { type: 'index' },
@@ -166,7 +166,7 @@ export const PAGES: DocPage[] = [
       {
         type: 'list',
         items: [
-          t('**One engine.** One WebGL2 context for the whole page, in plain TypeScript files. Where a component needs behaviour (keyboard, focus, forms, ARIA), it comes from UI SDK.', '**Tek motor.** Tüm sayfa için tek WebGL2 bağlamı, düz TypeScript dosyalarında. Bir bileşenin davranışa (klavye, odak, formlar, ARIA) ihtiyacı varsa, o UI SDK\'dan gelir.'),
+          t('**One engine.** One WebGL2 context draws every glass surface on the page, in plain TypeScript files; only Slider, Switch and Checkbox keep a renderer of their own, built on three.js. Where a component needs behaviour (keyboard, focus, forms, ARIA), it comes from UI SDK.', '**Tek motor.** Sayfadaki cam yüzeyleri tek bir WebGL2 bağlamı çizer, düz TypeScript dosyalarında; yalnızca Slider, Switch ve Checkbox three.js üzerine kurulu kendi çizicisini kullanır. Bir bileşenin davranışa (klavye, odak, formlar, ARIA) ihtiyacı varsa, o UI SDK\'dan gelir.'),
           t('**Your DOM.** The glass is a canvas behind your own elements, so any router, any styling and your own markup keep working.', '**Senin DOM\'un.** Cam, senin öğelerinin arkasındaki bir tuvaldir; her router, her stil ve kendi işaretlemen çalışmaya devam eder.'),
           t('**Free at rest.** The render loop runs only while a spring moves and stops completely when nothing does.', '**Dururken bedava.** Çizim döngüsü yalnız bir yay hareket ederken çalışır, hiçbir şey kıpırdamıyorsa tamamen durur.'),
         ],
@@ -1859,6 +1859,70 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.0.2',
+    date: '2026-11-25',
+    title: t('The engine does less: nothing at rest, and far less for the GPU.', 'Motor daha az iş yapıyor: boştayken hiç, çizerken GPU\'ya çok daha az.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'menu',
+        also: ['popover'],
+        text: t(
+          'A Menu or a Popover that was shut asked the engine for a new frame on every frame, for as long as it was on the page: the loop never stopped, and the browser went through a whole frame of its own each time with nothing moving. It now says once that it has landed, and the page is still again.',
+          'Kapalı duran bir Menu ya da Popover, sayfada olduğu sürece her karede motordan yeni bir kare istiyordu: döngü hiç durmuyor, hiçbir şey kıpırdamazken tarayıcı her seferinde baştan sona bir kare işliyordu. Artık yerine oturduğunu bir kez söylüyor ve sayfa yeniden duruyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'badge',
+        text: t(
+          'Once its glass has drawn, a Badge hides its plain CSS look, but the marquee in that look kept running unseen. It ran on the main thread, so on every frame of anything else on the page the browser worked out all of the page\'s layers again: several milliseconds a frame, on every page with a Badge. The hidden marquee now stops; without WebGL2 it runs as before.',
+          'Camı çizildikten sonra Badge düz CSS görünümünü gizler, ama o görünümdeki kayan yazı görünmeden çalışmaya devam ediyordu. Ana iş parçacığında çalıştığı için, sayfadaki başka herhangi bir şeyin her karesinde tarayıcı sayfanın bütün katmanlarını yeniden hesaplıyordu: Badge olan her sayfada kare başına birkaç milisaniye. Gizlenen kayan yazı artık duruyor; WebGL2 yoksa eskisi gibi çalışıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'card',
+        text: t(
+          'The frost of a Card is 32 readings of the page for every pixel of the glass, most of what the GPU does for it. On large frosted glass (a canvas of about 0.3 megapixels or more, so mostly on high-density screens) the frost is now worked out first, into a picture a half or a third of the size, and the glass reads it; along the rim it is still worked out in full. Measured on one GPU, that is about a fifth less GPU time on a 0.36 megapixel card and three quarters less on a 1.9 megapixel one. The two pictures differ by 5 levels in 255 at most; smaller cards are drawn exactly as before.',
+          'Card\'ın buzlanması, camın her pikseli için sayfadan 32 okuma demek; GPU\'nun onun için yaptığı işin çoğu bu. Büyük buzlu camda (tuvali yaklaşık 0,3 megapiksel ve üstü, yani çoğunlukla yüksek yoğunluklu ekranlarda) buzlanma artık önce yarı ya da üçte bir boyutunda bir resme hesaplanıyor ve cam onu okuyor; kenar boyunca yine tam hesaplanıyor. Tek bir GPU\'da ölçüldüğünde bu, 0,36 megapiksellik kartta yaklaşık beşte bir, 1,9 megapiksellik kartta dörtte üç daha az GPU süresi. İki resim arasındaki fark 255 üzerinden en çok 5 seviye; daha küçük kartlar eskisiyle birebir aynı çiziliyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'slider',
+        also: ['switch', 'checkbox'],
+        text: t(
+          'Slider, Switch and Checkbox share one WebGL canvas, and it was resized to each control before that control was drawn: with controls of different sizes on screen, every control got a new drawing buffer on every frame, the costliest call on such a page by far. The canvas now only grows, and each control is drawn into a corner of it.',
+          'Slider, Switch ve Checkbox tek bir WebGL tuvalini paylaşır; bu tuval her kontrol çizilmeden önce onun boyutuna getiriliyordu: ekranda farklı boyutlarda kontroller varken her kontrol her karede yeni bir çizim arabelleği alıyordu, böyle bir sayfadaki açık ara en pahalı çağrı buydu. Tuval artık yalnızca büyüyor ve her kontrol onun bir köşesine çiziliyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        text: t(
+          'The engine asks nothing of the GPU for a frame that would come out as the one already on the canvas, sends only the uniforms that changed, and writes a new picture of the page into the texture it has instead of having one allocated each time. The canvases those pictures are painted on are kept per size, no longer resized for every glass in turn.',
+          'Motor, tuvaldekinin aynısı çıkacak bir kare için GPU\'dan hiçbir şey istemiyor, yalnızca değişen uniform\'ları gönderiyor ve sayfanın yeni resmini her seferinde yeni bir doku ayırtmak yerine elindeki dokuya yazıyor. Bu resimlerin boyandığı tuvaller boyuta göre saklanıyor; artık sırayla her cam için yeniden boyutlanmıyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'select',
+        also: ['dropdown-menu', 'popover', 'menu'],
+        text: t(
+          'The control of a surface that opens keeps its picture of the page while the page scrolls under it, as a Button does, instead of painting the page again on every frame of a scroll. Reading the page for any glass also leaves out sooner what lies outside it.',
+          'Açılan bir yüzeyin kontrolü, sayfa altından kayarken sayfanın resmini bir Button gibi koruyor; kaydırmanın her karesinde sayfayı yeniden boyamıyor. Herhangi bir cam için sayfa okunurken camın dışında kalanlar da artık daha erken eleniyor.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'The site, the README and the introduction said one WebGL2 shader draws every component. Slider, Switch and Checkbox are drawn by a renderer of their own, built on three.js, so the line now reads "React components drawn in WebGL2", and the introduction says which components that renderer draws.',
+          'Site, README ve giriş sayfası bütün bileşenleri tek bir WebGL2 gölgelendiricisinin çizdiğini söylüyordu. Slider, Switch ve Checkbox ise three.js üzerine kurulu kendi çizicisiyle çiziliyor; cümle artık "WebGL2 ile çizilen React bileşenleri" ve giriş sayfası o çizicinin hangi bileşenleri çizdiğini söylüyor.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.0.1',
     date: '2026-11-25',

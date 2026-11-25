@@ -472,14 +472,15 @@ function drawText(
   originY: number,
   lang: string | undefined,
   isVisible: (rect: DOMRect) => boolean,
+  range: Range,
 ) {
   const raw = node.textContent ?? ''
   let text = raw.replace(/\s+/g, ' ').trim()
   if (!text) return
-  const range = document.createRange()
   range.selectNodeContents(node)
   const lines = [...range.getClientRects()].filter((rect) => rect.width > 0.5)
-  if (!lines.length) return
+  // No line of it shows: its font is not set up and nothing is measured.
+  if (!lines.some(isVisible)) return
   // The page shows the transformed text. Upper and lower case follow the page's
   // language (Turkish i → İ); browsers capitalise without it.
   const transform = style.textTransform
@@ -631,6 +632,23 @@ function clipShape(value: string, box: Box): Path2D | null {
   return shape
 }
 
+/** Screen-reader-only text (a 1 px square) and empty boxes: never painted. */
+const isEmpty = (rect: DOMRect) => rect.width <= 0 || rect.height <= 0 || (rect.width <= 1 && rect.height <= 1)
+
+let locale: { of: string; is: string | undefined } | undefined
+/** The page's language as a locale, worked out once for each value of `lang`. */
+function localeOf(lang: string) {
+  if (locale?.of === lang) return locale.is
+  let is: string | undefined
+  try {
+    is = Intl.getCanonicalLocales(lang)[0]
+  } catch {
+    // Not a language tag: the default locale's rules apply.
+  }
+  locale = { of: lang, is }
+  return is
+}
+
 export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: DomSnapshotOptions) {
   const { origin, region, skip, onStale, cacheKey = document.documentElement.className, found } = options
   const originX = origin.left
@@ -638,14 +656,10 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
   const deferred: { element: Element; opacity: number }[] = []
   const intersects = (rect: DOMRect) =>
     !region || (rect.right > region.left && rect.left < region.right && rect.bottom > region.top && rect.top < region.bottom)
-  let lang: string | undefined
-  try {
-    lang = Intl.getCanonicalLocales(document.documentElement.lang)[0]
-  } catch {
-    // Not a language tag: the default locale's rules apply.
-  }
+  const lang = localeOf(document.documentElement.lang)
+  const range = document.createRange()
 
-  const walk = (element: Element, parentOpacity: number, isDeferred = false, style = getComputedStyle(element)) => {
+  const walk = (element: Element, parentOpacity: number, isDeferred = false, style = getComputedStyle(element), measured?: DOMRect) => {
     if (skip?.(element)) return
     if (style.display === 'none' || style.visibility === 'hidden') return
     const opacity = parentOpacity * Number(style.opacity)
@@ -657,18 +671,33 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
     }
     const drawChildren = () => {
       const inFlexOrGrid = /flex|grid/.test(style.display)
-      const children = [...element.childNodes].map((node) => {
-        const childStyle = node instanceof Element ? getComputedStyle(node) : null
-        const [layer, z] = childStyle ? layerOf(childStyle, inFlexOrGrid) : [1, 0]
-        return { node, childStyle, layer, z }
-      })
+      const children: { node: ChildNode; childStyle: CSSStyleDeclaration | null; layer: number; z: number; rect?: DOMRect }[] = []
+      for (const node of element.childNodes) {
+        if (!(node instanceof Element)) {
+          children.push({ node, childStyle: null, layer: 1, z: 0 })
+          continue
+        }
+        const childStyle = getComputedStyle(node)
+        // Most siblings on the way down to the region lie outside it, and nothing of such a box is
+        // painted (see `walk`): it is left out here, before its place among its siblings is worked
+        // out, which takes most of what is read of an element. Kept whatever its box: an element
+        // pinned to the viewport (it is met again at the end, and reported in `found`) and one
+        // without a box of its own (`display: contents`).
+        let rect: DOMRect | undefined
+        if (childStyle.position !== 'fixed' && childStyle.position !== 'sticky' && childStyle.display !== 'contents') {
+          rect = node.getBoundingClientRect()
+          if (isEmpty(rect) || !intersects(rect)) continue
+        }
+        const [layer, z] = layerOf(childStyle, inFlexOrGrid)
+        children.push({ node, childStyle, layer, z, rect })
+      }
       // The sort is stable: within a layer, document order.
       children.sort((a, b) => a.layer - b.layer || a.z - b.z)
-      for (const { node, childStyle } of children) {
-        if (childStyle) walk(node as Element, opacity, false, childStyle)
+      for (const { node, childStyle, rect } of children) {
+        if (childStyle) walk(node as Element, opacity, false, childStyle, rect)
         else if (node.nodeType === Node.TEXT_NODE) {
           ctx.globalAlpha = opacity
-          drawText(ctx, node as Text, style, originX, originY, lang, intersects)
+          drawText(ctx, node as Text, style, originX, originY, lang, intersects, range)
         }
       }
     }
@@ -676,10 +705,11 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
       drawChildren()
       return
     }
-    const rect = element.getBoundingClientRect()
+    // (Nothing on the page moves during a walk: a box measured among its siblings is still right.)
+    const rect = measured ?? element.getBoundingClientRect()
     // Screen-reader-only text (a 1 px square) and empty boxes are not painted, a hairline is;
     // nothing outside the region is visited.
-    if (rect.width <= 0 || rect.height <= 0 || (rect.width <= 1 && rect.height <= 1) || !intersects(rect)) return
+    if (isEmpty(rect) || !intersects(rect)) return
     if (found) {
       if (isDeferred) found.touched = true
       else if (!found.loose) {

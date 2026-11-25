@@ -5,7 +5,7 @@ description: Add liquid glass UI to a React app with Liquid Glass UI (bilalgurse
 
 # Liquid Glass UI
 
-Copy-paste React components drawn by one WebGL2 glass shader, one verb each. Docs: https://onemorethink.dev — every page also exists as Markdown (`/docs/<page>.md`), and `https://onemorethink.dev/llms-full.txt` holds everything.
+Copy-paste React components drawn in WebGL2, one verb each. Docs: https://onemorethink.dev — every page also exists as Markdown (`/docs/<page>.md`), and `https://onemorethink.dev/llms-full.txt` holds everything.
 
 ## Non-negotiable rules
 

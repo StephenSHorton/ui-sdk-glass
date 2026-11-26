@@ -2284,6 +2284,20 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '2.4.3',
+    date: '2026-11-25',
+    title: t('Select, Dropdown Menu, Popover and Menu come from the index.', 'Select, Dropdown Menu, Popover ve Menu index\'ten geliyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        text: t(
+          'Select, Dropdown Menu, Popover and Menu, with their parts and prop types, are exported from the kit\'s `index.ts` with the rest: `import { GlassSelect, GlassMenu } from \'@/components/liquid-glass\'`.',
+          'Select, Dropdown Menu, Popover ve Menu, parçaları ve prop tipleriyle birlikte, diğerleri gibi kitin `index.ts` dosyasından dışa aktarılıyor: `import { GlassSelect, GlassMenu } from \'@/components/liquid-glass\'`.',
+        ),
+      },
+    ],
+  },
+  {
     version: '2.4.2',
     date: '2026-11-25',
     title: t('Long tables keep their glass.', 'Uzun tablolar camını koruyor.'),

@@ -2284,6 +2284,20 @@ export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed'
 
 export const RELEASES: Release[] = [
   {
+    version: '2.4.1',
+    date: '2026-11-25',
+    title: t('The focus ring stays on glass controls.', 'Odak halkası cam kontrollerde kalıyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        text: t(
+          'Once its glass had drawn, a control reached with Tab showed no focus ring: the ring was a box-shadow, and the glass clears the shadow of the element it draws on. Button, Action Button, Button Group, Tabs, Slide to Confirm and the triggers of Select, Dropdown Menu, Popover and Menu now draw the same blue ring as an outline, which the glass leaves alone. The outline of the Input\'s clear button, a Toast\'s button and a Table\'s sort button never showed at all, and now does.',
+          'Camı çizildikten sonra Tab ile ulaşılan bir kontrolde odak halkası görünmüyordu: halka bir box-shadow\'du ve cam, üzerine çizdiği öğenin gölgesini siler. Button, Action Button, Button Group, Tabs, Slide to Confirm ile Select, Dropdown Menu, Popover ve Menu tetikleyicileri artık aynı mavi halkayı, camın dokunmadığı bir outline olarak çiziyor. Input\'un temizle butonunun, Toast butonunun ve Table sıralama butonunun hiç görünmeyen outline\'ı da artık görünüyor.',
+        ),
+      },
+    ],
+  },
+  {
     version: '2.4.0',
     date: '2026-11-25',
     title: t('Table.', 'Table.'),

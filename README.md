@@ -9,7 +9,7 @@ Glass components for React, drawn in WebGL2, with behaviour from [UI SDK](https:
 - **The newest UI SDK beta.** `@ui-sdk/core` and `@ui-sdk/react` are pinned to `0.1.0-beta.17` (the original pins `0.1.0-beta.13`), the version used by the finance dashboard this fork is built for.
 - **Components for a finance dashboard.** The fork exists to add the components a whole glass dashboard needs; they land here as they are built.
 
-The docs site at onemorethink.dev, the `/r/…` registry and the `liquid-glass` agent skill belong to the original project and describe the original's files, not this fork's.
+The docs site at onemorethink.dev and its `/r/…` registry belong to the original project and describe the original's files, not this fork's. The `liquid-glass` agent skill in this repo is the fork's: it copies the kit from here.
 
 ## Install
 
@@ -57,7 +57,7 @@ No npm dependencies, except the components marked "Needs …". Every component h
 
 ## AI assistants
 
-`pnpm build` writes `llms.txt` and `llms-full.txt` into `public/` for this repo's own docs. The `skills/liquid-glass/` skill in this repo is the original project's: it installs from onemorethink.dev and the original GitHub repo, so for this fork tell your agent to copy `src/components/liquid-glass/` from here instead.
+`pnpm build` writes `llms.txt` and `llms-full.txt` into `public/` for this repo's own docs. The `skills/liquid-glass/` skill tells agents which component to use, to copy `src/components/liquid-glass/` from this repo with UI SDK `0.1.0-beta.17`, and to copy files verbatim instead of re-implementing the glass.
 
 ## Develop
 

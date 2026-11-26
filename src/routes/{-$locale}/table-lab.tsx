@@ -52,7 +52,13 @@ const coins = [
 ]
 
 function TableLab() {
-  const count = typeof window === 'undefined' ? 3000 : Number(new URLSearchParams(window.location.search).get('rows')) || 3000
+  const query = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search)
+  const count = Number(query?.get('rows')) || 3000
+  // `?controls=plain`: the rows' tabs and buttons without glass, to measure the table and page alone
+  // (`tabs` or `buttons`: only those of glass).
+  const controls = query?.get('controls')
+  const plainTabs = controls === 'plain' || controls === 'buttons'
+  const plainButtons = controls === 'plain' || controls === 'tabs'
   const [rows, setRows] = useState(() => makeRows(count))
   const [sort, setSort] = useState<GlassTableSort>({ key: 'date', direction: 'descending' })
   const sorted = useMemo(() => sortRows(rows, sort), [rows, sort])
@@ -91,6 +97,13 @@ function TableLab() {
               <GlassTableCell className="font-medium">{r.payee}</GlassTableCell>
               <GlassTableCell>{r.category}</GlassTableCell>
               <GlassTableCell>
+                {plainTabs ? (
+                  <span className="inline-flex gap-1 rounded-full bg-black/5 p-1 text-xs">
+                    <span className="px-3 py-1">Personal</span>
+                    <span className="px-3 py-1">Business</span>
+                    <span className="px-3 py-1">Split</span>
+                  </span>
+                ) : (
                 <GlassTabs
                   aria-label={`${r.payee}, ${r.date}: expense type`}
                   size="sm"
@@ -102,11 +115,14 @@ function TableLab() {
                     { value: 'split', label: 'Split' },
                   ]}
                 />
+                )}
               </GlassTableCell>
               <GlassTableCell>
+                {plainButtons ? <button type="button" className="h-8 rounded-full border px-4 text-[13px]">Attach</button> : (
                 <GlassButton size="sm" icon={<Paperclip />} aria-label={`Attach a receipt to ${r.payee}, ${r.date}`}>
                   Attach
                 </GlassButton>
+                )}
               </GlassTableCell>
               <GlassTableCell numeric className={`font-medium ${r.amount > 0 ? 'text-[#248a3d] dark:text-[#30d158]' : ''}`}>
                 {money.format(r.amount)}

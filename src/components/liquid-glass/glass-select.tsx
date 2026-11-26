@@ -47,7 +47,7 @@ export function GlassSelect({ label, options, value, defaultValue, onValueChange
         <SelectLabel className="text-sm font-medium text-neutral-900 dark:text-white">{label}</SelectLabel>
         <SelectTrigger
           data-glass-host=""
-          className="flex h-12 w-full cursor-pointer items-center justify-between rounded-full border border-black/10 bg-white/60 pr-4 pl-5 text-[15px] font-medium text-neutral-900 outline-none select-none focus-visible:ring-2 focus-visible:ring-[#3291FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900"
+          className="flex h-12 w-full cursor-pointer items-center justify-between rounded-full border border-black/10 bg-white/60 pr-4 pl-5 text-[15px] font-medium text-neutral-900 outline-none select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[#3291FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-white data-[glass-tone=dark]:text-white data-[glass-tone=light]:text-neutral-900"
         >
           <GlassPopupAnchor popup={popup} />
           <SelectValue />

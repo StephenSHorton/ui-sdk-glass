@@ -619,8 +619,23 @@ export type DomSnapshotOptions = {
   glass?: Element
 }
 
-/** The z-index a box paints at among the page's own boxes: that of its outermost positioned ancestor (or itself) that has one. */
+/** What paints over everything on the page: the top layer (an open popover, a modal dialog, full screen). */
+const TOP_LAYER = ':popover-open, dialog:modal, :fullscreen'
+function inTopLayer(element: Element) {
+  try {
+    return !!element.closest(TOP_LAYER)
+  } catch {
+    // A browser that does not know one of these selectors has no such top layer.
+    return false
+  }
+}
+
+/**
+ * The z-index a box paints at among the page's own boxes: that of its outermost positioned
+ * ancestor (or itself) that has one. In the top layer, above them all.
+ */
 function levelOf(element: Element) {
+  if (inTopLayer(element)) return Infinity
   let level = 0
   for (let a: Element | null = element; a && a !== document.documentElement; a = a.parentElement) {
     const st = getComputedStyle(a)
@@ -690,7 +705,7 @@ const isEmpty = (rect: DOMRect) => rect.width <= 0 || rect.height <= 0 || (rect.
  * each time it paints what lies behind it. A row moved out of its place in the table (pinned with
  * `position: sticky`, or carried by a transform) is seen only while it is near where the table put it.
  */
-const LONG = 64
+export const LONG = 64
 const ROW_GROUP = /^table-(row|header|footer)-group$/
 export function rowsNear(rows: HTMLCollection, region: { top: number; bottom: number }): Element[] {
   const n = rows.length

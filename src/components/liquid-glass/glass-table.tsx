@@ -27,7 +27,8 @@
 //   </GlassTable>
 //
 // The sheet is one glass however many rows it has: it draws when something changes and never
-// at rest. A table wider than its sheet scrolls sideways inside it; the glass stays put.
+// at rest, and a sheet taller than the screen draws only the part on screen (thousands of rows,
+// each with glass in it, scroll smoothly). A table wider than its sheet scrolls sideways inside it; the glass stays put.
 // `className` and `style` are the sheet's (size, corners, a `bg-*` for tinted glass); every
 // other attribute goes to the <table> (`aria-label`, `id`…). Glass controls (GlassButton,
 // GlassTabs) can sit in its cells: they bend the sheet and the rows behind them.

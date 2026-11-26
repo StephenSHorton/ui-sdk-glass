@@ -16,7 +16,7 @@
 // COPY THIS FILE VERBATIM. Do not rewrite or "simplify" the shader: the look comes
 // from the exact constants below. MIT — https://github.com/bilalgursen/liquid-glass
 
-import { forgetBoxes, markGlassCanvas, rowsNear } from './dom-snapshot'
+import { LONG, forgetBoxes, markGlassCanvas, rowsNear } from './dom-snapshot'
 
 export type Rgb = [number, number, number]
 export type Rgba = [number, number, number, number]
@@ -2055,7 +2055,7 @@ function createEngine(): GlassEngine | null {
    * behind it, the same as it draws now (a long sheet's window moved, its glass did not): its
    * picture is still right.
    */
-  const underneath = (v: GlassView, was: DOMRect | null) => {
+  const underneath = (v: GlassView, was: DOMRect | null, now: DOMRect | null) => {
     const host = hostOf(v)
     if (!host) return
     const inset = 48
@@ -2064,9 +2064,10 @@ function createEngine(): GlassEngine | null {
       if (o === v || !o.visible) continue
       const inner = hostOf(o)
       if (!inner || inner === host || !host.contains(inner)) continue
-      if (was) {
+      if (was && now) {
         const r = inner.getBoundingClientRect()
-        if (r.left >= was.left + inset && r.right <= was.right - inset && r.top >= was.top + inset && r.bottom <= was.bottom - inset) continue
+        const within = (b: DOMRect) => r.left >= b.left + inset && r.right <= b.right - inset && r.top >= b.top + inset && r.bottom <= b.bottom - inset
+        if (within(was) && within(now)) continue
       }
       o.stale = o.repaint = any = true
     }
@@ -2087,14 +2088,14 @@ function createEngine(): GlassEngine | null {
     if (box !== on.box) {
       const was = on.box ? v.canvas.getBoundingClientRect() : null
       on.box = box
-      // Glass that sits on this one keeps a picture of it, taken where this canvas was: it takes it again.
-      underneath(v, was)
       forgetBoxes()
       const st = v.canvas.style
       st.left = `${m.left}px`
       st.top = `${m.top}px`
       st.width = `${m.width}px`
       st.height = `${m.height}px`
+      // Glass that sits on this one keeps a picture of it, taken where this canvas was: it takes it again.
+      underneath(v, was, was ? v.canvas.getBoundingClientRect() : null)
     }
     // (Never more px on a side than the GPU takes: LARGEST.)
     const dpr = Math.min(window.devicePixelRatio || 1, 2, LARGEST / Math.max(m.width, m.height, 1))
@@ -2757,9 +2758,11 @@ function createEngine(): GlassEngine | null {
     { passive: true, capture: true },
   )
   window.addEventListener('resize', () => listsDue())
+  // The page changed height (something above a list grew or shrank): the list may have moved.
+  let pageSized: ResizeObserver | null = null
 
-  // Glass in the rows of a long list (an element marked `data-glass-rows`, as GlassTableBody is: a
-  // table body of thousands of rows, each with a button in it) is not observed glass by glass.
+  // Glass in the rows of a long list (an element marked `data-glass-rows`, as GlassTableBody is, with
+  // LONG rows or more: a table body of thousands of rows, each with a button in it) is not observed glass by glass.
   // Thousands of observed elements cost the browser milliseconds on every frame of a scroll. Its
   // rows lie one under the next, so the rows on screen are found by halving the list (rowsNear),
   // on every scroll, resize and change of rows, and the glass in a row hears whether its row is
@@ -2825,6 +2828,10 @@ function createEngine(): GlassEngine | null {
       mo.observe(body, { childList: true })
       listSeen ??= new IntersectionObserver(listsDue)
       listSeen.observe(body)
+      if (!pageSized && typeof ResizeObserver !== 'undefined') {
+        pageSized = new ResizeObserver(listsDue)
+        pageSized.observe(document.body)
+      }
       lists.set(body, (list = { rows: new Map(), mo }))
     }
     const own = list
@@ -2848,7 +2855,7 @@ function createEngine(): GlassEngine | null {
   let seen: IntersectionObserver | null = null
   const watch = (element: Element, onChange: (visible: boolean) => void) => {
     const body = element.closest('[data-glass-rows]')
-    if (body && body !== element) {
+    if (body && body !== element && body.children.length >= LONG) {
       let row: Element | null = element
       while (row && row.parentElement !== body) row = row.parentElement
       if (row) return watchRow(body, row, onChange)

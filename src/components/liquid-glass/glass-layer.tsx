@@ -788,11 +788,12 @@ export function GlassLayer({
     target.addEventListener('pointerleave', onLeave)
     const unwatch = engine.watch(host, (visible) => {
       view.visible = visible
-      // Clear glass off screen drops its CSS look before its glass is drawn, all such glass at once:
-      // leaving the look's `backdrop-filter` makes the browser lay out what holds the host again,
-      // and in a long table that is every row, for each row that scrolls in. It is drawn as it comes
-      // on screen; at most one frame shows it without its fill.
-      if (!visible && !ready && clear) {
+      // Clear glass in the rows of a long list (GlassTableBody), off screen, drops its CSS look
+      // before its glass is drawn, all such glass at once: leaving the look's `backdrop-filter`
+      // makes the browser lay out what holds the host again, and in a long table that is every row,
+      // for each row that scrolls in. The list says a row is on screen half a screen ahead, so it
+      // is drawn before it is seen.
+      if (!visible && !ready && clear && host.closest('[data-glass-rows]')) {
         ready = true
         host.dataset.glassReady = ''
       }

@@ -1,5 +1,5 @@
 // Liquid Glass — glass components (React 19 + Tailwind CSS v4), drawn by one dependency-free engine.
-// GlassButton, GlassTabs and GlassInput take their behaviour from UI SDK (@ui-sdk/core, @ui-sdk/react).
+// GlassButton, GlassTabs, GlassInput and GlassDatePicker take their behaviour from UI SDK (@ui-sdk/core, @ui-sdk/react).
 // Copy the whole `liquid-glass/` folder, or install with the shadcn CLI (see README).
 //
 //   GlassButton        press   — swells under the pointer, bends the page behind it
@@ -10,6 +10,7 @@
 //   GlassCard          hold    — a card of glass: holds your content, its rim bends what slides behind
 //   GlassButtonGroup   share   — related actions share one body of glass
 //   GlassInput         type    — a field of glass you type on; search adds a magnifier and a clear button
+//   GlassDatePicker    circle  — a date field of glass; its calendar swells out of the field as one body
 //   GlassToaster       rise    — a short message rises on frosted glass after an action, stays a moment and goes
 //   GlassTable         sort    — rows of data on one large sheet of glass; its headers sort
 export { GlassButton, type GlassButtonProps, type GlassButtonSize } from './glass-button'
@@ -45,6 +46,7 @@ export {
   type GlassButtonGroupOrientation,
 } from './glass-button-group'
 export { GlassInput, type GlassInputProps } from './glass-input'
+export { GlassDatePicker, type GlassDatePickerProps } from './glass-date-picker'
 export { GlassToaster, createToaster, toast, type GlassToasterProps, type Toaster, type ToastData, type ToastType } from './glass-toast'
 // Building blocks: GlassLens puts the travelling lens on your own tabs (Radix Tabs, a radiogroup).
 export { GlassLens, type GlassLensProps } from './glass-lens'

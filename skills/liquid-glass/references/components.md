@@ -1562,7 +1562,7 @@ export default function Demo() {
 
 - A few lines of content in a widget: use Card.
 - Layout. A table is for data with columns, never for placing things side by side.
-- Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.
+- Tens of thousands of rows: show a page at a time. The glass holds thousands (it draws only the part on screen), but the page still lays out every row.
 
 Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/components/liquid-glass/`) into your project's `components/liquid-glass/`, byte for byte, keeping their folders:
 
@@ -1833,6 +1833,7 @@ Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/compo
 - `controls/glass/tokens.ts`
 - `controls/glass/useGlassCanvas.ts`
 - `controls/shared.ts`
+- `dom-snapshot.ts`
 - `engine.ts`
 
 Then add the packages they import:
@@ -1937,6 +1938,7 @@ Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/compo
 - `controls/glass/tokens.ts`
 - `controls/glass/useGlassCanvas.ts`
 - `controls/shared.ts`
+- `dom-snapshot.ts`
 - `engine.ts`
 
 Then add the packages they import:
@@ -2042,6 +2044,7 @@ Copy these files from https://github.com/StephenSHorton/ui-sdk-glass (`src/compo
 - `controls/glass/tokens.ts`
 - `controls/glass/useGlassCanvas.ts`
 - `controls/shared.ts`
+- `dom-snapshot.ts`
 - `engine.ts`
 
 Then add the packages they import:

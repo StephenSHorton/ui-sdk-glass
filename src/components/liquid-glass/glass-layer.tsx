@@ -179,6 +179,25 @@ const PULSE_KICK = { x: 24, y: 20 }
  * lets go it follows at `back` (per second).
  */
 const PULSE_BEND = { amount: 0.5, in: 30, out: 5, even: 4, back: 12 }
+/**
+ * Glass far larger than the screen (a table of thousands of rows) is drawn only where it can be
+ * seen. Once its canvas would be more than `over` viewports long on a side, the canvas becomes a
+ * window onto the glass on that side: the viewport, `margin` of a viewport beyond it each way (more
+ * than the frost and the bend ever reach for), and one `step` more. It moves a `step` (a share of
+ * the viewport) at a time, so a scroll redraws the glass once every half a screen, not on every
+ * frame; in between it rides along with the page, as any glass does. The glass inside is the same
+ * glass however it is windowed: only the canvas's box moves, never its shape, light or size.
+ * Glass that fits keeps the canvas it always had.
+ */
+const WINDOW = { over: 3, margin: 0.5, step: 0.5 }
+/** One side of the window: where it starts and how long it is, in the host's own px. */
+function windowOf(from: number, size: number, seen: number, view: number): [number, number] {
+  if (size <= WINDOW.over * view) return [from, size]
+  const step = Math.max(64, Math.round(view * WINDOW.step))
+  const length = Math.ceil(view * (1 + 2 * WINDOW.margin)) + step
+  const start = from + Math.floor((seen - view * WINDOW.margin - from) / step) * step
+  return [Math.max(from, Math.min(start, from + size - length)), length]
+}
 
 /** The CSS the glass relies on. Rendered once per page by <GlassStyles /> (React 19 dedupes it). */
 export const GLASS_CSS = `
@@ -279,6 +298,8 @@ export function GlassLayer({
     let darkGlass = false
     let colorT = 1
     let unpaintable = false
+    /** The canvas is a window onto the glass (WINDOW): a scroll may move it. */
+    let windowed = false
     let sampled = false
     let pressed = false
     let hovered = false
@@ -294,6 +315,10 @@ export function GlassLayer({
       // Where the glass and the page were when the picture was taken, and what the walk found:
       // elements pinned to the viewport, and whether everything else scrolls as one piece.
       size: '',
+      /** Where the canvas's window onto the glass was (WINDOW). */
+      win: '',
+      /** When the page last scrolled under this glass. */
+      scrolled: 0,
       lx: 0,
       ly: 0,
       sx: 0,
@@ -502,13 +527,19 @@ export function GlassLayer({
         // its shadow is CSS) needs no more there than above it, and a canvas that much smaller is
         // that much less to paint, upload, shade and copy on every frame.
         const padBottom = (tuneRef.current.optics?.shadow ?? 1) <= 0 ? padTop : Math.round(h * 0.8 + 4)
-        const origin = `${padX + w / 2}px ${padTop + h / 2}px`
+        const rect = host.getBoundingClientRect()
+        // The canvas: all of the glass and the room around it, or a window onto it where that is
+        // far larger than the screen (WINDOW). In the host's own px, from its border box's corner.
+        const onScreen = rect.width / Math.max(w * px, 1e-3) || 1
+        const [winX, winW] = windowOf(-padX, w + 2 * padX, (0 - rect.left - rect.width / 2) / onScreen + w / 2, innerWidth / onScreen)
+        const [winY, winH] = windowOf(-padTop, h + padTop + padBottom, (0 - rect.top - rect.height / 2) / onScreen + h / 2, innerHeight / onScreen)
+        windowed = winW < w + 2 * padX || winH < h + padTop + padBottom
+        const origin = `${w / 2 - winX}px ${h / 2 - winY}px`
         const undo = px === 1 && py === 1 ? '' : `${(1 / px).toFixed(6)} ${(1 / py).toFixed(6)}`
         if (undo !== unstretched || (undo && origin !== unstretchedAt)) {
           canvas.style.transformOrigin = unstretchedAt = origin
           canvas.style.scale = unstretched = undo
         }
-        const rect = host.getBoundingClientRect()
         const pc = clamp(press.x)
         const unit = h / DESIGN_HEIGHT
         const bevel = lerp(DESIGN_HEIGHT * 0.42, 62, pc)
@@ -525,13 +556,13 @@ export function GlassLayer({
         const dip = Math.hypot(hy * py, (pull * k * px) / 2) - hy * py
         return {
           // The canvas is placed against the padding box; the glass is measured on the border box.
-          left: -padX - host.clientLeft,
-          top: -padTop - host.clientTop,
-          width: w + 2 * padX,
-          height: h + padTop + padBottom,
+          left: winX - host.clientLeft,
+          top: winY - host.clientTop,
+          width: winW,
+          height: winH,
           unit,
-          cx: padX + w / 2,
-          cy: padTop + h / 2,
+          cx: w / 2 - winX,
+          cy: h / 2 - winY,
           hx: ((w / 2 - pull / 2) * k + grow * growX.x) * px,
           hy: hy * py,
           radius,
@@ -579,7 +610,7 @@ export function GlassLayer({
             live,
             paint: (around, reach) => {
               const r = host.getBoundingClientRect()
-              const box = { left: r.left + (r.width - w) / 2 - padX, top: r.top + (r.height - h) / 2 - padTop, width: w + 2 * padX, height: h + padTop + padBottom }
+              const box = { left: r.left + (r.width - w) / 2 + winX, top: r.top + (r.height - h) / 2 + winY, width: winW, height: winH }
               drawAround(around, (backdrop ? host.closest(backdrop) : null) ?? document.body, box, reach, {
                 skip: (el) => el === host || el.hasAttribute('data-glass-skip'),
                 onStale: dirty,
@@ -589,21 +620,21 @@ export function GlassLayer({
           refraction: clear
             ? {
                 paint: (back) => {
-                  back.translate(padX, padTop)
+                  back.translate(-winX, -winY)
                   const fill = rgbCss(surface)
                   const recoloured = fill !== page.fill
                   page.fill = fill
                   back.fillStyle = fill
-                  back.fillRect(-padX, -padTop, w + 2 * padX, h + padTop + padBottom)
+                  back.fillRect(winX, winY, winW, winH)
                   const root = (backdrop ? host.closest(backdrop) : null) ?? document.body
                   const r = host.getBoundingClientRect()
                   const lx = r.left + (r.width - w) / 2
                   const ly = r.top + (r.height - h) / 2
                   const target = back.canvas
-                  const key = `${target.width}:${target.height}:${Math.round(lx * 2)}:${Math.round(ly * 2)}:${Math.round(scrollX)}:${Math.round(scrollY)}`
+                  const key = `${target.width}:${target.height}:${winX}:${winY}:${Math.round(lx * 2)}:${Math.round(ly * 2)}:${Math.round(scrollX)}:${Math.round(scrollY)}`
                   const now = performance.now()
                   if (!page.ctx) page.ctx = page.canvas.getContext('2d')
-                  const region = { left: lx - padX, top: ly - padTop, right: lx + w + padX, bottom: ly + h + padBottom }
+                  const region = { left: lx + winX, top: ly + winY, right: lx + winX + winW, bottom: ly + winY + winH }
                   // Scrolling with the page, the glass keeps the same page behind it: the picture it has
                   // is still right. Not when something in it moves by itself, or is pinned to the
                   // viewport (a sticky header) and touches the glass, now or when it was painted.
@@ -611,12 +642,18 @@ export function GlassLayer({
                     !live &&
                     page.rigid &&
                     page.size === `${target.width}:${target.height}` &&
+                    page.win === `${winX}:${winY}` &&
                     Math.abs(lx - page.lx + scrollX - page.sx) < 0.05 &&
                     Math.abs(ly - page.ly + scrollY - page.sy) < 0.05 &&
                     !page.pinned.some((el) => {
                       const b = el.getBoundingClientRect()
                       return b.width > 0 && b.height > 0 && b.right > region.left && b.left < region.right && b.bottom > region.top && b.top < region.bottom
                     })
+                  // Glass this one sits on was drawn in a new place (a long sheet's window moved): its picture of it is out of date.
+                  if (view.stale) {
+                    view.stale = false
+                    page.stale = true
+                  }
                   // Glass this one melts into (COHESION) is the same body now: the picture leaves it out.
                   if (page.near !== view.near) {
                     page.near = view.near
@@ -624,12 +661,17 @@ export function GlassLayer({
                   }
                   // The page is re-painted when the glass moves over it, and at most every 120 ms otherwise.
                   // `live` reads it again every frame at 60 Hz, and every second or third frame on a faster display.
-                  const again = !!page.ctx && (page.stale || (key !== page.key && !rides) || now - page.at > (live ? 12 : 120))
+                  // Riding a scroll, the 120 ms look waits until the page has been still for as long: a
+                  // page that scrolls by is not the place to look for changes, and a glass redrawn on every
+                  // eighth frame of a scroll repaints the whole page with it (a table of thousands of rows).
+                  const due = now - page.at > (live ? 12 : 120) && (live || !rides || now - page.scrolled > 120)
+                  const again = !!page.ctx && (page.stale || (key !== page.key && !rides) || due)
                   if (page.ctx && again) {
                     page.stale = false
                     page.key = key
                     page.at = now
                     page.size = `${target.width}:${target.height}`
+                    page.win = `${winX}:${winY}`
                     page.lx = lx
                     page.ly = ly
                     page.sx = scrollX
@@ -647,6 +689,7 @@ export function GlassLayer({
                       origin: { left: lx, top: ly },
                       region,
                       skip: (el) => el === host || el.hasAttribute('data-glass-skip') || !!view.near?.includes(el),
+                      glass: host,
                       onStale: () => {
                         page.stale = true
                         view.dirty = true
@@ -743,13 +786,19 @@ export function GlassLayer({
     target.addEventListener('pointercancel', onUp)
     target.addEventListener('pointerenter', onEnter)
     target.addEventListener('pointerleave', onLeave)
-    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
-    const io = new IntersectionObserver((entries) => {
-      const entry = entries[entries.length - 1]
-      view.visible = entry.isIntersecting
+    const unwatch = engine.watch(host, (visible) => {
+      view.visible = visible
+      // Clear glass in the rows of a long list (GlassTableBody), off screen, drops its CSS look
+      // before its glass is drawn, all such glass at once: leaving the look's `backdrop-filter`
+      // makes the browser lay out what holds the host again, and in a long table that is every row,
+      // for each row that scrolls in. The list says a row is on screen half a screen ahead, so it
+      // is drawn before it is seen.
+      if (!visible && !ready && clear && host.closest('[data-glass-rows]')) {
+        ready = true
+        host.dataset.glassReady = ''
+      }
       dirty()
     })
-    io.observe(host)
     const ro = new ResizeObserver(dirty)
     ro.observe(host)
     // Content changes (label, selected state) re-check the droplet and colours.
@@ -768,21 +817,28 @@ export function GlassLayer({
     }
     host.addEventListener('transitionrun', onTransition)
     // A scroll changes what lies behind, never the glass: sizes and colours are not read again.
-    const onScroll = () => {
+    // (It may move the window of glass far larger than the screen, tinted glass's too.)
+    view.scroll = () => {
+      page.scrolled = performance.now()
+      if (!clear && !windowed) return
       view.repaint = true
       engine.wake()
     }
-    if (clear) addEventListener('scroll', onScroll, { passive: true, capture: true })
+    // A window onto glass larger than the screen is as large as the screen: it follows a resize.
+    const onResize = () => {
+      if (windowed) dirty()
+    }
+    addEventListener('resize', onResize)
     engine.add(view)
 
     return () => {
       engine.remove(view)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      io.disconnect()
+      unwatch()
       ro.disconnect()
       mo.disconnect()
       host.removeEventListener('transitionrun', onTransition)
-      removeEventListener('scroll', onScroll, { capture: true })
+      removeEventListener('resize', onResize)
       target.removeEventListener('pointerdown', onDown)
       target.removeEventListener('pointerup', onUp)
       target.removeEventListener('pointercancel', onUp)

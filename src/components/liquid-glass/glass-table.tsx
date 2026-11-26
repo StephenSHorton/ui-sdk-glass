@@ -27,7 +27,8 @@
 //   </GlassTable>
 //
 // The sheet is one glass however many rows it has: it draws when something changes and never
-// at rest. A table wider than its sheet scrolls sideways inside it; the glass stays put.
+// at rest, and a sheet taller than the screen draws only the part on screen (thousands of rows,
+// each with glass in it, scroll smoothly). A table wider than its sheet scrolls sideways inside it; the glass stays put.
 // `className` and `style` are the sheet's (size, corners, a `bg-*` for tinted glass); every
 // other attribute goes to the <table> (`aria-label`, `id`…). Glass controls (GlassButton,
 // GlassTabs) can sit in its cells: they bend the sheet and the rows behind them.
@@ -139,9 +140,13 @@ export function GlassTableHeader({ className = '', ...rest }: Section) {
   return <thead className={className} {...rest} />
 }
 
-/** The rows of data (`<tbody>`). A thin line runs between rows. */
+/**
+ * The rows of data (`<tbody>`). A thin line runs between rows. Glass in its rows hears from the
+ * body whether its row is on screen (`data-glass-rows`, see GlassEngine.watch), not one by one
+ * from the browser: thousands of rows scroll as smoothly as a few.
+ */
 export function GlassTableBody({ className = '', ...rest }: Section) {
-  return <tbody className={`[&>tr]:border-t [&>tr]:border-current/10 ${className}`} {...rest} />
+  return <tbody data-glass-rows="" className={`[&>tr]:border-t [&>tr]:border-current/10 ${className}`} {...rest} />
 }
 
 /** The totals (`<tfoot>`): set apart by a stronger line, in bold. */

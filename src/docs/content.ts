@@ -967,7 +967,7 @@ const [view, setView] = useState('week')
         avoid: [
           t('A few lines of content in a widget: use Card.', 'Bir widget\'ta birkaç satırlık içerik: Card kullan.'),
           t('Layout. A table is for data with columns, never for placing things side by side.', 'Yerleşim. Tablo sütunlu veri içindir, öğeleri yan yana dizmek için değil.'),
-          t('Thousands of rows: show a page at a time; the glass is one sheet however long the table is, but the page still has to lay out every row.', 'Binlerce satır: bir seferde bir sayfa göster; tablo ne kadar uzun olursa olsun cam tek levhadır, ama sayfa yine de her satırı yerleştirmek zorunda.'),
+          t('Tens of thousands of rows: show a page at a time. The glass holds thousands (it draws only the part on screen), but the page still lays out every row.', 'On binlerce satır: bir seferde bir sayfa göster. Cam binlercesini taşır (yalnız ekrandaki kısmı çizer), ama sayfa yine de her satırı yerleştirir.'),
         ],
       },
       { type: 'install', item: 'table' },
@@ -2283,6 +2283,44 @@ export type Release = {
 export const CHANGE_KINDS: ChangeKind[] = ['new', 'improved', 'fixed', 'removed']
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.4.2',
+    date: '2026-11-25',
+    title: t('Long tables keep their glass.', 'Uzun tablolar camını koruyor.'),
+    changes: [
+      {
+        kind: 'fixed',
+        page: 'table',
+        text: t(
+          'A Table taller than the graphics card lets a canvas be (16,384 px on most; a few hundred rows at a pixel ratio of 2) went flat white, showed a broken image or lost its glass. The sheet now draws only the part on screen and half a screen above and below it, and moves that window as the page scrolls. No canvas of glass is ever larger than the GPU allows.',
+          'Ekran kartının bir tuvale izin verdiğinden uzun bir Table (çoğunda 16.384 px; piksel oranı 2\'de birkaç yüz satır) düz beyaza dönüyor, kırık bir resim gösteriyor ya da camını kaybediyordu. Levha artık yalnız ekrandaki kısmı ve onun yarım ekran üstünü ve altını çiziyor, sayfa kaydıkça bu pencereyi taşıyor. Hiçbir cam tuvali GPU\'nun izin verdiğinden büyük olmuyor.',
+        ),
+      },
+      {
+        kind: 'improved',
+        page: 'table',
+        text: t(
+          'Glass in the rows of a long table scrolls smoothly. A Button or Tabs in a row reads only the rows behind it, not the whole table; the table body tells its glass which rows are on screen, where the browser used to watch each one; and rows come on screen half a screen at a time, their glass drawn together. Scrolling a table of 3,000 rows, each with a Tabs and a Button, a frame took 76 ms on average at a pixel ratio of 1 and 82 ms at 2; it now takes 18 and 20 ms, most frames one refresh of a 60 Hz screen.',
+          'Uzun bir tablonun satırlarındaki cam akıcı kayıyor. Bir satırdaki Button ya da Tabs artık tüm tabloyu değil, yalnız arkasındaki satırları okuyor; hangi satırların ekranda olduğunu, eskiden her birini ayrı izleyen tarayıcı değil, tablo gövdesi camına söylüyor; satırlar ekrana yarım ekranlık adımlarla geliyor ve camları birlikte çiziliyor. Her satırında bir Tabs ve bir Button olan 3.000 satırlık bir tablo kaydırılırken bir kare ortalama, piksel oranı 1\'de 76 ms, 2\'de 82 ms sürüyordu; artık 18 ve 20 ms sürüyor, karelerin çoğu 60 Hz bir ekranın tek yenilemesinde.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        text: t(
+          'Glass passing under a sticky header no longer bends the header. A box pinned to the screen that paints above the glass covers it, so it is left out of what the glass shows behind it; a Table scrolled under the site\'s header went white there.',
+          'Yapışkan bir başlığın altından geçen cam artık başlığı bükmüyor. Ekrana sabitlenmiş ve camın üstünde çizilen bir kutu camı örter; bu yüzden camın arkasında gösterdiğinden çıkarılıyor. Sitenin başlığının altına kaydırılan bir Table orada beyaza dönüyordu.',
+        ),
+      },
+      {
+        kind: 'fixed',
+        page: 'date-picker',
+        text: t(
+          'Date Picker is exported from the kit\'s `index.ts` with the rest: `import { GlassDatePicker } from \'@/components/liquid-glass\'`.',
+          'Date Picker diğerleriyle birlikte kitin `index.ts` dosyasından dışa aktarılıyor: `import { GlassDatePicker } from \'@/components/liquid-glass\'`.',
+        ),
+      },
+    ],
+  },
   {
     version: '2.4.1',
     date: '2026-11-25',

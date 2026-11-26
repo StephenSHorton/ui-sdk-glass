@@ -16,6 +16,8 @@
 // COPY THIS FILE VERBATIM. Do not rewrite or "simplify" the shader: the look comes
 // from the exact constants below. MIT — https://github.com/bilalgursen/liquid-glass
 
+import { LONG, forgetBoxes, markGlassCanvas, rowsNear } from './dom-snapshot'
+
 export type Rgb = [number, number, number]
 export type Rgba = [number, number, number, number]
 
@@ -177,8 +179,13 @@ export type GlassView = {
    */
   repaint?: boolean
   visible: boolean
-  /** Advance springs; return true while anything still moves. */
+  /** Advance springs; return true while anything still moves. Glass off screen that has come to rest is not stepped until it is on screen again. */
   step: (dt: number, reducedMotion: boolean) => boolean
+  /**
+   * Called on any scroll of the page or of a box in it, while this glass is on screen (the engine
+   * listens once for every glass). Glass that reads the page behind it sets `repaint` here.
+   */
+  scroll?: () => void
   /** The shape to draw, or null to clear. `refresh`: re-read sizes and colours. */
   lens: (refresh: boolean) => GlassLens | null
   /** The first frame reached the canvas. */
@@ -219,6 +226,13 @@ export type GlassView = {
    */
   pulled?: { x: number; y: number; sx: number; sy: number }
   /**
+   * Set by the engine: glass this one sits on (its host holds this one's) was drawn in a new place
+   * (a window onto a long sheet moved, or it drew for the first time), so a picture of what lies
+   * behind taken before is out of date: take it again, even if this glass has not moved. Clear it
+   * once taken. (GlassLayer does.)
+   */
+  stale?: boolean
+  /**
    * Set by the engine: the hosts of the glass this one melts into (COHESION), or none. Melted,
    * they are one body with it, so a view leaves them out of its picture of what lies behind
    * (GlassLayer does). The list is replaced only when the glass it names changes.
@@ -233,6 +247,12 @@ export type GlassEngine = {
   wake: () => void
   /** Any CSS colour (oklch, var(), color-mix…) → 0..1 RGBA. */
   resolveColor: (css: string) => Rgba
+  /**
+   * Tells `onChange` whether the element is on screen, now and on every change; returns the
+   * function that stops it. Every glass on the page shares one IntersectionObserver this way: a
+   * page with thousands of glass controls (a long table's rows) asks the browser for one, not thousands.
+   */
+  watch: (element: Element, onChange: (visible: boolean) => void) => () => void
 }
 
 /** Damped spring. `omega` = speed (rad/s), `zeta` = damping ratio (< 1 bounces). Returns true while moving. */
@@ -1353,6 +1373,14 @@ function createEngine(): GlassEngine | null {
     return null
   }
   gl.useProgram(program)
+  /**
+   * The most device px a side of any canvas or texture may have: what this GPU takes. Glass bigger
+   * than that on screen (a sheet longer than the screen draws only a window onto itself, so this is
+   * rare) is drawn at fewer px per CSS px, softer but whole: past it, a texture is refused and the
+   * glass would go flat, or the context be lost.
+   */
+  const dims = gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array | null
+  const LARGEST = Math.max(256, Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096, gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) || 4096, dims?.[0] || 4096, dims?.[1] || 4096))
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
   const attr = gl.getAttribLocation(program, 'a')
@@ -1461,7 +1489,7 @@ function createEngine(): GlassEngine | null {
   const around = layer()
   if (!around.ctx) return null
   /** `busy`: a picture is due (or was taken) while something on the page moved or was lit: it is taken once all is still. */
-  type Mirrored = { pic: Picture; w: number; h: number; at: number; left: number; top: number; reach: number; due: boolean; timer: number; busy: boolean }
+  type Mirrored = { pic: Picture; w: number; h: number; scale: number; at: number; left: number; top: number; reach: number; due: boolean; timer: number; busy: boolean }
   /** The pictures of the surroundings taken on this frame. */
   const pictured: Mirrored[] = []
   const mirrored = new Map<GlassView, Mirrored>()
@@ -1570,6 +1598,8 @@ function createEngine(): GlassEngine | null {
   const shown = new WeakMap<GlassView, { sent: number[]; box: string }>()
 
   const views = new Set<GlassView>()
+  /** Views off screen whose springs and lights were at rest on their last frame: not stepped until on screen again. */
+  const resting = new Set<GlassView>()
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
   let dead = false
 
@@ -2019,6 +2049,31 @@ function createEngine(): GlassEngine | null {
     return { changed, regrouped }
   }
 
+  /**
+   * The glass on screen that sits on this one (its host holds theirs) takes its picture of what
+   * lies behind again. `was`: where this canvas was. Glass well inside it then had all of it
+   * behind it, the same as it draws now (a long sheet's window moved, its glass did not): its
+   * picture is still right.
+   */
+  const underneath = (v: GlassView, was: DOMRect | null, now: DOMRect | null) => {
+    const host = hostOf(v)
+    if (!host) return
+    const inset = 48
+    let any = false
+    for (const o of views) {
+      if (o === v || !o.visible) continue
+      const inner = hostOf(o)
+      if (!inner || inner === host || !host.contains(inner)) continue
+      if (was && now) {
+        const r = inner.getBoundingClientRect()
+        const within = (b: DOMRect) => r.left >= b.left + inset && r.right <= b.right - inset && r.top >= b.top + inset && r.bottom <= b.bottom - inset
+        if (within(was) && within(now)) continue
+      }
+      o.stale = o.repaint = any = true
+    }
+    if (any) wake()
+  }
+
   const draw = (v: GlassView, refresh: boolean, repaint: boolean, read?: GlassLens | null) => {
     const m = read !== undefined ? read : v.lens(refresh)
     let on = shown.get(v)
@@ -2031,16 +2086,21 @@ function createEngine(): GlassEngine | null {
     // The canvas's box is written only when it changes.
     const box = `${m.left}|${m.top}|${m.width}|${m.height}`
     if (box !== on.box) {
+      const was = on.box ? v.canvas.getBoundingClientRect() : null
       on.box = box
+      forgetBoxes()
       const st = v.canvas.style
       st.left = `${m.left}px`
       st.top = `${m.top}px`
       st.width = `${m.width}px`
       st.height = `${m.height}px`
+      // Glass that sits on this one keeps a picture of it, taken where this canvas was: it takes it again.
+      underneath(v, was, was ? v.canvas.getBoundingClientRect() : null)
     }
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const devW = Math.max(2, Math.round(m.width * dpr))
-    const devH = Math.max(2, Math.round(m.height * dpr))
+    // (Never more px on a side than the GPU takes: LARGEST.)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2, LARGEST / Math.max(m.width, m.height, 1))
+    const devW = Math.max(2, Math.min(LARGEST, Math.round(m.width * dpr)))
+    const devH = Math.max(2, Math.min(LARGEST, Math.round(m.height * dpr)))
     if (v.canvas.width !== devW || v.canvas.height !== devH) {
       v.canvas.width = devW
       v.canvas.height = devH
@@ -2112,13 +2172,18 @@ function createEngine(): GlassEngine | null {
     let picture: Mirrored | undefined
     if (f) {
       let a = mirrored.get(v)
-      if (!a) mirrored.set(v, (a = { pic: { tex: null, w: 0, h: 0 }, w: 0, h: 0, at: 0, left: 0, top: 0, reach: 0, due: true, timer: 0, busy: false }))
+      if (!a) mirrored.set(v, (a = { pic: { tex: null, w: 0, h: 0 }, w: 0, h: 0, scale: AROUND_SCALE, at: 0, left: 0, top: 0, reach: 0, due: true, timer: 0, busy: false }))
       const taken = a
       const reach = clamp(f.height * MIRROR.reach, MIRROR.reachMin, Math.max(MIRROR.reachMin, MIRROR.reachMax))
-      const aw = Math.max(2, Math.ceil((m.width + 2 * reach) * AROUND_SCALE))
-      const ah = Math.max(2, Math.ceil((m.height + 2 * reach) * AROUND_SCALE))
+      // (Fewer texels per CSS px on glass so large that it would pass LARGEST.)
+      const scale = Math.min(AROUND_SCALE, (LARGEST - 2) / (Math.max(m.width, m.height) + 2 * reach))
+      const aw = Math.max(2, Math.ceil((m.width + 2 * reach) * scale))
+      const ah = Math.max(2, Math.ceil((m.height + 2 * reach) * scale))
       const now = performance.now()
-      if (refresh || (f.live && repaint) || a.w !== aw || a.h !== ah || a.reach !== reach) a.due = true
+      // A canvas that is a window onto its glass (GlassLayer's WINDOW) and has moved needs the surroundings of where it is now.
+      // (A swell or a pull moves a canvas a little and changes its size: that is heard as before.)
+      const moved = a.w > 0 && Math.max(Math.abs(a.left - m.left), Math.abs(a.top - m.top)) > Math.max(m.width, m.height) / 8
+      if (refresh || (f.live && repaint) || a.w !== aw || a.h !== ah || a.reach !== reach || moved) a.due = true
       if (a.due && a.w && busy && !f.live && now - a.at < AROUND_WAIT) {
         // It waits for all to be still (see AROUND_WAIT): the picture it has is kept meanwhile.
         a.busy = true
@@ -2142,11 +2207,12 @@ function createEngine(): GlassEngine | null {
         const c = around.ctx!
         c.setTransform(1, 0, 0, 1, 0, 0)
         c.clearRect(0, 0, aw, ah)
-        c.setTransform(AROUND_SCALE, 0, 0, AROUND_SCALE, reach * AROUND_SCALE, reach * AROUND_SCALE)
+        c.setTransform(scale, 0, 0, scale, reach * scale, reach * scale)
         f.paint(c, reach)
         picture = a
         a.w = aw
         a.h = ah
+        a.scale = scale
         a.at = now
         a.left = m.left
         a.top = m.top
@@ -2154,8 +2220,8 @@ function createEngine(): GlassEngine | null {
         pictured.push(a)
         fresh = false
       }
-      set('uAroundBox', (a.left - m.left - a.reach) / unit, (a.top - m.top - a.reach) / unit, a.w / AROUND_SCALE / unit, a.h / AROUND_SCALE / unit)
-      set('uAroundScale', AROUND_SCALE * unit)
+      set('uAroundBox', (a.left - m.left - a.reach) / unit, (a.top - m.top - a.reach) / unit, a.w / a.scale / unit, a.h / a.scale / unit)
+      set('uAroundScale', a.scale * unit)
       set('uReach', reach / unit)
     } else {
       set('uAroundBox', 0, 0, 1, 1)
@@ -2369,6 +2435,12 @@ function createEngine(): GlassEngine | null {
     let regroup = meltsChanged
     meltsChanged = false
     for (const v of views) {
+      const melts = melting && v.button === true
+      // Off screen and at rest (on its last frame too): nothing moves it until it is on screen again.
+      if (!v.visible && resting.has(v)) {
+        if (melts && shownButtons.has(v)) regroup = true
+        continue
+      }
       const stepped = v.step(dt, still)
       // After the view's own springs: its `grow` is this frame's.
       const pulled = stepPull(v, dt, still)
@@ -2378,9 +2450,12 @@ function createEngine(): GlassEngine | null {
       const flashing = stepFlash(v, dt, still)
       const glowing = lit || flashing
       if (moving || glowing) running = busy = true
-      const melts = melting && v.button === true
       if (melts && v.visible !== shownButtons.has(v)) regroup = true
-      if (!v.visible) continue
+      if (!v.visible) {
+        if (!moving && !glowing) resting.add(v)
+        continue
+      }
+      resting.delete(v)
       const again = v.repaint === true
       if (moving || glowing || v.dirty || again || relight) {
         const refresh = v.dirty
@@ -2673,14 +2748,150 @@ function createEngine(): GlassEngine | null {
     engine = undefined
   })
 
+  // One scroll listener for every glass (GlassView.scroll), heard by the glass on screen.
+  window.addEventListener(
+    'scroll',
+    () => {
+      listsDue()
+      for (const v of views) if (v.visible && v.scroll) v.scroll()
+    },
+    { passive: true, capture: true },
+  )
+  window.addEventListener('resize', () => listsDue())
+  // The page changed height (something above a list grew or shrank): the list may have moved.
+  let pageSized: ResizeObserver | null = null
+
+  // Glass in the rows of a long list (an element marked `data-glass-rows`, as GlassTableBody is, with
+  // LONG rows or more: a table body of thousands of rows, each with a button in it) is not observed glass by glass.
+  // Thousands of observed elements cost the browser milliseconds on every frame of a scroll. Its
+  // rows lie one under the next, so the rows on screen are found by halving the list (rowsNear),
+  // on every scroll, resize and change of rows, and the glass in a row hears whether its row is
+  // on screen (inside the boxes around the list that clip it).
+  type Watcher = { tell: (visible: boolean) => void; said: boolean | null }
+  type List = { rows: Map<Element, Set<Watcher>>; mo: MutationObserver }
+  const lists = new Map<Element, List>()
+  let listsAsked = false
+  const sayList = (body: Element, list: List) => {
+    const shown = new Set<Element>()
+    if (body.isConnected) {
+      let top = 0
+      let bottom = innerHeight
+      let left = 0
+      let right = innerWidth
+      for (let a = body.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+        const st = getComputedStyle(a)
+        if (st.overflowX === 'visible' && st.overflowY === 'visible') continue
+        const r = a.getBoundingClientRect()
+        top = Math.max(top, r.top)
+        bottom = Math.min(bottom, r.bottom)
+        left = Math.max(left, r.left)
+        right = Math.min(right, r.right)
+      }
+      if (bottom > top && right > left) {
+        // Rows come on screen in steps of half a screen, half a screen ahead: the glass of a step's
+        // rows draws in one frame, and the page is not repainted for a row at a time.
+        const view = bottom - top
+        const step = Math.max(64, Math.round(view / 2))
+        const from = body.getBoundingClientRect().top
+        const lo = Math.max(top - view, from + Math.floor((top - view / 2 - from) / step) * step)
+        const hi = Math.min(bottom + view, lo + view * 2 + step)
+        for (const row of rowsNear(body.children, { top: lo, bottom: hi })) {
+          const r = row.getBoundingClientRect()
+          if (r.width > 0 && r.height > 0 && r.bottom > lo && r.top < hi && r.right > left && r.left < right) shown.add(row)
+        }
+      }
+    }
+    for (const [row, watchers] of list.rows) {
+      const visible = shown.has(row)
+      for (const w of watchers)
+        if (w.said !== visible) {
+          w.said = visible
+          w.tell(visible)
+        }
+    }
+  }
+  /** The rows on screen are found again once this task is done (as an IntersectionObserver reports: after the change, not during it). */
+  const listsDue = () => {
+    if (listsAsked || !lists.size) return
+    listsAsked = true
+    queueMicrotask(() => {
+      listsAsked = false
+      for (const [body, list] of lists) sayList(body, list)
+    })
+  }
+  // A list coming on screen, or leaving it, without a scroll (a layout above it changed).
+  let listSeen: IntersectionObserver | null = null
+  const watchRow = (body: Element, row: Element, tell: (visible: boolean) => void) => {
+    let list = lists.get(body)
+    if (!list) {
+      const mo = new MutationObserver(listsDue)
+      mo.observe(body, { childList: true })
+      listSeen ??= new IntersectionObserver(listsDue)
+      listSeen.observe(body)
+      if (!pageSized && typeof ResizeObserver !== 'undefined') {
+        pageSized = new ResizeObserver(listsDue)
+        pageSized.observe(document.body)
+      }
+      lists.set(body, (list = { rows: new Map(), mo }))
+    }
+    const own = list
+    let watchers = own.rows.get(row)
+    if (!watchers) own.rows.set(row, (watchers = new Set()))
+    const w: Watcher = { tell, said: null }
+    watchers.add(w)
+    listsDue()
+    return () => {
+      watchers.delete(w)
+      if (!watchers.size && own.rows.get(row) === watchers) own.rows.delete(row)
+      if (own.rows.size || lists.get(body) !== own) return
+      own.mo.disconnect()
+      listSeen?.unobserve(body)
+      lists.delete(body)
+    }
+  }
+
+  // One IntersectionObserver for every other glass (GlassEngine.watch).
+  const watched = new Map<Element, Set<(visible: boolean) => void>>()
+  let seen: IntersectionObserver | null = null
+  const watch = (element: Element, onChange: (visible: boolean) => void) => {
+    const body = element.closest('[data-glass-rows]')
+    if (body && body !== element && body.children.length >= LONG) {
+      let row: Element | null = element
+      while (row && row.parentElement !== body) row = row.parentElement
+      if (row) return watchRow(body, row, onChange)
+    }
+    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
+    seen ??= new IntersectionObserver((entries) => {
+      const last = new Map<Element, boolean>()
+      for (const e of entries) last.set(e.target, e.isIntersecting)
+      for (const [el, visible] of last) for (const tell of [...(watched.get(el) ?? [])]) tell(visible)
+    })
+    const io = seen
+    let told = watched.get(element)
+    if (!told) watched.set(element, (told = new Set()))
+    // Observed again, so that this one hears where the element is now, as the first did.
+    else io.unobserve(element)
+    told.add(onChange)
+    io.observe(element)
+    return () => {
+      told.delete(onChange)
+      if (told.size || watched.get(element) !== told) return
+      watched.delete(element)
+      io.unobserve(element)
+    }
+  }
+
   return {
+    watch,
     add: (v) => {
       views.add(v)
+      markGlassCanvas(v.canvas)
       meltsChanged = true
       wake()
     },
     remove: (v) => {
       views.delete(v)
+      resting.delete(v)
       lights.delete(v)
       flashes.delete(v)
       // The glass that melted into it lets go.

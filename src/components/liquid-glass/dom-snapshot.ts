@@ -61,6 +61,12 @@ function placeOf(position: string, freeX: number, freeY: number): [number, numbe
 // ── Sources: loading, and keeping the canvas readable ────────────────────────
 
 const verdicts = new WeakMap<Drawable, { key: string; ok: boolean }>()
+/** Canvases the glass engine draws: only ever drawn from pictures WebGL took, so never tainted. */
+const glassCanvases = new WeakSet<HTMLCanvasElement>()
+/** Tells the walk that a canvas is a glass's own: it is drawn without being tried first (see isClean). */
+export function markGlassCanvas(canvas: HTMLCanvasElement) {
+  glassCanvases.add(canvas)
+}
 
 /**
  * Is this source safe to draw? One image without CORS (or an SVG, in some browsers)
@@ -68,6 +74,8 @@ const verdicts = new WeakMap<Drawable, { key: string; ok: boolean }>()
  * tried once on a 1×1 canvas first. `key` is whatever makes it a different picture.
  */
 function isClean(source: Drawable, key = '') {
+  // (Trying one reads a pixel back from the GPU, which waits for it: on a long table, for every row that scrolls in.)
+  if (source instanceof HTMLCanvasElement && glassCanvases.has(source)) return true
   const known = verdicts.get(source)
   if (known && known.key === key) return known.ok
   let ok = false
@@ -602,6 +610,38 @@ export type DomSnapshotOptions = {
    * and `loose` that something painted may move by itself (an animation, an inline transform, a fixed background).
    */
   found?: { pinned: Element[]; touched: boolean; loose: boolean }
+  /**
+   * The glass this picture is of what lies behind: a box pinned to the viewport (fixed or sticky)
+   * that paints above it (a page's header, with a z-index, that content scrolls under) is left
+   * out. It covers that glass, it is not behind it, and painted in, it would make the picture
+   * change on every frame of a scroll for all the glass that passes under it.
+   */
+  glass?: Element
+}
+
+/** What paints over everything on the page: the top layer (an open popover, a modal dialog, full screen). */
+const TOP_LAYER = ':popover-open, dialog:modal, :fullscreen'
+function inTopLayer(element: Element) {
+  try {
+    return !!element.closest(TOP_LAYER)
+  } catch {
+    // A browser that does not know one of these selectors has no such top layer.
+    return false
+  }
+}
+
+/**
+ * The z-index a box paints at among the page's own boxes: that of its outermost positioned
+ * ancestor (or itself) that has one. In the top layer, above them all.
+ */
+function levelOf(element: Element) {
+  if (inTopLayer(element)) return Infinity
+  let level = 0
+  for (let a: Element | null = element; a && a !== document.documentElement; a = a.parentElement) {
+    const st = getComputedStyle(a)
+    if (st.position !== 'static' && st.zIndex !== 'auto') level = parseInt(st.zIndex, 10) || 0
+  }
+  return level
 }
 
 /**
@@ -634,8 +674,69 @@ function clipShape(value: string, box: Box): Path2D | null {
   return shape
 }
 
+// Boxes read in this task, kept until it ends (a microtask clears them). Several glasses painted
+// in one frame (the buttons of the rows a scroll brings on screen) read the same boxes on the
+// way down to the region behind each (the page's backdrop, the table): each is read once. The
+// engine forgets them when it moves or sizes a canvas (forgetBoxes); nothing else on the page
+// moves while glass is drawn.
+let boxes: WeakMap<Element, DOMRect> | null = null
+function boxOf(element: Element): DOMRect {
+  if (!boxes) {
+    boxes = new WeakMap()
+    queueMicrotask(forgetBoxes)
+  }
+  let box = boxes.get(element)
+  if (!box) boxes.set(element, (box = element.getBoundingClientRect()))
+  return box
+}
+/** Boxes are read again: a canvas of glass moved or changed size. */
+export function forgetBoxes() {
+  boxes = null
+}
+
 /** Screen-reader-only text (a 1 px square) and empty boxes: never painted. */
 const isEmpty = (rect: DOMRect) => rect.width <= 0 || rect.height <= 0 || (rect.width <= 1 && rect.height <= 1)
+
+/**
+ * A table body (or head, or foot) at least this many rows long is not read row by row: its rows
+ * lie one under the next in their order, so the rows that reach the region are found by halving
+ * the list (a dozen rows read for three thousand), and only they, with one more on either side,
+ * are visited. A small glass on a long table (a button in a row) otherwise reads every row of it
+ * each time it paints what lies behind it. A row moved out of its place in the table (pinned with
+ * `position: sticky`, or carried by a transform) is seen only while it is near where the table put it.
+ */
+export const LONG = 64
+const ROW_GROUP = /^table-(row|header|footer)-group$/
+export function rowsNear(rows: HTMLCollection, region: { top: number; bottom: number }): Element[] {
+  const n = rows.length
+  // The box of the first row at or after i that has one (a hidden row has none).
+  const boxFrom = (i: number) => {
+    for (let j = i; j < n; j++) {
+      const r = boxOf(rows[j])
+      if (!isEmpty(r)) return r
+    }
+    return null
+  }
+  // The first row whose bottom is below the region's top…
+  let lo = 0
+  let hi = n
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    const r = boxFrom(mid)
+    if (r && r.bottom <= region.top) lo = mid + 1
+    else hi = mid
+  }
+  const from = Math.max(0, lo - 1)
+  // …and the first whose top is at or past its bottom.
+  hi = n
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    const r = boxFrom(mid)
+    if (!r || r.top >= region.bottom) hi = mid
+    else lo = mid + 1
+  }
+  return Array.prototype.slice.call(rows, from, Math.min(n, lo + 1)) as Element[]
+}
 
 let locale: { of: string; is: string | undefined } | undefined
 /** The page's language as a locale, worked out once for each value of `lang`. */
@@ -652,7 +753,8 @@ function localeOf(lang: string) {
 }
 
 export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: DomSnapshotOptions) {
-  const { origin, region, skip, onStale, cacheKey = document.documentElement.className, found } = options
+  const { origin, region, skip, onStale, cacheKey = document.documentElement.className, found, glass } = options
+  let glassLevel: number | undefined
   const originX = origin.left
   const originY = origin.top
   const deferred: { element: Element; opacity: number }[] = []
@@ -667,6 +769,7 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
     const opacity = parentOpacity * Number(style.opacity)
     if (opacity < 0.01) return
     if (!isDeferred && element !== root && (style.position === 'fixed' || style.position === 'sticky')) {
+      if (glass && !element.contains(glass) && levelOf(element) > (glassLevel ??= levelOf(glass))) return
       deferred.push({ element, opacity: parentOpacity })
       found?.pinned.push(element)
       return
@@ -674,7 +777,7 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
     const drawChildren = () => {
       const inFlexOrGrid = /flex|grid/.test(style.display)
       const children: { node: ChildNode; childStyle: CSSStyleDeclaration | null; layer: number; z: number; rect?: DOMRect }[] = []
-      for (const node of element.childNodes) {
+      for (const node of region && ROW_GROUP.test(style.display) && element.children.length >= LONG ? rowsNear(element.children, region) : element.childNodes) {
         if (!(node instanceof Element)) {
           children.push({ node, childStyle: null, layer: 1, z: 0 })
           continue
@@ -687,7 +790,7 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
         // without a box of its own (`display: contents`).
         let rect: DOMRect | undefined
         if (childStyle.position !== 'fixed' && childStyle.position !== 'sticky' && childStyle.display !== 'contents') {
-          rect = node.getBoundingClientRect()
+          rect = boxOf(node)
           if (isEmpty(rect) || !intersects(rect)) continue
         }
         const [layer, z] = layerOf(childStyle, inFlexOrGrid)
@@ -708,7 +811,7 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
       return
     }
     // (Nothing on the page moves during a walk: a box measured among its siblings is still right.)
-    const rect = measured ?? element.getBoundingClientRect()
+    const rect = measured ?? boxOf(element)
     // Screen-reader-only text (a 1 px square) and empty boxes are not painted, a hairline is;
     // nothing outside the region is visited.
     if (isEmpty(rect) || !intersects(rect)) return
@@ -784,7 +887,17 @@ export function drawDom(ctx: CanvasRenderingContext2D, root: Element, options: D
       return
     }
     if (element instanceof HTMLCanvasElement) {
-      if (element.width && element.height && isClean(element)) ctx.drawImage(element, box.x, box.y, box.w, box.h)
+      if (!element.width || !element.height || !isClean(element)) return
+      // Only the part of it inside the region is copied: a small glass on a large one (a button on
+      // a long table's sheet) reads the few px behind it, not the whole sheet's canvas.
+      const x0 = region ? Math.max(box.x, region.left - originX) : box.x
+      const y0 = region ? Math.max(box.y, region.top - originY) : box.y
+      const x1 = region ? Math.min(box.x + box.w, region.right - originX) : box.x + box.w
+      const y1 = region ? Math.min(box.y + box.h, region.bottom - originY) : box.y + box.h
+      if (x1 <= x0 || y1 <= y0 || box.w <= 0 || box.h <= 0) return
+      const kx = element.width / box.w
+      const ky = element.height / box.h
+      ctx.drawImage(element, (x0 - box.x) * kx, (y0 - box.y) * ky, (x1 - x0) * kx, (y1 - y0) * ky, x0, y0, x1 - x0, y1 - y0)
       return
     }
     if (element instanceof HTMLImageElement) {

@@ -427,12 +427,9 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
     root.addEventListener('pointerdown', onDown)
     const touchAction = root.style.touchAction
     root.style.touchAction = 'pan-y'
-    // One report per change, newest last: a host React moves (a sorted row) is reported gone, then back, in one batch.
-    const io = new IntersectionObserver((entries) => {
-      const entry = entries[entries.length - 1]
-      view.visible = entry.isIntersecting
+    const unwatch = engine.watch(root, (visible) => {
+      view.visible = visible
     })
-    io.observe(root)
     const ro = new ResizeObserver(() => {
       if (!active) sync(false)
     })
@@ -442,7 +439,7 @@ export function GlassLens({ value, disabled = false }: GlassLensProps) {
     return () => {
       engine.remove(view)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      io.disconnect()
+      unwatch()
       ro.disconnect()
       root.removeEventListener('pointerdown', onDown)
       removeEventListener('pointermove', onMove)
